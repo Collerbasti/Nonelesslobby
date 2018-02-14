@@ -1,0 +1,6 @@
+main: Main.Main
+version: 1.5
+name: TestPlugin
+
+commands:
+     test:

@@ -15,8 +15,7 @@ public class Main extends JavaPlugin{
 	public static File Locations;
 	public static FileConfiguration loc;
 	
-	
-	
+@Override	
 	public void onEnable() {
 		
 		new NonelessEventListener(this);

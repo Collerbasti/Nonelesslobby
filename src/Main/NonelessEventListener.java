@@ -1,5 +1,6 @@
 package Main;
 
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -25,5 +26,6 @@ public class NonelessEventListener implements Listener {
 		System.out.println("Spieler ist gejoint");
 		p.teleport(new Location(w,x,y,z,yaw,pitch));
 	}
+	
 
 }

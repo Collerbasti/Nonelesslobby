@@ -19,6 +19,7 @@ import org.bukkit.entity.Player;
 						p.sendMessage("§cDu darfst diesen Befehl nicht Benutzen");
 					 return true;
 					}
+					if(args.length == 0) {
 					p.sendMessage("Lobby Wird Gespeichert");
 					Location loc = p.getLocation();
 					Main.Main.loc.set("spawn.X", loc.getX());
@@ -33,10 +34,36 @@ import org.bukkit.entity.Player;
 					e.printStackTrace();
 					
 				}
+				}else if(args.length == 1) {
+					
+					
+					p.sendMessage( args[0] +" Wird Gespeichert");
+					Location loc = p.getLocation();
+					Main.Main.loc.set(args[0]+".true", "true");
+					Main.Main.loc.set(args[0]+".X", loc.getX());
+					Main.Main.loc.set(args[0]+".Y", loc.getY());
+					Main.Main.loc.set(args[0]+".Z", loc.getZ());
+					Main.Main.loc.set(args[0]+".Yaw", loc.getYaw());
+					Main.Main.loc.set(args[0]+".Pitch", loc.getPitch());
+					Main.Main.loc.set(args[0]+".World", loc.getWorld().getName());
+					try {
+					Main.Main.loc.save(Main.Main.Locations);
+				}catch (IOException e) {
+					e.printStackTrace();
+					
 				}
+					
+					return true;
+					
+				}else {
+					
+					return true;
+				}
+					
 			
-				return true;
 		}
+				return true;
+			}
 
 	
 	

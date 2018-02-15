@@ -3,6 +3,6 @@ version: 1.5
 name: NonelessLobby
 
 commands:
-     test:
-     setlobby:
-     spawn:
+ test:
+ setlobby:
+ spawn:

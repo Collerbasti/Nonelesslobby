@@ -9,7 +9,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 
 public class NonelessEventListener implements Listener {
-	
 	public NonelessEventListener(Main plugin) {
 		plugin.getServer().getPluginManager().registerEvents(this , plugin);
 	}
@@ -26,6 +25,4 @@ public class NonelessEventListener implements Listener {
 		System.out.println("Spieler ist gejoint");
 		p.teleport(new Location(w,x,y,z,yaw,pitch));
 	}
-	
-
-}
+	}

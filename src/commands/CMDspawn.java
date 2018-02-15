@@ -14,7 +14,7 @@ public class CMDspawn implements CommandExecutor {
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		Player p = (Player) sender;
-	
+	 
 	
 		if(command.getName().equals("spawn")) {
 			if(args.length == 0) {
@@ -34,8 +34,7 @@ public class CMDspawn implements CommandExecutor {
 			
 	}else if(args.length == 1) {
 		String Truetest = Main.loc.getString(args[0]+".true");
-		p.sendMessage(Truetest);
-		if(Truetest == "") {
+		if(Truetest == null) {
 		p.sendMessage(args[0]+" Existiert nicht");
 		}else {
 			

@@ -7,7 +7,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.plugin.Plugin;
 
 public class NonelessEventListener implements Listener {
 	public NonelessEventListener(Main plugin) {
@@ -15,8 +14,6 @@ public class NonelessEventListener implements Listener {
 	}
 	@EventHandler
 	public void onPlayerJoin(PlayerJoinEvent ev) {
-	Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
-	            public void run() {
 		Player p = ev.getPlayer();
 		Double x = Main.loc.getDouble("spawn.X");
 		Double y = Main.loc.getDouble("spawn.Y");
@@ -28,6 +25,4 @@ public class NonelessEventListener implements Listener {
 		System.out.println("Spieler ist gejoint");
 		p.teleport(new Location(w,x,y,z,yaw,pitch));
                 }
-            }
-        }, 20L);
-    }
+}

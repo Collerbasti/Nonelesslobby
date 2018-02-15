@@ -1,11 +1,8 @@
 main: Main.Main
-version: 1.5
+version: 2.0
 name: NonelessLobby
 
  commands:
    test:
-     description: Dies ist ein Test.
    setlobby:
-     description: Setzt Spawnpunkt.
    spawn:
-     description: Begebe dich zum Spawn.

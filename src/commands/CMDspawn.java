@@ -34,7 +34,7 @@ public class CMDspawn implements CommandExecutor {
 			
 	}else if(args.length == 1) {
 		String Truetest = Main.loc.getString(args[0]+".true");
-		p.sendMessage(Truetest);
+		p.sendMessage("Es Existiert = "+Truetest);
 		if(Truetest == "") {
 		p.sendMessage(args[0]+" Existiert nicht");
 		}else {

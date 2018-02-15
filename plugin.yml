@@ -2,10 +2,10 @@ main: Main.Main
 version: 2.0
 name: NonelessLobby
 
- commands:
-   setlobby:
+commands:
+  setlobby:
      description: Setze die lobby
-   spawn:
+  spawn:
      description: Gehe zum Spawn
-   test:
+  test:
      description: Test!!!

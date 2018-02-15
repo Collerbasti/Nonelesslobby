@@ -37,7 +37,7 @@ public class NonelessEventListener implements Listener {
                     "Welcome to Bukkit! Remember to read the documentation!");
             }
             
-        }.runTaskLater(this.plugin, 20);
+        }.runTaskLater(this.plugin, 5000);
     }
  
 }

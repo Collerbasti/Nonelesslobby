@@ -15,10 +15,15 @@ import org.bukkit.inventory.ItemStack;
 
 
 public class NonelessEventListener implements Listener {
+    private final Main plugin;
 	public NonelessEventListener(Main plugin) {
-		plugin.getServer().getPluginManager().registerEvents(this , plugin);
-	}
-	@EventHandler
+        this.plugin = plugin;
+        this.plugin.getServer().getPluginManager().registerEvents(this, plugin);
+    }
+	
+	
+	
+	@EventHandler 
 	public void onPlayerJoin(PlayerJoinEvent ev) {
 		Player p = ev.getPlayer();
 		Double x = Main.loc.getDouble("spawn.X");
@@ -30,6 +35,7 @@ public class NonelessEventListener implements Listener {
 		p.sendMessage("Hallo");
 		System.out.println("Spieler ist gejoint");
 		p.teleport(new Location(w,x,y,z,yaw,pitch));
+
                 }
 	@EventHandler
 	public void onPlayerClickinLobby(PlayerInteractEvent ev) {
@@ -47,4 +53,6 @@ public class NonelessEventListener implements Listener {
 	    	e.sendMessage("Hat geklappt");
 	    }
 	}
-}
+
+	}	
+

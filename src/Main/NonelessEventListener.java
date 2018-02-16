@@ -58,6 +58,8 @@ public class NonelessEventListener implements Listener {
 		p.sendMessage("Hallo");
 		System.out.println("Spieler ist gejoint");
 		p.teleport(new Location(w,x,y,z,yaw,pitch));	
+		p.teleport(alt);
+		p.teleport(new Location(w,x,y,z,yaw,pitch));
         }
         
     }.runTaskLater(this.plugin, 80);

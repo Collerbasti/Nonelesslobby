@@ -15,6 +15,7 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.scheduler.BukkitRunnable;
 
 
 public class NonelessEventListener implements Listener {
@@ -37,9 +38,28 @@ public class NonelessEventListener implements Listener {
 		org.bukkit.World w = Bukkit.getWorld(Main.loc.getString("spawn.World"));
 		p.sendMessage("Hallo");
 		System.out.println("Spieler ist gejoint");
-		p.teleport(new Location(w,x,y,z,yaw,pitch));
+		p.teleport(new Location(w,x,y,z,yaw,pitch));	
+		
+    new BukkitRunnable() {
+		
+		@Override
+		public void run() {
+			
+		Player p = ev.getPlayer();
+		Double x = Main.loc.getDouble("spawn.X");
+		Double y = Main.loc.getDouble("spawn.Y");
+		Double z = Main.loc.getDouble("spawn.Z");
+		Float yaw = (float) Main.loc.getDouble("spawn.Yaw");
+		Float pitch = (float) Main.loc.getDouble("spawn.Pitch");
+		org.bukkit.World w = Bukkit.getWorld(Main.loc.getString("spawn.World"));
+		p.sendMessage("Hallo");
+		System.out.println("Spieler ist gejoint");
+		p.teleport(new Location(w,x,y,z,yaw,pitch));	
+        }
+        
+    }.runTaskLater(this.plugin, 80);
+}
 
-                }
 	@EventHandler
 	public void onPlayerClickinLobby(PlayerInteractEvent ev) {
 	    Player e = ev.getPlayer();

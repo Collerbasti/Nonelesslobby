@@ -62,7 +62,7 @@ public class NonelessEventListener implements Listener {
 		p.teleport(new Location(w,x,y,z,yaw,pitch));
         }
         
-    }.runTaskLater(this.plugin, 80);
+    }.runTaskLater(this.plugin, 20);
 }
 
 	@EventHandler

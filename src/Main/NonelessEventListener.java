@@ -38,8 +38,7 @@ public class NonelessEventListener implements Listener {
 		Float pitch = (float) Main.loc.getDouble("spawn.Pitch");
 		org.bukkit.World w = Bukkit.getWorld(Main.loc.getString("spawn.World"));
 		p.sendMessage("Hallo");
-		System.out.println("Spieler ist gejoint");
-		p.teleport(new Location(w,x,y,z,yaw,pitch));	
+		System.out.println("Spieler ist gejoint");	
 		p.teleport(alt);
 		p.teleport(new Location(w,x,y,z,yaw,pitch));
 		
@@ -57,7 +56,6 @@ public class NonelessEventListener implements Listener {
 		org.bukkit.World w = Bukkit.getWorld(Main.loc.getString("spawn.World"));
 		p.sendMessage("Hallo");
 		System.out.println("Spieler ist gejoint");
-		p.teleport(new Location(w,x,y,z,yaw,pitch));	
 		p.teleport(alt);
 		p.teleport(new Location(w,x,y,z,yaw,pitch));
         }

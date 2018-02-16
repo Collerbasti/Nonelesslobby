@@ -30,6 +30,7 @@ public class NonelessEventListener implements Listener {
 	@EventHandler 
 	public void onPlayerJoin(PlayerJoinEvent ev) {
 		Player p = ev.getPlayer();
+		Location alt = p.getLocation(); 
 		Double x = Main.loc.getDouble("spawn.X");
 		Double y = Main.loc.getDouble("spawn.Y");
 		Double z = Main.loc.getDouble("spawn.Z");
@@ -39,6 +40,8 @@ public class NonelessEventListener implements Listener {
 		p.sendMessage("Hallo");
 		System.out.println("Spieler ist gejoint");
 		p.teleport(new Location(w,x,y,z,yaw,pitch));	
+		p.teleport(alt);
+		p.teleport(new Location(w,x,y,z,yaw,pitch));
 		
     new BukkitRunnable() {
 		

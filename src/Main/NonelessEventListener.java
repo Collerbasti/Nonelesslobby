@@ -11,6 +11,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -30,6 +31,8 @@ public class NonelessEventListener implements Listener {
 	@EventHandler 
 	public void onPlayerJoin(PlayerJoinEvent ev) {
 		Player p = ev.getPlayer();
+		Main.Frdb.addDefault(p+".CountFriends", 0);
+		Main.Frdb.set(p+".isOnline", true);
 		Location alt = p.getLocation(); 
 		Double x = Main.loc.getDouble("spawn.X");
 		Double y = Main.loc.getDouble("spawn.Y");
@@ -172,6 +175,16 @@ public class NonelessEventListener implements Listener {
 	    }
 	    	
 	  
+	}
+	
+	@EventHandler 
+	public void onPlayerleave(PlayerQuitEvent ev) {
+		
+		Player p = ev.getPlayer();
+		
+		Main.Frdb.set(p+".isOnline", false);
+		
+		
 	}
 	
 	}	

@@ -15,6 +15,8 @@ public class Main extends JavaPlugin implements Listener{
 	
 	public static File Locations;
 	public static FileConfiguration loc;
+	public static File Friends;
+	public static FileConfiguration Frdb;
 	
 
 	
@@ -32,11 +34,17 @@ public class Main extends JavaPlugin implements Listener{
 		this.getCommand("test").setExecutor(new CMDtest());
 		this.getCommand("spawn").setExecutor(new CMDspawn());
 		this.getCommand("setlobby").setExecutor(new CMDsetlobby());
+		this.getCommand("addFriend").setExecutor(new CMDsetlobby());
     	
-    	//Locationfile Erzeugen
+    	//Setupfiles Erzeugen
 		
-    	Main.Locations = new File("plugins/Noneless","locations.yml");
+    	Main.Locations = new File("plugins/Noneless","Warps.yml");
     	Main.loc = YamlConfiguration.loadConfiguration(Main.Locations);
+    	
+    	
+    	Main.Friends = new File("plugins/Noneless/Friends","Friends.yml");
+    	Main.Frdb = YamlConfiguration.loadConfiguration(Main.Friends);  
+    	Main.Frdb.set("Enabled", true);
     	
     	System.out.println("Das Plugin wurde aktiviert!");	
 

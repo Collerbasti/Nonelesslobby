@@ -32,7 +32,7 @@ public class NonelessEventListener implements Listener {
 	@EventHandler 
 	public void onPlayerJoin(PlayerJoinEvent ev) {	
 		Player p = ev.getPlayer();
-	if(Bukkit.getWorld(Main.loc.getString("spawn.world")) != null) {
+	if(p.getWorld().getName()== Main.loc.getString("spawn.world")) {
 		((Cancellable) ev).setCancelled(true);
 	}
 		Main.Frdb.addDefault(p+".CountFriends", 0);

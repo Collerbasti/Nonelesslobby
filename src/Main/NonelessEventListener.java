@@ -6,6 +6,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -29,8 +30,11 @@ public class NonelessEventListener implements Listener {
 	
 	
 	@EventHandler 
-	public void onPlayerJoin(PlayerJoinEvent ev) {
+	public void onPlayerJoin(PlayerJoinEvent ev) {	
 		Player p = ev.getPlayer();
+	if(p.getWorld().getName().equals("lobby")) {
+		((Cancellable) ev).setCancelled(true);
+	}
 		Main.Frdb.addDefault(p+".CountFriends", 0);
 		Main.Frdb.set(p+".isOnline", true);
 		Location alt = p.getLocation(); 
@@ -44,12 +48,11 @@ public class NonelessEventListener implements Listener {
 		System.out.println("Spieler ist gejoint");	
 		p.teleport(alt);
 		p.teleport(new Location(w,x,y,z,yaw,pitch));
-		
+
     new BukkitRunnable() {
 		
 		@Override
 		public void run() {
-			
 		Player p = ev.getPlayer();
 		Double x = Main.loc.getDouble("spawn.X");
 		Double y = Main.loc.getDouble("spawn.Y");
@@ -61,8 +64,8 @@ public class NonelessEventListener implements Listener {
 		System.out.println("Spieler ist gejoint");
 		p.teleport(alt);
 		p.teleport(new Location(w,x,y,z,yaw,pitch));
+		
         }
-        
     }.runTaskLater(this.plugin, 20);
 }
 

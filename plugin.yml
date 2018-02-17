@@ -9,3 +9,5 @@ commands:
      description: Gehe zum Spawn
   test:
      description: Test!!!
+  addFriend:
+     description: Adde freunde!!!

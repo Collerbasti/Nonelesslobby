@@ -7,6 +7,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 
+import commands.CMDaddFriend;
 import commands.CMDsetlobby;
 import commands.CMDspawn;
 import commands.CMDtest;
@@ -34,7 +35,7 @@ public class Main extends JavaPlugin implements Listener{
 		this.getCommand("test").setExecutor(new CMDtest());
 		this.getCommand("spawn").setExecutor(new CMDspawn());
 		this.getCommand("setlobby").setExecutor(new CMDsetlobby());
-		this.getCommand("addFriend").setExecutor(new CMDsetlobby());
+		this.getCommand("addFriend").setExecutor(new CMDaddFriend());
     	
     	//Setupfiles Erzeugen
 		
@@ -42,9 +43,8 @@ public class Main extends JavaPlugin implements Listener{
     	Main.loc = YamlConfiguration.loadConfiguration(Main.Locations);
     	
     	
-    	Main.Friends = new File("plugins/Noneless/Friends","Friends.yml");
+    	Main.Friends = new File("plugins/Noneless","Test.yml");
     	Main.Frdb = YamlConfiguration.loadConfiguration(Main.Friends);  
-    	Main.Frdb.set("Enabled", true);
     	
     	System.out.println("Das Plugin wurde aktiviert!");	
 

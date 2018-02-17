@@ -2,6 +2,8 @@ package Main;
 
 
 
+import java.io.IOException;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -17,6 +19,7 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.scheduler.BukkitRunnable;
 
 
@@ -35,8 +38,14 @@ public class NonelessEventListener implements Listener {
 	if(p.getWorld().getName()== Main.loc.getString("spawn.world")) {
 		((Cancellable) ev).setCancelled(true);
 	}
-		Main.Frdb.addDefault(p+".CountFriends", 0);
-		Main.Frdb.set(p+".isOnline", true);
+		
+		Main.Frdb.set(p.getName()+".isOnline", true);
+		try {
+			Main.Frdb.save(Main.Friends);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		Location alt = p.getLocation(); 
 		Double x = Main.loc.getDouble("spawn.X");
 		Double y = Main.loc.getDouble("spawn.Y");
@@ -69,6 +78,7 @@ public class NonelessEventListener implements Listener {
     }.runTaskLater(this.plugin, 20);
 }
 
+	
 	@EventHandler
 	public void onPlayerClickinLobby(PlayerInteractEvent ev) {
 	    Player e = ev.getPlayer();
@@ -103,6 +113,14 @@ public class NonelessEventListener implements Listener {
 	    	Meta3.setDisplayName("AREA City");
 	    	Spawn3.setItemMeta(Meta3);
 	    	Menue.setItem(12,Spawn3);
+	    	
+	    	ItemStack Skull = new ItemStack(Material.SKULL_ITEM);
+	    	SkullMeta SMeta = (SkullMeta) Skull.getItemMeta(); 
+	    	SMeta.setDisplayName("Freunde");
+	    	SMeta.setOwningPlayer(e);
+	    	Skull.setItemMeta(SMeta);
+	    	Skull.setDurability((short) 3);
+	    	Menue.setItem(13,Skull);
 	    	
 	    	
 	    	e.openInventory(Menue);
@@ -185,8 +203,13 @@ public class NonelessEventListener implements Listener {
 		
 		Player p = ev.getPlayer();
 		
-		Main.Frdb.set(p+".isOnline", false);
-		
+		Main.Frdb.set(p.getName()+".isOnline", false);
+		try {
+			Main.Frdb.save(Main.Friends);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 	

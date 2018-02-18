@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.configuration.MemorySection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
@@ -179,10 +178,10 @@ public class NonelessEventListener implements Listener {
 				
 			}else if(ev.getCurrentItem().getType() == Material.SKULL_ITEM) {
 				int Counter = Main.Frdb.getInt(p.getName()+".Count");
-				Friends.addAll(Main.Frdb.get(p.getName()+".Friends"));
-				while(Counter > 0) {
-					
-					p.sendMessage("Dein freund"++"ist online");
+				Friends.addAll(Main.Frdb.getStringList(p.getName()+".Friends"));
+			while(Counter > 0) {	
+				p.sendMessage("Dein freund"+Friends.get(Counter)+"ist online");
+				Counter = Counter -1;
 				}
 				
 			}

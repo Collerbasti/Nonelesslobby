@@ -28,12 +28,16 @@ import org.bukkit.entity.Player;
 			
 		Player p = (Player) sender;
 		
-		
+
 	
 		int Count = 0;
 		
 		if(sender instanceof Player) {
-
+			
+			if(Main.Main.Frdb.getString(p.getName()+".Name") == Main.Main.Frdb.getString(args[0]+".Name")){
+				p.sendMessage("Du Kannst dich nicht selber adden");
+			}else {
+			
 
 		
 		if(args.length == 1) {
@@ -58,7 +62,7 @@ import org.bukkit.entity.Player;
 			
 
 				boolean Test = Friends.contains(args[0]);
-				p.sendMessage("Rec");
+				
 				
 				if(Test) { 
 					Exists = true; 
@@ -72,37 +76,45 @@ import org.bukkit.entity.Player;
 					p.sendMessage("Du Kannst nicht mehr Freunde Haben");
 				}else {
 					if(Main.Main.Frdb.getBoolean(args[0]+".isOnline")) {
-				Friends.add(args[0]);
-				Main.Main.Frdb.set(p.getName()+".Friends", Friends);
-				Main.Main.Frdb.set(p.getName()+".Count", C2+1);
+						
+						
+						
+						
+						
+						p.sendMessage("Du und "+args[0]+" sind nun Freunde");
+						Friends.add(args[0]);
+						Main.Main.Frdb.set(p.getName()+".Friends", Friends);
+						Main.Main.Frdb.set(p.getName()+".Count", C2+1);
 				try {
 					Main.Main.Frdb.save(Main.Main.Friends);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				
 				}
+				
 				}else {
 					p.sendMessage("Der Spieler "+args[0]+" ist Leider nicht Online");
 				}
 				}
 			}
+			
 				
 			}
 		
 			
 			
-			
+			}
 		
 			  
 			}else {
 				return false;
 			}
+		
 				
 		
 		
 			
-			
+
 		
 		
 		

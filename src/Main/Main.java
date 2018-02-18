@@ -43,7 +43,7 @@ public class Main extends JavaPlugin implements Listener{
     	Main.loc = YamlConfiguration.loadConfiguration(Main.Locations);
     	
     	
-    	Main.Friends = new File("plugins/Noneless","Test.yml");
+    	Main.Friends = new File("plugins/Noneless","FriendsDB.yml");
     	Main.Frdb = YamlConfiguration.loadConfiguration(Main.Friends);  
     	
     	System.out.println("Das Plugin wurde aktiviert!");	

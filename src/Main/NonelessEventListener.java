@@ -42,6 +42,7 @@ public class NonelessEventListener implements Listener {
 	}
 		
 		Main.Frdb.set(p.getName()+".isOnline", true);
+		Main.Frdb.set(p.getName()+".Name", p.getName());
 		try {
 			Main.Frdb.save(Main.Friends);
 		} catch (IOException e) {
@@ -88,7 +89,6 @@ public class NonelessEventListener implements Listener {
 	    Location loctest = e.getLocation();
 	    
 	    if(e.getInventory().getItemInMainHand().getType()==Material.MINECART && loctest.getWorld().getName() == Main.loc.getString("spawn.World")) {
-	    	
 	    	
 	    	
 	    	Inventory Menue = e.getServer().createInventory(null, 27,e.getName()+"§b Warps");
@@ -180,9 +180,14 @@ public class NonelessEventListener implements Listener {
 				int Counter = Main.Frdb.getInt(p.getName()+".Count");
 				Friends.addAll(Main.Frdb.getStringList(p.getName()+".Friends"));
 			while(Counter > 0) {	
-				p.sendMessage("Dein freund"+Friends.get(Counter)+"ist online");
 				Counter = Counter -1;
+				if(Main.Frdb.getBoolean(Friends.get(Counter).toString()+".isOnline")){
+				p.sendMessage("Dein Freund "+Friends.get(Counter).toString()+" ist online");
+				}else {
+					p.sendMessage("Dein Freund "+Friends.get(Counter).toString()+" ist Oflline");
 				}
+				}
+					
 				
 			}
 			

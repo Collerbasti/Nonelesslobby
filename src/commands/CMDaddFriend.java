@@ -73,7 +73,7 @@ import org.bukkit.entity.Player;
 				}else {
 					if(Main.Main.Frdb.getBoolean(args[0]+".isOnline")) {
 				Friends.add(args[0]);
-				Main.Main.Frdb.set(p.getName()+"Friends", Friends);
+				Main.Main.Frdb.set(p.getName()+".Friends", Friends);
 				Main.Main.Frdb.set(p.getName()+".Count", C2+1);
 				try {
 					Main.Main.Frdb.save(Main.Main.Friends);

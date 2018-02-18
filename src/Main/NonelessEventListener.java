@@ -5,6 +5,7 @@ package Main;
 import java.io.IOException;
 
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -12,6 +13,7 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -176,10 +178,17 @@ public class NonelessEventListener implements Listener {
 			}
 			
 		}
-		
-		
-		
 	}
+	@EventHandler
+	public void ItemClick(PlayerDropItemEvent ev) {
+		Player p = ev.getPlayer();
+			if(p.getWorld().getName()==Main.loc.getString("spawn.world")) {
+				p.sendMessage("Das Darfts du nicht");
+				ev.setCancelled(true);
+			}
+			}
+	
+	
 	
 	@EventHandler
 	public void teleportrec(PlayerTeleportEvent ev) {

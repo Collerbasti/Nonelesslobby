@@ -3,11 +3,12 @@ package Main;
 
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.configuration.MemorySection;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
@@ -135,6 +136,7 @@ public class NonelessEventListener implements Listener {
 	@EventHandler
 	public void InventoryClick(InventoryClickEvent ev) {
 		
+		ArrayList<String> Friends = new ArrayList<String>();
 		Player p = (Player) ev.getWhoClicked();
 		
 		if(ev.getInventory().getName().equalsIgnoreCase(p.getName()+"§b Warps")){
@@ -173,7 +175,15 @@ public class NonelessEventListener implements Listener {
 				Float pitch = (float) Main.loc.getDouble("AREA.Pitch");
 				org.bukkit.World w = Bukkit.getWorld(Main.loc.getString("AREA.World"));
 				p.teleport(new Location(w,x,y,z,yaw,pitch));
+			
 				
+			}else if(ev.getCurrentItem().getType() == Material.SKULL_ITEM) {
+				int Counter = Main.Frdb.getInt(p.getName()+".Count");
+				Friends.addAll(Main.Frdb.get(p.getName()+".Friends"));
+				while(Counter > 0) {
+					
+					p.sendMessage("Dein freund"++"ist online");
+				}
 				
 			}
 			

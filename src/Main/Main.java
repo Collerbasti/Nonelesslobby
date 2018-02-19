@@ -32,7 +32,7 @@ public class Main extends JavaPlugin implements Listener{
 
 		new NonelessEventListener(this);
 		
-		this.getCommand("test").setExecutor(new CMDvote());
+		this.getCommand("vote").setExecutor(new CMDvote());
 		this.getCommand("spawn").setExecutor(new CMDspawn());
 		this.getCommand("setlobby").setExecutor(new CMDsetlobby());
 		this.getCommand("addFriend").setExecutor(new CMDaddFriend());

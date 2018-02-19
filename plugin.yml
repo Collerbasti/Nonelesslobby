@@ -9,3 +9,5 @@ commands:
      description: Gehe zum Spawn
   addFriend:
      description: Adde freunde!!!
+  vote:
+     description: Bekomme den Vote Link

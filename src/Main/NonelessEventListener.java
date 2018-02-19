@@ -86,9 +86,10 @@ public class NonelessEventListener implements Listener {
 	public void onPlayerClickinLobby(PlayerInteractEvent ev) {
 	    Player e = ev.getPlayer();
 	    
-	    Location loctest = e.getLocation();
-	    
-	    if(e.getInventory().getItemInMainHand().getType()==Material.MINECART && loctest.getWorld().getName() == Main.loc.getString("spawn.World")) {
+	
+	    String World = Main.loc.getString("spawn.World");
+	    Main.loc.set("spawn.World", World);
+	    if(e.getInventory().getItemInMainHand().getType()==Material.MINECART && e.getInventory().getItemInMainHand().getItemMeta().getDisplayName()=="Warps") {
 	    	
 	    	
 	    	Inventory Menue = e.getServer().createInventory(null, 27,e.getName()+"§b Warps");
@@ -124,16 +125,25 @@ public class NonelessEventListener implements Listener {
 	    	Skull.setDurability((short) 3);
 	    	Menue.setItem(13,Skull);
 	    	
+	    	ItemStack Set = new ItemStack(Material.COMPASS);
+	    	ItemMeta CMeta =  Set.getItemMeta(); 
+	    	CMeta.setDisplayName("Einstellungen");
+	    	
+	    	Set.setItemMeta(CMeta);
+	    	Menue.setItem(14,Set);
+	    	
 	    	
 	    	e.openInventory(Menue);
-	    	e.sendMessage("Inventory Geöffnet");
+
 	    }
 	}
 	
 	
 	
+	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void InventoryClick(InventoryClickEvent ev) {
+
 		
 		ArrayList<String> Friends = new ArrayList<String>();
 		Player p = (Player) ev.getWhoClicked();
@@ -164,6 +174,42 @@ public class NonelessEventListener implements Listener {
 				org.bukkit.World w = Bukkit.getWorld(Main.loc.getString("Spiele.World"));
 				p.teleport(new Location(w,x,y,z,yaw,pitch));
 				
+			}else	if(ev.getCurrentItem().getType() == Material.COMPASS) {
+				
+				
+				//------------------------------------------------SettingsMenue----------------------------------------------------------------------------------
+				
+				Inventory Settings = p.getServer().createInventory(null, 27,p.getName()+"§b Settings");
+				
+				if(Main.Frdb.getBoolean(p.getName()+".AllowFriendsTp")){
+					
+					ItemStack FATP = new ItemStack(Material.WOOL,1,(byte)5 );
+			    	ItemMeta FATPM =  FATP.getItemMeta(); 
+			    	FATPM.setDisplayName("Teleportieren von Freunden zu Einem Erlaubt");
+			    	FATP.setItemMeta(FATPM);
+			    	Settings.setItem(2, FATP);
+				}else {
+					ItemStack FATP = new ItemStack(Material.WOOL,1,(byte)14 );
+				    ItemMeta FATPM =  FATP.getItemMeta(); 
+				    FATPM.setDisplayName("Teleportieren von Freunden zu Einem Verboten");
+				    FATP.setItemMeta(FATPM);
+				    Settings.setItem(2, FATP);
+					}
+				
+				ItemStack Back = new ItemStack(Material.BARRIER);
+		    	ItemMeta BMeta =  Back.getItemMeta(); 
+		    	BMeta.setDisplayName("Zurück");
+		    	Back.setItemMeta(BMeta);
+		    	Settings.setItem(26,Back);
+				
+				p.openInventory(Settings);
+			
+			
+				//----------------
+				
+				
+				
+				
 				
 			}else	if(ev.getCurrentItem().getType() == Material.WOOD) {
 				
@@ -179,13 +225,50 @@ public class NonelessEventListener implements Listener {
 			}else if(ev.getCurrentItem().getType() == Material.SKULL_ITEM) {
 				int Counter = Main.Frdb.getInt(p.getName()+".Count");
 				Friends.addAll(Main.Frdb.getStringList(p.getName()+".Friends"));
+				
+				Inventory FriendsMenue = p.getServer().createInventory(null, 27,p.getName()+"§b Freunde");
+				
+		    	ItemStack Back = new ItemStack(Material.BARRIER);
+		    	ItemMeta BMeta =  Back.getItemMeta(); 
+		    	BMeta.setDisplayName("Zurück");
+		    	Back.setItemMeta(BMeta);
+		    	FriendsMenue.setItem(26,Back);
+				
 			while(Counter > 0) {	
 				Counter = Counter -1;
 				if(Main.Frdb.getBoolean(Friends.get(Counter).toString()+".isOnline")){
-				p.sendMessage("Dein Freund "+Friends.get(Counter).toString()+" ist online");
+				
+				
+		    	
+		    	ItemStack Skull = new ItemStack(Material.SKULL_ITEM);
+		    	SkullMeta SMeta = (SkullMeta) Skull.getItemMeta(); 
+		    	SMeta.setDisplayName(Friends.get(Counter));
+				Player Fp = Bukkit.getPlayer(Friends.get(Counter));
+		    	SMeta.setOwningPlayer(Fp);
+		    	Skull.setItemMeta(SMeta);
+		    	Skull.setDurability((short) 3);
+		    	FriendsMenue.setItem(Counter,Skull);
+		    	
+		    	
+
+		    	
+		    	
+				
+				
 				}else {
-					p.sendMessage("Dein Freund "+Friends.get(Counter).toString()+" ist Oflline");
+					
+			    	ItemStack Skull = new ItemStack(Material.SKULL_ITEM , 1);
+			    	SkullMeta SMeta = (SkullMeta) Skull.getItemMeta(); 
+			    	SMeta.setDisplayName("§4"+Friends.get(Counter));
+			    	Skull.setItemMeta(SMeta);
+			    	Skull.setDurability((short) 0);
+			    	FriendsMenue.setItem(Counter,Skull);
+					
 				}
+				
+				p.openInventory(FriendsMenue);
+
+				
 				}
 					
 				
@@ -193,6 +276,7 @@ public class NonelessEventListener implements Listener {
 			
 		}
 	}
+	
 	@EventHandler
 	public void ItemClick(PlayerDropItemEvent ev) {
 		Player p = ev.getPlayer();
@@ -236,5 +320,226 @@ public class NonelessEventListener implements Listener {
 		
 	}
 	
-	}	
+	
+	
+	@EventHandler
+	public void InventoryFriendsClick(InventoryClickEvent ev) {
+		Player p = (Player) ev.getWhoClicked();
+		if(ev.getInventory().getName().equalsIgnoreCase(p.getName()+"§b Freunde")){
+			ev.setCancelled(true);
+			
+			
+			if(ev.getCurrentItem().getType() == Material.SKULL_ITEM && Main.Frdb.getBoolean(ev.getCurrentItem().getItemMeta().getDisplayName()+".isOnline")) {
+				if(Main.Frdb.getBoolean(ev.getCurrentItem().getItemMeta().getDisplayName()+".AllowFriendsTp")){
+			@SuppressWarnings("deprecation")
+			Player Friend = Bukkit.getPlayer(ev.getCurrentItem().getItemMeta().getDisplayName());
+			p.teleport(Friend.getLocation());
+				}else {
+					p.sendMessage("Sorry aber "+ev.getCurrentItem().getItemMeta().getDisplayName()+" Erlaubt das nicht");
+				}
+			}
+			if(ev.getCurrentItem().getType() == Material.BARRIER) {
+				p.closeInventory();
+				Inventory Menue = p.getServer().createInventory(null, 27,p.getName()+"§b Warps");
+		    	
+
+		    	
+		    	ItemStack Spawn = new ItemStack(Material.APPLE);
+		    	ItemMeta Meta = Spawn.getItemMeta(); 
+		    	Meta.setDisplayName("Spawn");
+		    	Spawn.setItemMeta(Meta);
+		    	Menue.setItem(10,Spawn);
+		    	
+		    	
+		    		    	
+		    	ItemStack Spawn2 = new ItemStack(Material.BANNER);
+		    	ItemMeta Meta2 = Spawn2.getItemMeta(); 
+		    	Meta2.setDisplayName("Spiele");
+		    	Spawn2.setItemMeta(Meta2);
+		    	Menue.setItem(11,Spawn2);
+		    	
+		    	
+		    	ItemStack Spawn3 = new ItemStack(Material.WOOD);
+		    	ItemMeta Meta3 = Spawn3.getItemMeta(); 
+		    	Meta3.setDisplayName("AREA City");
+		    	Spawn3.setItemMeta(Meta3);
+		    	Menue.setItem(12,Spawn3);
+		    	
+		    	ItemStack Skull = new ItemStack(Material.SKULL_ITEM);
+		    	SkullMeta SMeta = (SkullMeta) Skull.getItemMeta(); 
+		    	SMeta.setDisplayName("Freunde");
+		    	SMeta.setOwningPlayer(p);
+		    	Skull.setItemMeta(SMeta);
+		    	Skull.setDurability((short) 3);
+		    	Menue.setItem(13,Skull);
+		    	
+		    	ItemStack Set = new ItemStack(Material.COMPASS);
+		    	ItemMeta CMeta =  Set.getItemMeta(); 
+		    	CMeta.setDisplayName("Einstellungen");
+		    	
+		    	Set.setItemMeta(CMeta);
+		    	Menue.setItem(14,Set);
+		    	
+		    	p.openInventory(Menue);
+
+				
+			}
+	}
+	}
+
+
+
+@EventHandler
+public void InventorySettingsClick(InventoryClickEvent ev) {
+	Player p = (Player) ev.getWhoClicked();
+	if(ev.getInventory().getName().equalsIgnoreCase(p.getName()+"§b Settings")){
+		if(ev.getCurrentItem().getType() ==Material.WOOL && ev.getCurrentItem().getItemMeta().getDisplayName()=="Teleportieren von Freunden zu Einem Erlaubt") {
+			Main.Frdb.set(p.getName()+".AllowFriendsTp", false);
+			try {
+				Main.Frdb.save(Main.Friends);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
+			
+			//SettingsMenue-----------------------------
+			
+			Inventory Settings = p.getServer().createInventory(null, 27,p.getName()+"§b Settings");
+			
+			if(Main.Frdb.getBoolean(p.getName()+".AllowFriendsTp")){
+				
+				ItemStack FATP = new ItemStack(Material.WOOL,1,(byte)5 );
+		    	ItemMeta FATPM =  FATP.getItemMeta(); 
+		    	FATPM.setDisplayName("Teleportieren von Freunden zu Einem Erlaubt");
+		    	FATP.setItemMeta(FATPM);
+		    	Settings.setItem(2, FATP);
+			}else {
+				ItemStack FATP = new ItemStack(Material.WOOL,1,(byte)14 );
+			    ItemMeta FATPM =  FATP.getItemMeta(); 
+			    FATPM.setDisplayName("Teleportieren von Freunden zu Einem Verboten");
+			    FATP.setItemMeta(FATPM);
+			    Settings.setItem(2, FATP);
+				}
+			
+			ItemStack Back = new ItemStack(Material.BARRIER);
+	    	ItemMeta BMeta =  Back.getItemMeta(); 
+	    	BMeta.setDisplayName("Zurück");
+	    	Back.setItemMeta(BMeta);
+	    	Settings.setItem(26,Back);
+			
+			p.openInventory(Settings);
+			
+			//----------------
+			
+		}else if((ev.getCurrentItem().getType() ==Material.WOOL && ev.getCurrentItem().getItemMeta().getDisplayName()=="Teleportieren von Freunden zu Einem Verboten")){
+			Main.Frdb.set(p.getName()+".AllowFriendsTp", true);
+			
+			
+			
+			
+			
+			try {
+				Main.Frdb.save(Main.Friends);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			
+			//SettingsMenue-----------------------------
+			
+			Inventory Settings = p.getServer().createInventory(null, 27,p.getName()+"§b Settings");
+			
+			if(Main.Frdb.getBoolean(p.getName()+".AllowFriendsTp")){
+				
+				ItemStack FATP = new ItemStack(Material.WOOL,1,(byte)5 );
+		    	ItemMeta FATPM =  FATP.getItemMeta(); 
+		    	FATPM.setDisplayName("Teleportieren von Freunden zu Einem Erlaubt");
+		    	FATP.setItemMeta(FATPM);
+		    	Settings.setItem(2, FATP);
+			}else {
+				ItemStack FATP = new ItemStack(Material.WOOL,1,(byte)14 );
+			    ItemMeta FATPM =  FATP.getItemMeta(); 
+			    FATPM.setDisplayName("Teleportieren von Freunden zu Einem Verboten");
+			    FATP.setItemMeta(FATPM);
+			    Settings.setItem(2, FATP);
+				}
+			
+			ItemStack Back = new ItemStack(Material.BARRIER);
+	    	ItemMeta BMeta =  Back.getItemMeta(); 
+	    	BMeta.setDisplayName("Zurück");
+	    	Back.setItemMeta(BMeta);
+	    	Settings.setItem(26,Back);
+			
+			p.openInventory(Settings);
+			
+			//----------------
+			
+			
+		}else if(ev.getCurrentItem().getType() == Material.BARRIER) {
+			p.closeInventory();
+			Inventory Menue = p.getServer().createInventory(null, 27,p.getName()+"§b Warps");
+	    	
+
+	    	
+	    	ItemStack Spawn = new ItemStack(Material.APPLE);
+	    	ItemMeta Meta = Spawn.getItemMeta(); 
+	    	Meta.setDisplayName("Spawn");
+	    	Spawn.setItemMeta(Meta);
+	    	Menue.setItem(10,Spawn);
+	    	
+	    	
+	    		    	
+	    	ItemStack Spawn2 = new ItemStack(Material.BANNER);
+	    	ItemMeta Meta2 = Spawn2.getItemMeta(); 
+	    	Meta2.setDisplayName("Spiele");
+	    	Spawn2.setItemMeta(Meta2);
+	    	Menue.setItem(11,Spawn2);
+	    	
+	    	
+	    	ItemStack Spawn3 = new ItemStack(Material.WOOD);
+	    	ItemMeta Meta3 = Spawn3.getItemMeta(); 
+	    	Meta3.setDisplayName("AREA City");
+	    	Spawn3.setItemMeta(Meta3);
+	    	Menue.setItem(12,Spawn3);
+	    	
+	    	ItemStack Skull = new ItemStack(Material.SKULL_ITEM);
+	    	SkullMeta SMeta = (SkullMeta) Skull.getItemMeta(); 
+	    	SMeta.setDisplayName("Freunde");
+	    	SMeta.setOwningPlayer(p);
+	    	Skull.setItemMeta(SMeta);
+	    	Skull.setDurability((short) 3);
+	    	Menue.setItem(13,Skull);
+	    	
+	    	ItemStack Set = new ItemStack(Material.COMPASS);
+	    	ItemMeta CMeta =  Set.getItemMeta(); 
+	    	CMeta.setDisplayName("Einstellungen");
+	    	
+	    	Set.setItemMeta(CMeta);
+	    	Menue.setItem(14,Set);
+	    	
+	    	p.openInventory(Menue);
+
+			
+		}
+		
+		
+	}
+}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 

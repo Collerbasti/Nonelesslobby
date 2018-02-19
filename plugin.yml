@@ -7,9 +7,5 @@ commands:
      description: Setze die lobby
   spawn:
      description: Gehe zum Spawn
-  test:
-     description: Test!!!
   addFriend:
      description: Adde freunde!!!
-  vote:
-     description: Bekomme den Vote Link

@@ -11,8 +11,8 @@ public class CMDvote implements CommandExecutor{
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		Player p = (Player) sender;
 		if(cmd.getName().equals("vote"));
-		p.sendMessage("§4Hier ist der Link zum Voten :"
-				 +" §ahttps://www.minecraft-serverlist.net/vote/46735");
+		p.sendMessage("§4Hier ist der Link zum Voten : "
+				+ "§ahttps://www.minecraft-serverlist.net/vote/46735");
 		
 		return false;
 	}

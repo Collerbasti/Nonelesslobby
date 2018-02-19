@@ -199,6 +199,7 @@ public class NonelessEventListener implements Listener {
 				ItemStack Back = new ItemStack(Material.BARRIER);
 		    	ItemMeta BMeta =  Back.getItemMeta(); 
 		    	BMeta.setDisplayName("Zurück");
+		    	
 		    	Back.setItemMeta(BMeta);
 		    	Settings.setItem(26,Back);
 				

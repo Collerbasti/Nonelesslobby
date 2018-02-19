@@ -11,3 +11,5 @@ commands:
      description: Test!!!
   addFriend:
      description: Adde freunde!!!
+  vote:
+     description: Bekomme den Vote Link

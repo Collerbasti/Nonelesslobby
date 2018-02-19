@@ -10,7 +10,7 @@ import java.io.File;
 import commands.CMDaddFriend;
 import commands.CMDsetlobby;
 import commands.CMDspawn;
-import commands.CMDtest;
+import commands.CMDvote;
 
 public class Main extends JavaPlugin implements Listener{
 	
@@ -32,7 +32,7 @@ public class Main extends JavaPlugin implements Listener{
 
 		new NonelessEventListener(this);
 		
-		this.getCommand("test").setExecutor(new CMDtest());
+		this.getCommand("test").setExecutor(new CMDvote());
 		this.getCommand("spawn").setExecutor(new CMDspawn());
 		this.getCommand("setlobby").setExecutor(new CMDsetlobby());
 		this.getCommand("addFriend").setExecutor(new CMDaddFriend());

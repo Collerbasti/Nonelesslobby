@@ -1,8 +1,6 @@
 package commands;
 
 import java.io.IOException;
-import java.util.ArrayList;
-
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -10,10 +8,8 @@ import org.bukkit.entity.Player;
 		
 	public class CMDaddItem implements CommandExecutor {
 		
-		@SuppressWarnings("deprecation")
 		@Override
 		public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-			ArrayList<String> ShopsPreise = new ArrayList<String>();
 
 				if(sender instanceof Player) {
 					if(args.length == 1);
@@ -24,11 +20,8 @@ import org.bukkit.entity.Player;
 					 return true;
 					 
 					}else {
-					  
-					  p.getInventory().getItemInMainHand().getType().getId();	
-					  int C2 = Main.Main.Frdb.getInt(p.getItemInHand()+".Count");
-					  Main.Main.shp.set(p.getItemInHand()+".ShopsPreise", ShopsPreise);
-					  Main.Main.shp.set(p.getItemInHand()+".Count", C2+1);
+					  p.getInventory().getItemInMainHand().getType();
+					  Main.Main.shp.set(p.getInventory().getItemInMainHand().getType()+".ShopsPreise", args[0]);
 					  p.sendMessage("Item wurde Gespeichert");
 					
 					try {

@@ -11,3 +11,5 @@ commands:
      description: Adde freunde!!!
   vote:
      description: Bekomme den Vote Link
+  addItem:
+     description: Adde das Item zur Liste

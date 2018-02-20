@@ -8,6 +8,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 
 import commands.CMDaddFriend;
+import commands.CMDaddItem;
 import commands.CMDsetlobby;
 import commands.CMDspawn;
 import commands.CMDvote;
@@ -18,6 +19,8 @@ public class Main extends JavaPlugin implements Listener{
 	public static FileConfiguration loc;
 	public static File Friends;
 	public static FileConfiguration Frdb;
+	public static File ShopsPreise;
+	public static FileConfiguration shp; 
 	
 
 	
@@ -36,6 +39,7 @@ public class Main extends JavaPlugin implements Listener{
 		this.getCommand("spawn").setExecutor(new CMDspawn());
 		this.getCommand("setlobby").setExecutor(new CMDsetlobby());
 		this.getCommand("addFriend").setExecutor(new CMDaddFriend());
+		this.getCommand("addItem").setExecutor(new CMDaddItem());
     	
     	//Setupfiles Erzeugen
 		
@@ -44,7 +48,12 @@ public class Main extends JavaPlugin implements Listener{
     	
     	
     	Main.Friends = new File("plugins/Noneless","FriendsDB.yml");
-    	Main.Frdb = YamlConfiguration.loadConfiguration(Main.Friends);  
+    	Main.Frdb = YamlConfiguration.loadConfiguration(Main.Friends); 
+    	
+    	
+    	Main.ShopsPreise = new File("plugins/Noneless","ShopItems.yml");
+    	Main.shp = YamlConfiguration.loadConfiguration(Main.ShopsPreise);
+    	
     	
     	System.out.println("Das Plugin wurde aktiviert!");	
 

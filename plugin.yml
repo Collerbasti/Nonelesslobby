@@ -13,3 +13,5 @@ commands:
      description: Bekomme den Vote Link
   addItem:
      description: Adde das Item zur Liste
+  itemList:
+     description: Siehe die Item Liste

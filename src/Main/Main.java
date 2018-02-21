@@ -9,6 +9,7 @@ import java.io.File;
 
 import commands.CMDaddFriend;
 import commands.CMDaddItem;
+import commands.CMDitemList;
 import commands.CMDsetlobby;
 import commands.CMDspawn;
 import commands.CMDvote;
@@ -40,6 +41,7 @@ public class Main extends JavaPlugin implements Listener{
 		this.getCommand("setlobby").setExecutor(new CMDsetlobby());
 		this.getCommand("addFriend").setExecutor(new CMDaddFriend());
 		this.getCommand("addItem").setExecutor(new CMDaddItem());
+		this.getCommand("itemList").setExecutor(new CMDitemList());
     	
     	//Setupfiles Erzeugen
 		

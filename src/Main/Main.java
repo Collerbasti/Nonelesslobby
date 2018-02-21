@@ -9,6 +9,7 @@ import java.io.File;
 
 import commands.CMDaddFriend;
 import commands.CMDaddItem;
+import commands.CMDdelFriend;
 import commands.CMDitemList;
 import commands.CMDsetlobby;
 import commands.CMDspawn;
@@ -40,6 +41,7 @@ public class Main extends JavaPlugin implements Listener{
 		this.getCommand("spawn").setExecutor(new CMDspawn());
 		this.getCommand("setlobby").setExecutor(new CMDsetlobby());
 		this.getCommand("addFriend").setExecutor(new CMDaddFriend());
+		this.getCommand("delFriend").setExecutor(new CMDdelFriend());
 		this.getCommand("addItem").setExecutor(new CMDaddItem());
 		this.getCommand("itemList").setExecutor(new CMDitemList());
     	

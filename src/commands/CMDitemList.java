@@ -20,7 +20,6 @@ public class CMDitemList implements CommandExecutor {
 		ArrayList<String> ShopsPreise = new ArrayList<String>();
 		Player p = (Player) sender;
 		if(sender instanceof Player);
-		if(cmd.getName().equals("itemList"));
 		if(!p.hasPermission("Noneless.itemList")) {
 			p.sendMessage("§cDu darfst diesen Befehl nicht Benutzen");
 		 return true;
@@ -30,12 +29,14 @@ public class CMDitemList implements CommandExecutor {
 		Inventory Items = p.getServer().createInventory(null, 36,p.getName()+"§b ItemListe");
 		ShopsPreise.addAll(Main.shp.getStringList("Items.List"));
 		while(Counter > 0) {
+			Counter = Counter- 1;
 			String M = ShopsPreise.get(Counter);
 	    	ItemStack Skull = new ItemStack(Material.getMaterial(M));
 	    	ItemMeta SMeta =  Skull.getItemMeta(); 
-	    	SMeta.setDisplayName(Main.shp.getString(ShopsPreise.get(Counter)+".ShopsPreise"));
+	    	SMeta.setDisplayName(M+Main.shp.getString(ShopsPreise.get(Counter)+".ShopsPreise"));
+	    	Skull.setItemMeta(SMeta);
 	    	Items.setItem(Counter,Skull);
-	    	Counter = Counter- 1;
+	    	
 		}
 		p.openInventory(Items);
 	}

@@ -9,6 +9,8 @@ commands:
      description: Gehe zum Spawn
   addFriend:
      description: Adde freunde!!!
+  delFriend:
+     description: Entfernt den angegebenen Freund
   vote:
      description: Bekomme den Vote Link
   addItem:

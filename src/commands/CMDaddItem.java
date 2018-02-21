@@ -18,7 +18,6 @@ import org.bukkit.entity.Player;
 				if(sender instanceof Player) {
 					if(args.length == 1);
 					Player p = (Player) sender;
-					if(command.getName().equals("addItem"));
 					if(!p.hasPermission("Noneless.addItem")) {
 						p.sendMessage("§cDu darfst diesen Befehl nicht Benutzen");
 					 return true;

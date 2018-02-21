@@ -30,12 +30,13 @@ public class CMDitemList implements CommandExecutor {
 		Inventory Items = p.getServer().createInventory(null, 36,p.getName()+"§b ItemListe");
 		ShopsPreise.addAll(Main.shp.getStringList("Items.List"));
 		while(Counter > 0) {
+		Counter = Counter- 1;
 			String M = ShopsPreise.get(Counter);
 	    	ItemStack Skull = new ItemStack(Material.getMaterial(M));
 	    	ItemMeta SMeta =  Skull.getItemMeta(); 
-	    	SMeta.setDisplayName(Main.shp.getString(ShopsPreise.get(Counter)+".ShopsPreise"));
+	    	SMeta.setDisplayName(M+" "+Main.shp.getString(ShopsPreise.get(Counter)+".ShopsPreise"));
+	    	Skull.setItemMeta(SMeta);
 	    	Items.setItem(Counter,Skull);
-	    	Counter = Counter- 1;
 		}
 		p.openInventory(Items);
 	}

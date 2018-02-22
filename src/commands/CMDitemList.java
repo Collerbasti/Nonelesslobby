@@ -34,7 +34,6 @@ public class CMDitemList implements CommandExecutor {
 			String M = ShopsPreise.get(Counter);
 	    	ItemStack Skull = new ItemStack(Material.getMaterial(M));
 	    	ItemMeta SMeta =  Skull.getItemMeta(); 
-	    	SMeta.setDisplayName(M+Main.shp.getString(ShopsPreise.get(Counter)+".ShopsPreise"));
 	    	SMeta.setDisplayName(M+" "+Main.shp.getString(ShopsPreise.get(Counter)+".ShopsPreise"));
 	    	Skull.setItemMeta(SMeta);
 	    	Items.setItem(Counter,Skull);

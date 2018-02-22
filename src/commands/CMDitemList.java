@@ -29,14 +29,25 @@ public class CMDitemList implements CommandExecutor {
 		Inventory Items = p.getServer().createInventory(null, 36,p.getName()+"§b ItemListe");
 		ShopsPreise.addAll(Main.shp.getStringList("Items.List"));
 		while(Counter > 0) {
+<<<<<<< HEAD
 			Counter = Counter- 1;
+=======
+		Counter = Counter- 1;
+>>>>>>> branch 'master' of https://github.com/Collerbasti/Nonelesslobby.git
 			String M = ShopsPreise.get(Counter);
 	    	ItemStack Skull = new ItemStack(Material.getMaterial(M));
 	    	ItemMeta SMeta =  Skull.getItemMeta(); 
+<<<<<<< HEAD
 	    	SMeta.setDisplayName(M+Main.shp.getString(ShopsPreise.get(Counter)+".ShopsPreise"));
+=======
+	    	SMeta.setDisplayName(M+" "+Main.shp.getString(ShopsPreise.get(Counter)+".ShopsPreise"));
+>>>>>>> branch 'master' of https://github.com/Collerbasti/Nonelesslobby.git
 	    	Skull.setItemMeta(SMeta);
 	    	Items.setItem(Counter,Skull);
+<<<<<<< HEAD
 	    	
+=======
+>>>>>>> branch 'master' of https://github.com/Collerbasti/Nonelesslobby.git
 		}
 		p.openInventory(Items);
 	}

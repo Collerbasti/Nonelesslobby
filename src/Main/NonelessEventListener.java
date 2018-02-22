@@ -91,7 +91,7 @@ public class NonelessEventListener implements Listener {
 	    Main.loc.set("spawn.World", World);
 	    if(e.getInventory().getItemInMainHand().getType()==Material.MINECART && e.getInventory().getItemInMainHand().getItemMeta().getDisplayName()=="Warps") {
 	    	
-	    	
+	    	//------Menü-----
 	    	Inventory Menue = e.getServer().createInventory(null, 27,e.getName()+"§b Warps");
 	    	
 
@@ -128,13 +128,19 @@ public class NonelessEventListener implements Listener {
 	    	ItemStack Set = new ItemStack(Material.COMPASS);
 	    	ItemMeta CMeta =  Set.getItemMeta(); 
 	    	CMeta.setDisplayName("Einstellungen");
-	    	
 	    	Set.setItemMeta(CMeta);
 	    	Menue.setItem(14,Set);
 	    	
+	    	ItemStack Meat = new ItemStack(Material.BAKED_POTATO);
+	    	ItemMeta MMeta =  Meat.getItemMeta(); 
+	    	MMeta.setDisplayName("Essen");
+	    	Meat.setItemMeta(MMeta);
+	    	
+	    	Menue.setItem(20,Meat);
+	    	
 	    	
 	    	e.openInventory(Menue);
-
+//------Menue
 	    }
 	}
 	
@@ -152,7 +158,7 @@ public class NonelessEventListener implements Listener {
 			ev.setCancelled(true);
 			
 			
-			//Menue Spawns
+			//---------------------Menue Spawns
 			if(ev.getCurrentItem().getType() == Material.APPLE) {
 				
 				Double x = Main.loc.getDouble("spawn.X");
@@ -206,7 +212,7 @@ public class NonelessEventListener implements Listener {
 				p.openInventory(Settings);
 			
 			
-				//----------------
+				//----------------Set
 				
 				
 				
@@ -272,6 +278,10 @@ public class NonelessEventListener implements Listener {
 				
 				}
 					
+				
+			}else	if(ev.getCurrentItem().getType() == Material.BAKED_POTATO) {
+				p.setHealth(20);
+				p.setFoodLevel(20);
 				
 			}
 			

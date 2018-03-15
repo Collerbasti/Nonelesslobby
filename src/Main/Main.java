@@ -11,6 +11,7 @@ import commands.CMDaddFriend;
 import commands.CMDaddItem;
 import commands.CMDdelFriend;
 import commands.CMDitemList;
+import commands.CMDreport;
 import commands.CMDsetlobby;
 import commands.CMDspawn;
 import commands.CMDvote;
@@ -44,6 +45,7 @@ public class Main extends JavaPlugin implements Listener{
 		this.getCommand("delFriend").setExecutor(new CMDdelFriend());
 		this.getCommand("addItem").setExecutor(new CMDaddItem());
 		this.getCommand("itemList").setExecutor(new CMDitemList());
+		this.getCommand("report").setExecutor(new CMDreport());
     	
     	//Setupfiles Erzeugen
 		

@@ -8,10 +8,13 @@ import java.io.IOException;
 
 import java.util.ArrayList;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+
+import Main.Main;
 		
 
 
@@ -23,6 +26,10 @@ import org.bukkit.entity.Player;
 		@Override
 		public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 			ArrayList<String> Friends = new ArrayList<String>();
+			ArrayList<String> p2Friends = new ArrayList<String>();
+			ArrayList<String> SendedRequestslist = new ArrayList<String>();
+			ArrayList<String> p2BecameRequestslist = new ArrayList<String>();
+			ArrayList<String> BecameRequestslist = new ArrayList<String>();
 			
 			
 			
@@ -34,7 +41,7 @@ import org.bukkit.entity.Player;
 		
 		if(sender instanceof Player) {
 			
-			if(Main.Main.Frdb.getString(p.getName()+".Name") == Main.Main.Frdb.getString(args[0]+".Name")){
+			if(Main.Frdb.getString(p.getName()+".Name") == Main.Frdb.getString(args[0]+".Name")){
 				p.sendMessage("Du Kannst dich nicht selber adden");
 			}else {
 			
@@ -45,19 +52,45 @@ import org.bukkit.entity.Player;
 			boolean Exists = false;
 			boolean First = false;
 			
-			if(Main.Main.Frdb.getBoolean(p.getName()+".Exists")) {
+			
+			BecameRequestslist.addAll(Main.Frdb.getStringList(p.getName()+".BecameRequests"));
+			if(BecameRequestslist.contains(args[0])) {
+				p.sendMessage("Du Hast Bereits eine Anfrage von "+args[0]+" Erhalten, die Wird nun angenommen");
+				//Annehmen
+				int BCRCounter = Main.Frdb.getInt(p.getName()+".BCRCounter") - 1;
+				Main.Frdb.set(p.getName()+".BCRCounter",BCRCounter);
+				int SDCounter = Main.Frdb.getInt(args[0]+".SDCounter") -1;
+				Main.Frdb.set(args[0]+".SDCounter", SDCounter);
+				SendedRequestslist.addAll(Main.Frdb.getStringList(args[0]+".SendetRequests"));
+				SendedRequestslist.remove(p.getName());
+				BecameRequestslist.addAll(Main.Frdb.getStringList(p.getName()+".BecameRequests"));
+				BecameRequestslist.remove(args[0]);
+				Friends.add(args[0]);
+				p2Friends.addAll(Main.Frdb.getStringList(args[0]+".Friends"));
+				p2Friends.add(p.getName());
+				int p1Counter = Main.Frdb.getInt(p.getName()+".Count")-1;
+				int p2Counter = Main.Frdb.getInt(args[0] + ".Count")-1;
+				Main.Frdb.set(p.getName()+".Count", p1Counter);
+				Main.Frdb.set(args[0]+".Count", p2Counter);
+			
+			
+			}
+			
+			
+			
+			if(Main.Frdb.getBoolean(p.getName()+".Exists")) {
 
 			}else {
 				First = true;
-				Main.Main.Frdb.set(p.getName()+".Exists", true);
-				Main.Main.Frdb.set(p.getName()+".Count", Count);
+				Main.Frdb.set(p.getName()+".Exists", true);
+				Main.Frdb.set(p.getName()+".Count", Count);
 				
 			}
 			
 			
-			int C2 = Main.Main.Frdb.getInt(p.getName()+".Count");
+			int C2 = Main.Frdb.getInt(p.getName()+".Count");
 			if(First == false) {
-			Friends.addAll(Main.Main.Frdb.getStringList(p.getName()+".Friends"));
+			Friends.addAll(Main.Frdb.getStringList(p.getName()+".Friends"));
 			}
 			
 
@@ -75,18 +108,63 @@ import org.bukkit.entity.Player;
 				if(C2 == 27) {
 					p.sendMessage("Du Kannst nicht mehr Freunde Haben");
 				}else {
-					if(Main.Main.Frdb.getBoolean(args[0]+".isOnline")) {
+					if(Main.Frdb.getBoolean(args[0]+".isOnline")) {
 						
 						
 						
 						
 						
-						p.sendMessage("Du und "+args[0]+" sind nun Freunde");
-						Friends.add(args[0]);
-						Main.Main.Frdb.set(p.getName()+".Friends", Friends);
-						Main.Main.Frdb.set(p.getName()+".Count", C2+1);
+						
+						SendedRequestslist.addAll(Main.Frdb.getStringList(p.getName()+".SendetRequests"));
+						
+						if(SendedRequestslist.contains(args[0])) {
+							p.sendMessage("Du hast "+args[0]+" schon eine Anfrage Geschickt");
+						}else {
+						SendedRequestslist.add(args[0]);
+						Main.Frdb.set(p.getName()+".SendetRequests", SendedRequestslist);
+						
+						p2BecameRequestslist.addAll(Main.Frdb.getStringList(args[0]+".BecameRequests"));
+						if(p2BecameRequestslist.contains(p.getName())){
+							p.sendMessage("Hier ist ein Fehler unterlaufen Bitte Kontaktiere den Support (FC:AddFriend.already.exists");
+						}else {
+							BecameRequestslist.addAll(Main.Frdb.getStringList(p.getName()+".BecameRequests"));
+							if(BecameRequestslist.contains(args[0])) {
+								p.sendMessage("Du Hast Bereits eine Anfrage von "+args[0]+" Erhalten, die Wird nun angenommen");
+								//Annehmen
+								int BCRCounter = Main.Frdb.getInt(p.getName()+".BCRCounter") - 1;
+								Main.Frdb.set(p.getName()+".BCRCounter",BCRCounter);
+								int SDCounter = Main.Frdb.getInt(args[0]+".SDCounter") -1;
+								Main.Frdb.set(args[0]+".SDCounter", SDCounter);
+								SendedRequestslist.addAll(Main.Frdb.getStringList(args[0]+".SendetRequests"));
+								SendedRequestslist.remove(p.getName());
+								BecameRequestslist.addAll(Main.Frdb.getStringList(p.getName()+".BecameRequests"));
+								BecameRequestslist.remove(args[0]);
+								Friends.add(args[0]);
+								p2Friends.addAll(Main.Frdb.getStringList(args[0]+".Friends"));
+								p2Friends.add(p.getName());
+								int p1Counter = Main.Frdb.getInt(p.getName()+".Count")-1;
+								int p2Counter = Main.Frdb.getInt(args[0] + ".Count")-1;
+								Main.Frdb.set(p.getName()+".Count", p1Counter);
+								Main.Frdb.set(args[0]+".Count", p2Counter);
+							}else {
+							p2BecameRequestslist.add(p.getName());
+							Main.Frdb.set(args[0]+".BecameRequests", BecameRequestslist);
+							@SuppressWarnings("deprecation")
+							Player p2 = Bukkit.getPlayer(args[0]);
+							int BCRCounter = Main.Frdb.getInt(args[0]+".BCRCounter") + 1;
+							Main.Frdb.set(args[0]+".BCRCounter",BCRCounter);
+							int SDCounter = Main.Frdb.getInt(p.getName()+".SDCounter") +1;
+							Main.Frdb.set(p.getName()+".SDCounter", SDCounter);
+							p2.sendMessage("Du Hast Eine neue Anfrage von "+p.getName()+" bitte mit /addfriend "+p.getName()+" annehmen");
+							p.sendMessage("Du hast "+args[0]+" eine Anfrage Geschickt");
+						}
+							
+						
+						}
+						
+						}
 				try {
-					Main.Main.Frdb.save(Main.Main.Friends);
+					Main.Frdb.save(Main.Friends);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();

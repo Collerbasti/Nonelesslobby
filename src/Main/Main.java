@@ -1,11 +1,14 @@
 package Main;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
+import java.io.IOException;
 
 import commands.CMDaddFriend;
 import commands.CMDaddItem;
@@ -52,7 +55,6 @@ public class Main extends JavaPlugin implements Listener{
     	Main.Locations = new File("plugins/Noneless","Warps.yml");
     	Main.loc = YamlConfiguration.loadConfiguration(Main.Locations);
     	
-    	
     	Main.Friends = new File("plugins/Noneless","FriendsDB.yml");
     	Main.Frdb = YamlConfiguration.loadConfiguration(Main.Friends); 
     	
@@ -65,5 +67,21 @@ public class Main extends JavaPlugin implements Listener{
 
 
     	}
-
+	
+    public void onDisable() {
+        for(Player on:Bukkit.getServer().getOnlinePlayers()){
+            on.kickPlayer(ChatColor.RED + "Der Server wird Neugestartet \n"+ChatColor.BLUE+"bitte warte kurtz und versuche dann dich wieder zu Verbinden\n "+ChatColor.GREEN+"Come and Play On ");
+            Main.Frdb.set(on.getName()+".isOnline", false);
+     
+        }
+       	try {
+    				Main.Frdb.save(Main.Friends);
+    			} catch (IOException e) {
+    				// TODO Auto-generated catch block
+    				e.printStackTrace();
+    			}
+}
+    public void onReload() {
+    	
+    }
 }

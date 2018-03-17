@@ -17,3 +17,5 @@ commands:
      description: Adde das Item zur Liste
   itemList:
      description: Siehe die Item Liste
+  report:
+     description: Reporte Einen Spieler

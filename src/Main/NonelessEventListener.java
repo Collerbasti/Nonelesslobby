@@ -28,15 +28,47 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
-import org.bukkit.scheduler.BukkitRunnable;
 
 
 public class NonelessEventListener implements Listener {
     private final Main plugin;
+    public int MainCounter = 0; 
 	public NonelessEventListener(Main plugin) {
         this.plugin = plugin;
         this.plugin.getServer().getPluginManager().registerEvents(this, plugin);
     }
+	
+
+	@EventHandler 
+	public void onPlayerJoin(PlayerJoinEvent ev) {	
+		Player p = ev.getPlayer();
+
+		
+		Main.Frdb.set(p.getName()+".isOnline", true);
+		Main.Frdb.set(p.getName()+".Name", p.getName());
+		MainCounter = MainCounter+1;
+		if(MainCounter == 10) {
+			try {
+				Main.Frdb.save(Main.Friends);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			MainCounter = 0;
+		}
+		Location alt = p.getLocation(); 
+		Double x = Main.loc.getDouble("spawn.X");
+		Double y = Main.loc.getDouble("spawn.Y");
+		Double z = Main.loc.getDouble("spawn.Z");
+		Float yaw = (float) Main.loc.getDouble("spawn.Yaw");
+		Float pitch = (float) Main.loc.getDouble("spawn.Pitch");
+		org.bukkit.World w = Bukkit.getWorld(Main.loc.getString("spawn.World"));
+		p.sendMessage("Hallo");
+		System.out.println("Spieler ist gejoint");	
+		p.teleport(alt);
+		p.teleport(new Location(w,x,y,z,yaw,pitch));
+}
+	
 	
 	@EventHandler 
 	public void onPLayerThrow(PlayerDropItemEvent ev) {	
@@ -61,54 +93,6 @@ public class NonelessEventListener implements Listener {
 		 }
 		 
 	}
-		
-	
-	@EventHandler 
-	public void onPlayerJoin(PlayerJoinEvent ev) {	
-		Player p = ev.getPlayer();
-	if(p.getWorld().getName()== Main.loc.getString("spawn.World")) {
-		((Cancellable) ev).setCancelled(true);
-	}
-		
-		Main.Frdb.set(p.getName()+".isOnline", true);
-		Main.Frdb.set(p.getName()+".Name", p.getName());
-		try {
-			Main.Frdb.save(Main.Friends);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		Location alt = p.getLocation(); 
-		Double x = Main.loc.getDouble("spawn.X");
-		Double y = Main.loc.getDouble("spawn.Y");
-		Double z = Main.loc.getDouble("spawn.Z");
-		Float yaw = (float) Main.loc.getDouble("spawn.Yaw");
-		Float pitch = (float) Main.loc.getDouble("spawn.Pitch");
-		org.bukkit.World w = Bukkit.getWorld(Main.loc.getString("spawn.World"));
-		p.sendMessage("Hallo");
-		System.out.println("Spieler ist gejoint");	
-		p.teleport(alt);
-		p.teleport(new Location(w,x,y,z,yaw,pitch));
-
-    new BukkitRunnable() {
-		
-		@Override
-		public void run() {
-		Player p = ev.getPlayer();
-		Double x = Main.loc.getDouble("spawn.X");
-		Double y = Main.loc.getDouble("spawn.Y");
-		Double z = Main.loc.getDouble("spawn.Z");
-		Float yaw = (float) Main.loc.getDouble("spawn.Yaw");
-		Float pitch = (float) Main.loc.getDouble("spawn.Pitch");
-		org.bukkit.World w = Bukkit.getWorld(Main.loc.getString("spawn.World"));
-		p.sendMessage("Hallo");
-		System.out.println("Spieler ist gejoint");
-		p.teleport(alt);
-		p.teleport(new Location(w,x,y,z,yaw,pitch));
-		
-        }
-    }.runTaskLater(this.plugin, 20);
-}
 
 	
 	@EventHandler
@@ -436,7 +420,7 @@ public class NonelessEventListener implements Listener {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+		MainCounter = 0;
 	}
 	
 	
@@ -551,11 +535,15 @@ public void InventorySettingsClick(InventoryClickEvent ev) {
 	if(ev.getInventory().getName().equalsIgnoreCase(p.getName()+"§b Settings")){
 		if(ev.getCurrentItem().getType() ==Material.WOOL && ev.getCurrentItem().getItemMeta().getDisplayName()=="Teleportieren von Freunden zu Einem Erlaubt") {
 			Main.Frdb.set(p.getName()+".AllowFriendsTp", false);
-			try {
-				Main.Frdb.save(Main.Friends);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			MainCounter = MainCounter+1;
+			if(MainCounter == 10) {
+				try {
+					Main.Frdb.save(Main.Friends);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				MainCounter = 0;
 			}
 			
 			
@@ -620,11 +608,15 @@ public void InventorySettingsClick(InventoryClickEvent ev) {
 			
 			
 			
-			try {
-				Main.Frdb.save(Main.Friends);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			MainCounter = MainCounter+1;
+			if(MainCounter == 10) {
+				try {
+					Main.Frdb.save(Main.Friends);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				MainCounter = 0;
 			}
 			
 			
@@ -755,11 +747,15 @@ public void InventorySettingsClick(InventoryClickEvent ev) {
 			if(ev.getCurrentItem().getType() ==Material.WOOL && ev.getCurrentItem().getItemMeta().getDisplayName()=="Gamemode Creative") {
 				Main.Frdb.set(p.getName()+".Gamemode", false);
 				p.setGameMode(GameMode.ADVENTURE);
-				try {
-					Main.Frdb.save(Main.Friends);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				MainCounter = MainCounter+1;
+				if(MainCounter == 10) {
+					try {
+						Main.Frdb.save(Main.Friends);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					MainCounter = 0;
 				}
 				
 				
@@ -825,11 +821,15 @@ public void InventorySettingsClick(InventoryClickEvent ev) {
 				
 				
 				
-				try {
-					Main.Frdb.save(Main.Friends);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				MainCounter = MainCounter+1;
+				if(MainCounter == 10) {
+					try {
+						Main.Frdb.save(Main.Friends);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					MainCounter = 0;
 				}
 				
 				

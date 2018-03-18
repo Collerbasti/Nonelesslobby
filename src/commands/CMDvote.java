@@ -8,7 +8,8 @@ import org.bukkit.entity.Player;
 public class CMDvote implements CommandExecutor{
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args)  
+	{
 		Player p = (Player) sender;
 		if(cmd.getName().equals("vote"));
 		p.sendMessage("§4Hier sind die Links zum Voten : "

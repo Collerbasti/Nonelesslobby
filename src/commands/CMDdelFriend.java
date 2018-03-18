@@ -18,7 +18,8 @@ import org.bukkit.entity.Player;
 
 
 
-	public class CMDdelFriend implements CommandExecutor {
+	public class CMDdelFriend implements CommandExecutor  
+	{
 		
 		@Override
 		public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {

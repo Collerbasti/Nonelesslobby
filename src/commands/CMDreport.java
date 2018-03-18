@@ -11,7 +11,9 @@ public class CMDreport implements CommandExecutor
 {
 
 	@Override
-	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
+	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args)  
+	
+	{
 		
 		Player p = (Player) sender;
 		if(sender instanceof Player) {

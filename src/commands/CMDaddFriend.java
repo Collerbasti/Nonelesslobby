@@ -21,7 +21,8 @@ import Main.Main;
 
 
 
-	public class CMDaddFriend implements CommandExecutor {
+	public class CMDaddFriend implements CommandExecutor  
+	{
 		
 		@Override
 		public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {

@@ -30,7 +30,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
 
-public class NonelessEventListener implements Listener {
+public class NonelessEventListener implements Listener 
+{ 
     private final Main plugin;
     public int MainCounter = 0; 
 	public NonelessEventListener(Main plugin) {

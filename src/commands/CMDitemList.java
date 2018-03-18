@@ -12,7 +12,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import Main.Main;
 
-public class CMDitemList implements CommandExecutor {
+public class CMDitemList implements CommandExecutor  
+{
 
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {

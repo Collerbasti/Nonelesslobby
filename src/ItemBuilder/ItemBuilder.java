@@ -13,7 +13,8 @@ public class ItemBuilder {
 
 	
 	
-	public static ItemStack addLore(String name , Material mat, String lore , int amount) {
+	public static ItemStack addLore(String name , Material mat, String lore , int amount)  
+	{
 		ItemStack s = new ItemStack(mat , amount);
 		ItemMeta m = s.getItemMeta();
 		List<String> lore1= new ArrayList<>();

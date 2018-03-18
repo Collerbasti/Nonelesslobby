@@ -26,7 +26,9 @@ public class Main extends JavaPlugin implements Listener{
 	public static File Friends;
 	public static FileConfiguration Frdb;
 	public static File ShopsPreise;
-	public static FileConfiguration shp; 
+	public static FileConfiguration shp;
+	public static File Reports;
+	public static FileConfiguration rpt;
 	
 
 	
@@ -61,6 +63,9 @@ public class Main extends JavaPlugin implements Listener{
     	
     	Main.ShopsPreise = new File("plugins/Noneless","ShopItems.yml");
     	Main.shp = YamlConfiguration.loadConfiguration(Main.ShopsPreise);
+    	
+    	Main.Reports = new File("plugins/Noneless","Reports.yml");
+    	Main.rpt = YamlConfiguration.loadConfiguration(Main.Reports);
     	
     	
     	System.out.println("Das Plugin wurde aktiviert!");	

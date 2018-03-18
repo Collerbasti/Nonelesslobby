@@ -53,29 +53,7 @@ import Main.Main;
 			boolean First = false;
 			
 			
-			BecameRequestslist.addAll(Main.Frdb.getStringList(p.getName()+".BecameRequests"));
-			if(BecameRequestslist.contains(args[0])) {
-				p.sendMessage("Du Hast Bereits eine Anfrage von "+args[0]+" Erhalten, die Wird nun angenommen");
-				//Annehmen
-				int BCRCounter = Main.Frdb.getInt(p.getName()+".BCRCounter") - 1;
-				Main.Frdb.set(p.getName()+".BCRCounter",BCRCounter);
-				int SDCounter = Main.Frdb.getInt(args[0]+".SDCounter") -1;
-				Main.Frdb.set(args[0]+".SDCounter", SDCounter);
-				SendedRequestslist.addAll(Main.Frdb.getStringList(args[0]+".SendetRequests"));
-				SendedRequestslist.remove(p.getName());
-				BecameRequestslist.addAll(Main.Frdb.getStringList(p.getName()+".BecameRequests"));
-				BecameRequestslist.remove(args[0]);
-				Friends.add(args[0]);
-				p2Friends.addAll(Main.Frdb.getStringList(args[0]+".Friends"));
-				p2Friends.add(p.getName());
-				int p1Counter = Main.Frdb.getInt(p.getName()+".Count")-1;
-				int p2Counter = Main.Frdb.getInt(args[0] + ".Count")-1;
-				Main.Frdb.set(p.getName()+".Count", p1Counter);
-				Main.Frdb.set(args[0]+".Count", p2Counter);
-			
-			
-			}
-			
+
 			
 			
 			if(Main.Frdb.getBoolean(p.getName()+".Exists")) {
@@ -129,33 +107,19 @@ import Main.Main;
 						}else {
 							BecameRequestslist.addAll(Main.Frdb.getStringList(p.getName()+".BecameRequests"));
 							if(BecameRequestslist.contains(args[0])) {
-								p.sendMessage("Du Hast Bereits eine Anfrage von "+args[0]+" Erhalten, die Wird nun angenommen");
+								p.sendMessage("Du Hast Bereits eine Anfrage von "+args[0]+" Erhalten, bitte mit /addfriend accept "+args[0]+" annehmen");
 								//Annehmen
-								int BCRCounter = Main.Frdb.getInt(p.getName()+".BCRCounter") - 1;
-								Main.Frdb.set(p.getName()+".BCRCounter",BCRCounter);
-								int SDCounter = Main.Frdb.getInt(args[0]+".SDCounter") -1;
-								Main.Frdb.set(args[0]+".SDCounter", SDCounter);
-								SendedRequestslist.addAll(Main.Frdb.getStringList(args[0]+".SendetRequests"));
-								SendedRequestslist.remove(p.getName());
-								BecameRequestslist.addAll(Main.Frdb.getStringList(p.getName()+".BecameRequests"));
-								BecameRequestslist.remove(args[0]);
-								Friends.add(args[0]);
-								p2Friends.addAll(Main.Frdb.getStringList(args[0]+".Friends"));
-								p2Friends.add(p.getName());
-								int p1Counter = Main.Frdb.getInt(p.getName()+".Count")-1;
-								int p2Counter = Main.Frdb.getInt(args[0] + ".Count")-1;
-								Main.Frdb.set(p.getName()+".Count", p1Counter);
-								Main.Frdb.set(args[0]+".Count", p2Counter);
 							}else {
 							p2BecameRequestslist.add(p.getName());
-							Main.Frdb.set(args[0]+".BecameRequests", BecameRequestslist);
+							Main.Frdb.set(args[0]+".BecameRequests", p2BecameRequestslist);
+							
 							@SuppressWarnings("deprecation")
 							Player p2 = Bukkit.getPlayer(args[0]);
 							int BCRCounter = Main.Frdb.getInt(args[0]+".BCRCounter") + 1;
 							Main.Frdb.set(args[0]+".BCRCounter",BCRCounter);
 							int SDCounter = Main.Frdb.getInt(p.getName()+".SDCounter") +1;
 							Main.Frdb.set(p.getName()+".SDCounter", SDCounter);
-							p2.sendMessage("Du Hast Eine neue Anfrage von "+p.getName()+" bitte mit /addfriend "+p.getName()+" annehmen");
+							p2.sendMessage("Du Hast Eine neue Anfrage von "+p.getName()+" bitte mit /addfriend accept "+p.getName()+" annehmen");
 							p.sendMessage("Du hast "+args[0]+" eine Anfrage Geschickt");
 						}
 							
@@ -176,6 +140,50 @@ import Main.Main;
 				}
 			}
 			
+				
+			}else {
+				if(args[0]=="accept") {
+				BecameRequestslist.addAll(Main.Frdb.getStringList(p.getName()+".BecameRequests"));
+				if(BecameRequestslist.contains(args[1])) {
+					
+					@SuppressWarnings("deprecation")
+					Player p2 = Bukkit.getPlayer(args[1]);
+					
+					p.sendMessage("Du Hast eine Anfrage von "+args[1]+" Erhalten, die wird nun angenommen");
+					//Annehmen
+					int BCRCounter = Main.Frdb.getInt(p.getName()+".BCRCounter") - 1;
+					Main.Frdb.set(p.getName()+".BCRCounter",BCRCounter);
+					int SDCounter = Main.Frdb.getInt(args[1]+".SDCounter") -1;
+					Main.Frdb.set(args[1]+".SDCounter", SDCounter);
+					
+					
+					SendedRequestslist.addAll(Main.Frdb.getStringList(args[1]+".SendetRequests"));
+					SendedRequestslist.remove(p.getName());
+					Main.Frdb.set(args[1]+".SendetRequests", SendedRequestslist);
+					
+					
+					BecameRequestslist.remove(p2.getName());
+					Main.Frdb.set(p.getName()+".BecameRequests", BecameRequestslist);
+					
+					
+					Friends.addAll(Main.Frdb.getStringList(p.getName()+".Friends"));
+					Friends.add(p2.getName());
+					Main.Frdb.set(p.getName()+".Friends", Friends);
+					p2Friends.addAll(Main.Frdb.getStringList(args[1]+".Friends"));
+					p2Friends.add(p.getName());
+					Main.Frdb.set(args[1]+".Friends", p2Friends);
+					int p1Counter = Main.Frdb.getInt(p.getName()+".Count")+1;
+					int p2Counter = Main.Frdb.getInt(args[1] + ".Count")+1;
+					Main.Frdb.set(p.getName()+".Count", p1Counter);
+					Main.Frdb.set(args[1]+".Count", p2Counter);
+					p2.sendMessage(p.getName()+" Hat deine Anfrage angenommen");
+				
+				}else {
+					p.sendMessage("Bitte /addfriend accept (Spielername) eingeben");
+				}
+				}
+				
+				
 				
 			}
 		

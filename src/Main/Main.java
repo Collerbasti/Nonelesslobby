@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 
 import commands.CMDaddFriend;
+import commands.CMDaddGame;
 import commands.CMDaddItem;
 import commands.CMDdelFriend;
 import commands.CMDitemList;
@@ -30,6 +31,8 @@ public class Main extends JavaPlugin implements Listener
 	public static FileConfiguration shp;
 	public static File Reports;
 	public static FileConfiguration rpt;
+	public static File Minigames;
+	public static FileConfiguration MiGm;
 	
 
 	
@@ -37,7 +40,7 @@ public class Main extends JavaPlugin implements Listener
 
 	public void onEnable() {
 
-		
+	
 	
 
 		Bukkit.getPluginManager().registerEvents(this, this);
@@ -52,6 +55,7 @@ public class Main extends JavaPlugin implements Listener
 		this.getCommand("addItem").setExecutor(new CMDaddItem());
 		this.getCommand("itemList").setExecutor(new CMDitemList());
 		this.getCommand("report").setExecutor(new CMDreport());
+		this.getCommand("addGame").setExecutor(new CMDaddGame());
     	
     	//Setupfiles Erzeugen
 		
@@ -67,6 +71,10 @@ public class Main extends JavaPlugin implements Listener
     	
     	Main.Reports = new File("plugins/Noneless","Reports.yml");
     	Main.rpt = YamlConfiguration.loadConfiguration(Main.Reports);
+    	
+    	Main.Minigames = new File("plugins/Noneless","MGames.yml");
+    	Main.MiGm = YamlConfiguration.loadConfiguration(Main.Minigames);
+    	
     	
     	
     	System.out.println("Das Plugin wurde aktiviert!");	
@@ -87,7 +95,7 @@ public class Main extends JavaPlugin implements Listener
     				e.printStackTrace();
     			}
 }
-    public void onReload() {
-    	
-    }
+
+    
+    
 }

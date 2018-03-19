@@ -34,9 +34,11 @@ public class NonelessEventListener implements Listener
 { 
     private final Main plugin;
     public int MainCounter = 0; 
+    public boolean First = false;
 	public NonelessEventListener(Main plugin) {
         this.plugin = plugin;
         this.plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        
     }
 	
 
@@ -44,7 +46,14 @@ public class NonelessEventListener implements Listener
 	public void onPlayerJoin(PlayerJoinEvent ev) {	
 		Player p = ev.getPlayer();
 
-		
+		if(First = false) {
+		if(p.hasPermission("Noneless.lobby.set")) {
+			p.sendMessage("Hey, Wegem dem Neustart wurde Die Lobby Jetzt Automatisch neu gesetzt");
+			p.performCommand("setlobby");
+			p.performCommand("Spawn");
+			First = true;
+		}
+		}
 		Main.Frdb.set(p.getName()+".isOnline", true);
 		Main.Frdb.set(p.getName()+".Name", p.getName());
 		MainCounter = MainCounter+1;
@@ -85,7 +94,7 @@ public class NonelessEventListener implements Listener
 	public void onPLayerPick(EntityPickupItemEvent ev) {	
 		 LivingEntity pe = ev.getEntity();
 		 if(pe.getType().equals(EntityType.PLAYER)){
-
+			 
 			Player p = Bukkit.getServer().getPlayer(pe.getName());
 		if(p.getWorld().getName()== Main.loc.getString("spawn.World")) {
 			((Cancellable) ev).setCancelled(true);
@@ -243,14 +252,26 @@ public class NonelessEventListener implements Listener
 				
 			}else	if(ev.getCurrentItem().getType() == Material.BANNER) {
 				
-				Double x = Main.loc.getDouble("Spiele.X");
-				Double y = Main.loc.getDouble("Spiele.Y");
-				Double z = Main.loc.getDouble("Spiele.Z");
-				Float yaw = (float) Main.loc.getDouble("Spiele.Yaw");
-				Float pitch = (float) Main.loc.getDouble("Spiele.Pitch");
-				org.bukkit.World w = Bukkit.getWorld(Main.loc.getString("Spiele.World"));
-				p.teleport(new Location(w,x,y,z,yaw,pitch));
+
+				Inventory Games = p.getServer().createInventory(null, 27, p.getName()+"$b Minispiele");
 				
+				int Counter = Main.MiGm.getInt("Global.Count");
+				ArrayList<String> MiniGames = new ArrayList<String>();
+				MiniGames.addAll(Main.MiGm.getStringList("Global.Minigames"));
+				
+					while(Counter >0 ){
+						Counter = Counter - 1;
+						p.sendMessage("Test");
+						String Game = MiniGames.get(Counter);
+						Material GameMat = (Material) Main.MiGm.get(Game+".Mat");
+						ItemStack FATP = new ItemStack(GameMat,1,(byte)14 );
+					    ItemMeta FATPM =  FATP.getItemMeta(); 
+					    FATPM.setDisplayName(Main.MiGm.getString(Game+".Name"));
+					    FATP.setItemMeta(FATPM);
+					    Games.setItem(Counter, FATP);
+						
+					}
+				p.openInventory(Games);
 			}else	if(ev.getCurrentItem().getType() == Material.COMPASS) {
 				
 				

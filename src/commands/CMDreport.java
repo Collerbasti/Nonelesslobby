@@ -27,7 +27,7 @@ public class CMDreport implements CommandExecutor {
 		  p.sendMessage("Der Report wird Gesendet");
 		  Main.Main.rpt.set(p.getInventory().getItemInMainHand().getType()+".Reports", args[0]);
 		  ReportList.addAll(Main.Main.rpt.getStringList("Report.List"));
-		  ReportList.add(args.length==2 );
+		  ReportList.add(args.toString() );
 		  Main.Main.rpt.set("Report.List",ReportList);
 		  Main.Main.rpt.set("Report.Count", Count+1);
 		  

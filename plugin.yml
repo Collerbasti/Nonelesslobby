@@ -19,3 +19,5 @@ commands:
      description: Siehe die Item Liste
   report:
      description: Reporte Einen Spieler
+  addGame:
+     description: Fügt Minigames/Arenen in die liste

@@ -114,7 +114,6 @@ import Main.Main;
 							p2BecameRequestslist.add(p.getName());
 							Main.Frdb.set(args[0]+".BecameRequests", p2BecameRequestslist);
 							
-							@SuppressWarnings("deprecation")
 							Player p2 = Bukkit.getPlayer(args[0]);
 							int BCRCounter = Main.Frdb.getInt(args[0]+".BCRCounter") + 1;
 							Main.Frdb.set(args[0]+".BCRCounter",BCRCounter);
@@ -147,7 +146,7 @@ import Main.Main;
 				BecameRequestslist.addAll(Main.Frdb.getStringList(p.getName()+".BecameRequests"));
 				if(BecameRequestslist.contains(args[1])) {
 					
-					@SuppressWarnings("deprecation")
+
 					Player p2 = Bukkit.getPlayer(args[1]);
 					
 					p.sendMessage("Du Hast eine Anfrage von "+args[1]+" Erhalten, die wird nun angenommen");

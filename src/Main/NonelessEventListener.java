@@ -85,7 +85,7 @@ public class NonelessEventListener implements Listener
 	public void onPLayerPick(EntityPickupItemEvent ev) {	
 		 LivingEntity pe = ev.getEntity();
 		 if(pe.getType().equals(EntityType.PLAYER)){
-			 @SuppressWarnings("deprecation")
+
 			Player p = Bukkit.getServer().getPlayer(pe.getName());
 		if(p.getWorld().getName()== Main.loc.getString("spawn.World")) {
 			((Cancellable) ev).setCancelled(true);
@@ -191,7 +191,6 @@ public class NonelessEventListener implements Listener
 		}
 	}
 	
-	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void InventoryClick(InventoryClickEvent ev) {
 
@@ -435,7 +434,7 @@ public class NonelessEventListener implements Listener
 			
 			if(ev.getCurrentItem().getType() == Material.SKULL_ITEM && Main.Frdb.getBoolean(ev.getCurrentItem().getItemMeta().getDisplayName()+".isOnline")) {
 				if(Main.Frdb.getBoolean(ev.getCurrentItem().getItemMeta().getDisplayName()+".AllowFriendsTp")){
-			@SuppressWarnings("deprecation")
+
 			Player Friend = Bukkit.getPlayer(ev.getCurrentItem().getItemMeta().getDisplayName());
 			String Adminworld = Main.loc.getString("Admin.World");
 			if(Friend.getLocation().getWorld().getName() == Adminworld ) {

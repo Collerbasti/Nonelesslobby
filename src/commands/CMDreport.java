@@ -24,14 +24,25 @@ public class CMDreport implements CommandExecutor {
 	}else {
 		if(args.length == 2) {
 		  Player p = (Player) sender;
+		  
+		  
+		  StringBuilder sb = new StringBuilder();
+
+		  for(int i = 1; i >= args.length; i++) {
+		    sb.append(args[i] + " ");
+		  }
+
+		  sb.setLength(sb.length() - 1);
+		  String text = sb.toString();
+		  
 		  p.sendMessage("Der Report wird Gesendet");
-		  Main.Main.rpt.set(p.getInventory().getItemInMainHand().getType()+".Reports", args[0]);
-		  ReportList.addAll(Main.Main.rpt.getStringList("Report.List"));
-		  ReportList.add(args.toString());
-		  Main.Main.rpt.set("Report.List",ReportList);
+		  Main.Main.rpt.set(args[0]+".Reports", args[0]);
+		  ReportList.addAll(Main.Main.rpt.getStringList(args[0]+".List"));
+		  ReportList.add(text);
+		  Main.Main.rpt.set(args[0]+".List",ReportList);
 		  Main.Main.rpt.set("Report.Count", Count+1);
-		  
-		  
+		  Main.Main.rpt.set(args[0]+".Number",Count+1);
+		  p.sendMessage("Die Report Nummer lautet :"+ (Count+1)+" Bitte für alle Fälle aufbewaren");
 		try {
 			Main.Main.rpt.save(Main.Main.Reports);
 		}catch (IOException e) {

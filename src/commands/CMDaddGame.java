@@ -1,5 +1,6 @@
 package commands;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import org.bukkit.command.Command;
@@ -41,7 +42,30 @@ public class CMDaddGame implements CommandExecutor
 					
 				}
 			}	else { //if(MiniGames.contains(args[0]))
-				p.sendMessage("Das MiniSpiel Gibt es Leider nicht ");
+				p.sendMessage("Das MiniSpiel Gibt es Leider nicht Das Angegebene Material wird als Game Material genutzt");
+				MiniGames.add(args[0]);
+				 Main.MiGm.set("Global.Minigames", MiniGames);
+				 Main.MiGm.set(args[0]+".StartCommand","Bitte hier den Befehl Eingeben");
+				 Main.MiGm.set("Global.Count",Main.MiGm.getInt("Global.Count") + 1);
+				 
+				 
+				 
+				 if(args[2]=="BED") {
+						Main.MiGm.set(args[0]+".Mat", 1);
+						}else if(args[2]=="WOOD") {
+							Main.MiGm.set(args[0]+".Mat",2);
+						}else {
+							Main.MiGm.set(args[0]+".Mat", 3);
+						}
+				 
+				 MiniGameArenas.add(args[1]);
+				 
+					Main.MiGm.set(args[0]+".Arenas",MiniGameArenas);
+					int ACounter = Main.MiGm.getInt(args[0]+".Count");
+					Main.MiGm.set(args[0]+".Count", ACounter + 1);
+					
+					Main.MiGm.set(args[0]+"."+args[1]+".Mat", args[2]);
+					
 			}
 				
 			}else { //if(args.length == 1)
@@ -61,10 +85,17 @@ public class CMDaddGame implements CommandExecutor
 	}
 		
 		
-		
-		return true;
-		
+	try {
+		Main.MiGm.save(Main.Minigames);
+	} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
 	}
+		return true;
+
+		
+
 	
+	}
 
 	}

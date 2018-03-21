@@ -35,6 +35,7 @@ public class NonelessEventListener implements Listener
     private final Main plugin;
     public int MainCounter = 0; 
     public boolean First = false;
+    public boolean Tree = false;
 	public NonelessEventListener(Main plugin) {
         this.plugin = plugin;
         this.plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -46,14 +47,7 @@ public class NonelessEventListener implements Listener
 	public void onPlayerJoin(PlayerJoinEvent ev) {	
 		Player p = ev.getPlayer();
 
-		if(First = false) {
-		if(p.hasPermission("Noneless.lobby.set")) {
-			p.sendMessage("Hey, Wegem dem Neustart wurde Die Lobby Jetzt Automatisch neu gesetzt");
-			p.performCommand("setlobby");
-			p.performCommand("Spawn");
-			First = true;
-		}
-		}
+
 		Main.Frdb.set(p.getName()+".isOnline", true);
 		Main.Frdb.set(p.getName()+".Name", p.getName());
 		MainCounter = MainCounter+1;
@@ -77,6 +71,16 @@ public class NonelessEventListener implements Listener
 		System.out.println("Spieler ist gejoint");	
 		p.teleport(alt);
 		p.teleport(new Location(w,x,y,z,yaw,pitch));
+		
+		
+		if(First == false) {
+		if(p.hasPermission("Noneless.lobby.set")) {
+			p.sendMessage("Hey, Wegem dem Neustart wurde Die Lobby Jetzt Automatisch neu gesetzt");
+			p.performCommand("setlobby");
+			p.performCommand("Spawn");
+			First = true;
+		}
+		}
 }
 	
 	
@@ -253,22 +257,42 @@ public class NonelessEventListener implements Listener
 			}else	if(ev.getCurrentItem().getType() == Material.BANNER) {
 				
 
-				Inventory Games = p.getServer().createInventory(null, 27, p.getName()+"$b Minispiele");
+				Inventory Games = p.getServer().createInventory(null, 27, p.getName()+"§b Minispiele");
 				
 				int Counter = Main.MiGm.getInt("Global.Count");
 				ArrayList<String> MiniGames = new ArrayList<String>();
 				MiniGames.addAll(Main.MiGm.getStringList("Global.Minigames"));
 				
-					while(Counter >0 ){
+					while(Counter > 0 ){
+						
 						Counter = Counter - 1;
-						p.sendMessage("Test");
 						String Game = MiniGames.get(Counter);
-						Material GameMat = (Material) Main.MiGm.get(Game+".Mat");
-						ItemStack FATP = new ItemStack(GameMat,1,(byte)14 );
-					    ItemMeta FATPM =  FATP.getItemMeta(); 
-					    FATPM.setDisplayName(Main.MiGm.getString(Game+".Name"));
-					    FATP.setItemMeta(FATPM);
-					    Games.setItem(Counter, FATP);
+						
+						if(Main.MiGm.getInt(MiniGames.get(Counter)+".Mat") == 1) {
+							ItemStack FATP = new ItemStack(Material.BED,1,(byte)14 );
+							ItemMeta FATPM =  FATP.getItemMeta(); 
+						    FATPM.setDisplayName(Game);
+						    p.sendMessage("Test");
+						    FATP.setItemMeta(FATPM);
+						    Games.setItem(Counter, FATP);
+						}else if(Main.MiGm.getInt(MiniGames.get(Counter)+".Mat") == 2) {
+							ItemStack FATP = new ItemStack(Material.WOOD,1);
+							ItemMeta FATPM =  FATP.getItemMeta(); 
+						    FATPM.setDisplayName(Game);
+						    FATP.setItemMeta(FATPM);
+						    Games.setItem(Counter, FATP);
+						}else {
+							ItemStack FATP = new ItemStack(Material.RED_MUSHROOM,1,(byte)14 );
+							ItemMeta FATPM =  FATP.getItemMeta(); 
+						    FATPM.setDisplayName(Game);
+						    FATP.setItemMeta(FATPM);
+						    Games.setItem(Counter, FATP);
+						}
+						
+						
+						
+						
+					    
 						
 					}
 				p.openInventory(Games);
@@ -910,12 +934,131 @@ public void InventorySettingsClick(InventoryClickEvent ev) {
 	}
 }
 	}
+//-----------Minigames
+	
+	if(Tree == true) {
+		Tree = false;
+		p.sendMessage("Hallo");
+	ArrayList<String> MiniGames = new ArrayList<String>();
+	MiniGames.addAll(Main.MiGm.getStringList("Global.Minigames"));
+	int Counter = Main.MiGm.getInt("Global.Count");
+		while(Counter > 0 ){
+			Counter = Counter - 1;
+			p.sendMessage(MiniGames.get(Counter));
+			if(ev.getInventory().getName().equalsIgnoreCase(p.getName()+"§b "+MiniGames.get(Counter))){
+				p.performCommand(Main.MiGm.getString(MiniGames.get(Counter)+".StartCommand")+" "+ev.getCurrentItem().getItemMeta().getDisplayName());
+				p.sendMessage(Main.MiGm.getString(MiniGames.get(Counter)+".StartCommand")+" "+ev.getCurrentItem().getItemMeta().getDisplayName());
+			}
+		}
+	}
+	if(ev.getInventory().getName().equalsIgnoreCase(p.getName()+"§b Minispiele")){
+		
+		Inventory GameINV  = p.getServer().createInventory(null, 27,p.getName()+"§b "+ev.getCurrentItem().getItemMeta().getDisplayName());
+		
+		int Counter = Main.MiGm.getInt(ev.getCurrentItem().getItemMeta().getDisplayName()+".Count");
+		ArrayList<String> MiniGames = new ArrayList<String>();
+		MiniGames.addAll(Main.MiGm.getStringList(ev.getCurrentItem().getItemMeta().getDisplayName()+".Arenas"));
+		p.sendMessage("Test");
+			while(Counter > 0 ){
+				
+				Counter = Counter - 1;
+				Material mat = Material.getMaterial(Main.MiGm.getString(ev.getCurrentItem().getItemMeta().getDisplayName()+"."+MiniGames.get(Counter)+".Mat"));
+					
+					
+					
+					
+					ItemStack Skull = new ItemStack(mat , 1);
+					ItemMeta SMeta =  Skull.getItemMeta(); 
+			    	SMeta.setDisplayName(MiniGames.get(Counter));
+			    	Skull.setItemMeta(SMeta);
+			    	
+			    	GameINV.setItem(Counter,Skull);
+				
+				
+			}
+			p.openInventory(GameINV);
+		Tree = true;
+	}
+
+		
+
+
+if(ev.getCurrentItem().getItemMeta().getDisplayName()=="Warps") {
+	Player e = p;
+	//------Menü-----
+	Inventory Menue = e.getServer().createInventory(null, 27,e.getName()+"§b Warps");
+	
+
+	
+	ItemStack Spawn = new ItemStack(Material.APPLE);
+	ItemMeta Meta = Spawn.getItemMeta(); 
+	Meta.setDisplayName("Spawn");
+	Spawn.setItemMeta(Meta);
+	Menue.setItem(10,Spawn);
+	
+	
+		    	
+	ItemStack Spawn2 = new ItemStack(Material.BANNER);
+	ItemMeta Meta2 = Spawn2.getItemMeta(); 
+	Meta2.setDisplayName("Spiele");
+	Spawn2.setItemMeta(Meta2);
+	Menue.setItem(11,Spawn2);
+	
+	
+	ItemStack Spawn3 = new ItemStack(Material.WOOD);
+	ItemMeta Meta3 = Spawn3.getItemMeta(); 
+	Meta3.setDisplayName("AREA City");
+	Spawn3.setItemMeta(Meta3);
+	Menue.setItem(12,Spawn3);
+	
+	ItemStack Skull = new ItemStack(Material.SKULL_ITEM);
+	SkullMeta SMeta = (SkullMeta) Skull.getItemMeta(); 
+	SMeta.setDisplayName("Freunde");
+	SMeta.setOwningPlayer(e);
+	Skull.setItemMeta(SMeta);
+	Skull.setDurability((short) 3);
+	Menue.setItem(13,Skull);
+	
+	ItemStack Set = new ItemStack(Material.COMPASS);
+	ItemMeta CMeta =  Set.getItemMeta(); 
+	CMeta.setDisplayName("Einstellungen");
+	Set.setItemMeta(CMeta);
+	Menue.setItem(14,Set);
+	
+	ItemStack Meat = new ItemStack(Material.BAKED_POTATO);
+	ItemMeta MMeta =  Meat.getItemMeta(); 
+	MMeta.setDisplayName("Essen");
+	Meat.setItemMeta(MMeta);
+	Menue.setItem(20,Meat);
+	if(e.hasPermission("Noneless.Creative.World")){
+		ItemStack Creative = new ItemStack(Material.REDSTONE);
+    	ItemMeta CMETA =  Creative.getItemMeta(); 
+    	CMETA.setDisplayName("Kreativ welt");
+    	Creative.setItemMeta(CMETA);
+    	Menue.setItem(21,Creative);
+		
+	}
+	if(e.hasPermission("Noneless.Admin.World")){
+		ItemStack Creative = new ItemStack(Material.GLOWSTONE_DUST);
+    	ItemMeta CMETA =  Creative.getItemMeta(); 
+    	CMETA.setDisplayName("Admin AreaCity");
+    	Creative.setItemMeta(CMETA);
+    	Menue.setItem(22,Creative);
+		
+	}
+	
+	
+	
+	
+	e.openInventory(Menue);
+//------Menue
 }
 }
 
 
 
 
+}
 
 
 

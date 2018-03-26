@@ -34,7 +34,7 @@ public class MySQL {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-    	}
+    	 }
     }
     
     public static boolean isConnected() {

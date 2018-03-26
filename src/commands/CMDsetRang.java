@@ -27,6 +27,8 @@ public class CMDsetRang implements CommandExecutor  {
 			}else if (args[0]=="remove") {
 				Punkte.Update(Bukkit.getPlayer(args[1]).getUniqueId(), Integer.parseInt(args[2]), args[1], true,p);	
 				p.sendMessage("Der Spieler "+args[1] +" hat nun den Rang "+Punkte.getPoints(Bukkit.getPlayer(args[1]).getUniqueId()));
+			}else {
+				p.sendMessage("ungültige argumente");
 			}
 			
 			

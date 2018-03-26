@@ -39,7 +39,8 @@ public class Main extends JavaPlugin implements Listener
 	@Override	
 
 	public void onEnable() {
-
+        
+		MySQL.connect();
 	
 	
 
@@ -83,6 +84,7 @@ public class Main extends JavaPlugin implements Listener
     	}
 	
     public void onDisable() {
+    	MySQL.disconnect();
         for(Player on:Bukkit.getServer().getOnlinePlayers()){
             on.kickPlayer(ChatColor.RED + "Der Server wird Neugestartet \n"+ChatColor.BLUE+"bitte warte kurz und versuche dann dich wieder zu Verbinden\n "+ChatColor.GREEN+"Come and Play On ");
             Main.Frdb.set(on.getName()+".isOnline", false);

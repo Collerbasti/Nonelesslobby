@@ -29,7 +29,7 @@ public class CMDsetRang implements CommandExecutor  {
 				p.sendMessage("Der Spieler "+args[1] +" hat nun den Rang "+Punkte.getPoints(Bukkit.getPlayer(args[1]).getUniqueId()));
 			}else {
 				p.sendMessage("ungültige argumente");
-			}
+			} 
 			
 			
 			

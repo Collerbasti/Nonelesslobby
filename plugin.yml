@@ -21,3 +21,5 @@ commands:
      description: Reporte Einen Spieler
   addGame:
      description: Fügt Minigames/Arenen in die liste
+  setRang:
+     description: Setzt den Rang eines Spielers

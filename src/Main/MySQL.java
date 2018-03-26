@@ -2,15 +2,16 @@ package Main;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 public class MySQL {
 	
-	public static String host;
-	public static String port;
-	public static String database;
-	public static String username;
-	public static String password;
+	public static String host = "localhost";
+	public static String port = "3306";
+	public static String database = "RangSystem";
+	public static String username = "RangSystem";
+	public static String password = "GGHDFHHGFDSL45SDA";
 	public static Connection con;
 	
     public static void connect() {
@@ -22,6 +23,14 @@ public class MySQL {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
+    		
+    		try {
+    			PreparedStatement ps = MySQL.getConnection().prepareStatement("CREATE TABLE IF NOT EXISTS PUNKTESYSTEM (UUID VARCHAR(100), SPIELERNAME VARCHAR(100), PUNKTE INT(100))");
+    			ps.executeUpdate();
+        	} catch (SQLException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}
     	}
     }
     
@@ -42,7 +51,10 @@ public class MySQL {
     	
     }
     
-    
+  public static  Connection getConnection() {
+	  return con;
+  }
+  
     
 }
 

@@ -16,6 +16,7 @@ import commands.CMDaddItem;
 import commands.CMDdelFriend;
 import commands.CMDitemList;
 import commands.CMDreport;
+import commands.CMDsetRang;
 import commands.CMDsetlobby;
 import commands.CMDspawn;
 import commands.CMDvote;
@@ -57,7 +58,7 @@ public class Main extends JavaPlugin implements Listener
 		this.getCommand("itemList").setExecutor(new CMDitemList());
 		this.getCommand("report").setExecutor(new CMDreport());
 		this.getCommand("addGame").setExecutor(new CMDaddGame());
-    	
+		this.getCommand("setRang").setExecutor(new CMDsetRang());
     	//Setupfiles Erzeugen
 		
     	Main.Locations = new File("plugins/Noneless","Warps.yml");

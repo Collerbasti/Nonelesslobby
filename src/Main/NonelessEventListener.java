@@ -272,7 +272,6 @@ public class NonelessEventListener implements Listener
 							ItemStack FATP = new ItemStack(Material.BED,1,(byte)14 );
 							ItemMeta FATPM =  FATP.getItemMeta(); 
 						    FATPM.setDisplayName(Game);
-						    p.sendMessage("Test");
 						    FATP.setItemMeta(FATPM);
 						    Games.setItem(Counter, FATP);
 						}else if(Main.MiGm.getInt(MiniGames.get(Counter)+".Mat") == 2) {
@@ -938,16 +937,15 @@ public void InventorySettingsClick(InventoryClickEvent ev) {
 	
 	if(Tree == true) {
 		Tree = false;
-		p.sendMessage("Hallo");
 	ArrayList<String> MiniGames = new ArrayList<String>();
 	MiniGames.addAll(Main.MiGm.getStringList("Global.Minigames"));
 	int Counter = Main.MiGm.getInt("Global.Count");
 		while(Counter > 0 ){
 			Counter = Counter - 1;
-			p.sendMessage(MiniGames.get(Counter));
+			
 			if(ev.getInventory().getName().equalsIgnoreCase(p.getName()+"§b "+MiniGames.get(Counter))){
 				p.performCommand(Main.MiGm.getString(MiniGames.get(Counter)+".StartCommand")+" "+ev.getCurrentItem().getItemMeta().getDisplayName());
-				p.sendMessage(Main.MiGm.getString(MiniGames.get(Counter)+".StartCommand")+" "+ev.getCurrentItem().getItemMeta().getDisplayName());
+				
 			}
 		}
 	}
@@ -958,7 +956,6 @@ public void InventorySettingsClick(InventoryClickEvent ev) {
 		int Counter = Main.MiGm.getInt(ev.getCurrentItem().getItemMeta().getDisplayName()+".Count");
 		ArrayList<String> MiniGames = new ArrayList<String>();
 		MiniGames.addAll(Main.MiGm.getStringList(ev.getCurrentItem().getItemMeta().getDisplayName()+".Arenas"));
-		p.sendMessage("Test");
 			while(Counter > 0 ){
 				
 				Counter = Counter - 1;

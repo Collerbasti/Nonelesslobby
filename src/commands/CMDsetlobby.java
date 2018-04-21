@@ -1,7 +1,6 @@
 package commands;
 
 import java.io.IOException;
-
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;

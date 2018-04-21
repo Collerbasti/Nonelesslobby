@@ -21,7 +21,7 @@ if(isUserExists(uuid,p)) {
 					PreparedStatement ps = Main.MySQL.getConnection().prepareStatement("UPDATE PUNKTESYSTEM SET Punkte = ? WHERE UUID = ?");
 					ps.setString(2, uuid.toString());
 					
-					ps.setInt(1, getPoints(uuid) + amount);
+					ps.setInt(1, getPoints(uuid) - amount);
 					ps.executeUpdate();
 				} catch (SQLException e) {
 					e.printStackTrace();
@@ -84,7 +84,7 @@ if(isUserExists(uuid,p)) {
 
 	
 	public static boolean isUserExists(UUID uuid, Player p) {
-		p.sendMessage("Danten Test");
+		
 		PreparedStatement ps;
 		try {
 			ps = Main.MySQL.getConnection().prepareStatement("SELECT Punkte FROM PUNKTESYSTEM WHERE UUID = ?");

@@ -142,7 +142,7 @@ import Main.Main;
 			
 				
 			}else {
-				if(args[0]=="accept") {
+				if(args[0].equalsIgnoreCase("accept")) {
 				BecameRequestslist.addAll(Main.Frdb.getStringList(p.getName()+".BecameRequests"));
 				if(BecameRequestslist.contains(args[1])) {
 					

@@ -97,18 +97,18 @@ public class Main extends JavaPlugin implements Listener
     	public void run() {
     			for(Player players : Bukkit.getOnlinePlayers()) {
     				
-    				int Min = Frdb.getInt(players.getDisplayName() + ".Online.Min");
-    				int Std = Frdb.getInt(players.getDisplayName() + ".Online.Std");
+    				int Min = Frdb.getInt(players.getName() + ".Online.Min");
+    				int Std = Frdb.getInt(players.getName() + ".Online.Std");
     				if(Min == 60) {
     					Min = 0;
     					Std = Std+1;
     					players.sendMessage("Du insgesammt : "+Std+" Stunden auf dem Server, dafür bekommst du einen Punkt");
-    					Mysql.Punkte.Update(players.getUniqueId(), 1, players.getDisplayName(), false , players);
+    					Mysql.Punkte.Update(players.getUniqueId(), 1, players.getName(), false , players);
     				}else {
     					Min = Min+1;
     				}
-    				Frdb.set(players.getDisplayName() + ".Online.Min", Min);
-    				Frdb.set(players.getDisplayName() + ".Online.Std", Std);
+    				Frdb.set(players.getName() + ".Online.Min", Min);
+    				Frdb.set(players.getName() + ".Online.Std", Std);
     			}
     			}
     	}, 20*60, 20*60);

@@ -3,6 +3,7 @@ package Main;
 
 
 import java.io.IOException;
+import java.sql.Time;
 import java.util.ArrayList;
 
 import org.bukkit.Bukkit;
@@ -41,12 +42,23 @@ public class NonelessEventListener implements Listener
         this.plugin.getServer().getPluginManager().registerEvents(this, plugin);
         
     }
+	@SuppressWarnings("deprecation")
+	public void Tick(Time ev) {
+		if (ev.getHours()==0) {
+			if(ev.getDay()==1) {
+				MySQL.disconnect();
+				MySQL.connect();
+				
+			}
+		}
+	}
 	
 
+	
+	
 	@EventHandler 
 	public void onPlayerJoin(PlayerJoinEvent ev) {	
 		Player p = ev.getPlayer();
-
 
 		Main.Frdb.set(p.getName()+".isOnline", true);
 		Main.Frdb.set(p.getName()+".Name", p.getName());

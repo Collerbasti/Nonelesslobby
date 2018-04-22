@@ -7,8 +7,12 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
+
+
 import java.io.File;
 import java.io.IOException;
+
+
 
 import commands.CMDaddFriend;
 import commands.CMDaddGame;
@@ -20,6 +24,7 @@ import commands.CMDsetRang;
 import commands.CMDsetlobby;
 import commands.CMDspawn;
 import commands.CMDvote;
+
 
 public class Main extends JavaPlugin implements Listener 
 {
@@ -42,7 +47,7 @@ public class Main extends JavaPlugin implements Listener
 	public void onEnable() {
         
 		MySQL.connect();
-	
+		StartTimer();
 	
 
 		Bukkit.getPluginManager().registerEvents(this, this);
@@ -84,7 +89,36 @@ public class Main extends JavaPlugin implements Listener
 
     	 }
 	
-    public void onDisable() {
+    private void StartTimer() {
+		
+    	
+    	Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+    		@Override
+    	public void run() {
+    			for(Player players : Bukkit.getOnlinePlayers()) {
+    				
+    				int Min = Frdb.getInt(players.getDisplayName() + ".Online.Min");
+    				int Std = Frdb.getInt(players.getDisplayName() + ".Online.Std");
+    				if(Min == 60) {
+    					Min = 0;
+    					Std = Std+1;
+    					players.sendMessage("Du insgesammt : "+Std+" Stunden auf dem Server, dafür bekommst du einen Punkt");
+    					Mysql.Punkte.Update(players.getUniqueId(), 1, players.getDisplayName(), false , players);
+    				}else {
+    					Min = Min+1;
+    				}
+    				Frdb.set(players.getDisplayName() + ".Online.Min", Min);
+    				Frdb.set(players.getDisplayName() + ".Online.Std", Std);
+    			}
+    			}
+    	}, 20*60, 20*60);
+    		
+    	
+    	
+    	}
+	
+
+	public void onDisable() {
     	MySQL.disconnect();
         for(Player on:Bukkit.getServer().getOnlinePlayers()){
             on.kickPlayer(ChatColor.RED + "Der Server wird Neugestartet \n"+ChatColor.BLUE+"bitte warte kurz und versuche dann dich wieder zu Verbinden\n "+ChatColor.GREEN+"Come and Play On ");

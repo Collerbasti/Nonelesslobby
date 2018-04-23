@@ -121,7 +121,7 @@ public class Main extends JavaPlugin implements Listener
     				if(Min == 60) {
     					Min = 0;
     					Std = Std+1;
-    					players.sendMessage("Du insgesammt : "+Std+" Stunden auf dem Server, dafür bekommst du einen Punkt");
+    					players.sendMessage("Du bist nun insgesammt : "+Std+" Stunden auf dem Server, dafür bekommst du einen Punkt");
     					Mysql.Punkte.Update(players.getUniqueId(), 1, players.getName(), false , players);
     				}else {
     					Min = Min+1;

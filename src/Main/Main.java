@@ -39,7 +39,8 @@ public class Main extends JavaPlugin implements Listener
 	public static FileConfiguration rpt;
 	public static File Minigames;
 	public static FileConfiguration MiGm;
-	
+	public static File GlaDOS;
+	public static FileConfiguration GDOS;	
 
 	
 	@Override	
@@ -82,7 +83,8 @@ public class Main extends JavaPlugin implements Listener
     	Main.Minigames = new File("plugins/Noneless","MGames.yml");
     	Main.MiGm = YamlConfiguration.loadConfiguration(Main.Minigames);
     	
-    	
+    	Main.GlaDOS = new File("plugins/Noneless","GlaDOS.yml");
+    	Main.GDOS = YamlConfiguration.loadConfiguration(Main.GlaDOS);
     	
     	System.out.println("Das Plugin wurde aktiviert!");	
 

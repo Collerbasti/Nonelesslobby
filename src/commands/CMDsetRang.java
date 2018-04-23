@@ -6,7 +6,6 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
-import Main.MySQL;
 import Mysql.Punkte;
 
 public class CMDsetRang implements CommandExecutor  {
@@ -22,7 +21,6 @@ public class CMDsetRang implements CommandExecutor  {
 			if(p.hasPermission("Noneless.SetRang")) {
 		if(args.length== 3) {
 			
-			MySQL.connect();
 			if(args[0].equalsIgnoreCase("add")) {
 				Punkte.Update(Bukkit.getPlayer(args[1]).getUniqueId(), Integer.parseInt(args[2]), args[1], false , p);
 				p.sendMessage("Der Spieler "+args[1] +" hat nun den Rang "+Punkte.getPoints(Bukkit.getPlayer(args[1]).getUniqueId()));

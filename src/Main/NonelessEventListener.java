@@ -19,7 +19,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.player.PlayerChatEvent;
+import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -40,6 +40,7 @@ public class NonelessEventListener implements Listener
     public boolean Tree = false;
     public boolean GlaDOSListen = false;
     public String GlaDOSFrage = "";
+    public String GDOSVersion = "1.0";
 	public NonelessEventListener(Main plugin) {
         this.plugin = plugin;
         this.plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -98,12 +99,41 @@ public class NonelessEventListener implements Listener
 		}
 }
 	// An Timo -- Niemals etwas sagen, dies ist GlaDOS, Sie wird eine kleine unterstützerin in not
-	@SuppressWarnings("deprecation")
+	
 	@EventHandler 
-	public void onChat(PlayerChatEvent ev) {	
+	public void onChat(AsyncPlayerChatEvent ev) {	
 		
 		String Message = ev.getMessage();
-		if(Message.equalsIgnoreCase("ist der kuchen eine lüge")) {
+		Message.toLowerCase();
+		if(Message.contains("Häcke") && Message.contains("Server")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
+			ev.getPlayer().setHealth(0);
+			Bukkit.broadcastMessage("§4GlaDOS: §fUps ich glaube das war absicht");
+			ev.setCancelled(true);
+		}else if(Message.contains("hilf")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
+			Bukkit.broadcastMessage("§4GlaDOS: §f");
+			ev.setCancelled(true);
+			ArrayList<String> Glados = new ArrayList<String>();
+			Glados.addAll(Main.GDOS.getStringList("GlaDOS.List"));
+			int count = Glados.size();
+			int Count2 = 0;
+			while(Count2 <= count) {
+				
+				Bukkit.broadcastMessage("§f"+Glados.get(Count2));
+				Count2 = Count2 +1;
+			}
+		}else if(Message.contains("häcke") && Message.contains("server")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
+			ev.getPlayer().setHealth(0);
+			Bukkit.broadcastMessage("§4GlaDOS: §fUps ich glaube das war absicht");
+			ev.setCancelled(true);
+		}
+		else if(Message.contains("Version")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
+			ev.getPlayer().setHealth(0);
+			Bukkit.broadcastMessage("§4GlaDOS: §fich bin GlaDOS in der Version: "+GDOSVersion);
+			ev.setCancelled(true);
+		}
+		
+		else {
+		if(Message.equalsIgnoreCase("ist der kuchen eine lüge?")) {
 			Bukkit.broadcastMessage("§4GlaDOS: §fNein der Kuchen ist keine §4Lüge §f. Niemand hat das behauptet");
 			ev.setCancelled(true);
 			Main.GDOS.set(ev.getPlayer().getName()+".Enable", true);
@@ -113,7 +143,7 @@ public class NonelessEventListener implements Listener
 			Glados.addAll(Main.GDOS.getStringList("GlaDOS.List"));
 			Glados.add(GlaDOSFrage);
 			Main.GDOS.set("GlaDOS.List", Glados);
-			Main.GDOS.set("GlaDOS."+GlaDOSFrage, Message);
+			Main.GDOS.set("GlaDOS."+GlaDOSFrage, ev.getMessage());
 			ev.setCancelled(true);
 			Bukkit.broadcastMessage("§4GlaDOS: §f Absofort werde ich das auf die Frage Antworten Danke Spieler");
 			GlaDOSListen = false;
@@ -150,7 +180,7 @@ public class NonelessEventListener implements Listener
 				}
 			}
 		}}
-		}
+		}}
 	
 	
 	

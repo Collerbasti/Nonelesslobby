@@ -41,6 +41,7 @@ public class Main extends JavaPlugin implements Listener
 	public static FileConfiguration MiGm;
 	public static File GlaDOS;
 	public static FileConfiguration GDOS;	
+	public int Timer = 0;
 
 	
 	@Override	
@@ -49,7 +50,7 @@ public class Main extends JavaPlugin implements Listener
         
 		MySQL.connect();
 		StartTimer();
-	
+		ReconnectData();
 
 		Bukkit.getPluginManager().registerEvents(this, this);
 
@@ -90,13 +91,29 @@ public class Main extends JavaPlugin implements Listener
 
 
     	 }
-	
+    private void ReconnectData() {
+		
+    	
+    	Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+    		@Override
+    	public void run() {
+    		Timer =Timer + 1;
+    		if(Timer == 60) {
+    			MySQL.disconnect();
+    		}else if(Timer == 61) {
+    			MySQL.connect();
+    		}
+    		}
+    		},20*60, 20*60);
+    	}
+    			
     private void StartTimer() {
 		
     	
     	Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
     		@Override
     	public void run() {
+    			
     			for(Player players : Bukkit.getOnlinePlayers()) {
     				
     				int Min = Frdb.getInt(players.getName() + ".Online.Min");

@@ -12,13 +12,16 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.IOException;
 
-
-
+import commands.CMDMagic;
 import commands.CMDaddFriend;
 import commands.CMDaddGame;
 import commands.CMDaddItem;
+import commands.CMDaddVIP;
+import commands.CMDdatabaseconnect;
+import commands.CMDdatabasedisconnect;
 import commands.CMDdelFriend;
 import commands.CMDitemList;
+import commands.CMDremoveKIcommand;
 import commands.CMDreport;
 import commands.CMDsetRang;
 import commands.CMDsetlobby;
@@ -56,6 +59,8 @@ public class Main extends JavaPlugin implements Listener
 
 		new NonelessEventListener(this);
 		
+		this.getCommand("databasedisconnect").setExecutor(new CMDdatabasedisconnect());
+		this.getCommand("databaseconnect").setExecutor(new CMDdatabaseconnect());
 		this.getCommand("vote").setExecutor(new CMDvote());
 		this.getCommand("spawn").setExecutor(new CMDspawn());
 		this.getCommand("setlobby").setExecutor(new CMDsetlobby());
@@ -66,6 +71,10 @@ public class Main extends JavaPlugin implements Listener
 		this.getCommand("report").setExecutor(new CMDreport());
 		this.getCommand("addGame").setExecutor(new CMDaddGame());
 		this.getCommand("setRang").setExecutor(new CMDsetRang());
+		this.getCommand("removeKIcommand").setExecutor(new CMDremoveKIcommand());
+		this.getCommand("Magic").setExecutor(new CMDMagic());
+		this.getCommand("AddVip").setExecutor(new CMDaddVIP());
+		
     	//Setupfiles Erzeugen
 		
     	Main.Locations = new File("plugins/Noneless","Warps.yml");
@@ -102,6 +111,7 @@ public class Main extends JavaPlugin implements Listener
     			MySQL.disconnect();
     		}else if(Timer == 61) {
     			MySQL.connect();
+    			Timer = 0;
     		}
     		}
     		},20*60, 20*60);
@@ -118,6 +128,7 @@ public class Main extends JavaPlugin implements Listener
     				
     				int Min = Frdb.getInt(players.getName() + ".Online.Min");
     				int Std = Frdb.getInt(players.getName() + ".Online.Std");
+    						Main.GDOS.set(players.getName().toString()+".EasyMode.Magic",Main.GDOS.getInt(players.getName().toString()+".EasyMode.Magic")+1);
     				if(Min == 60) {
     					Min = 0;
     					Std = Std+1;
@@ -144,6 +155,12 @@ public class Main extends JavaPlugin implements Listener
             Main.Frdb.set(on.getName()+".isOnline", false);
      
         }
+        try {
+			GDOS.save(GlaDOS);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
        	try {
     				Main.Frdb.save(Main.Friends);
     			} catch (IOException e) {

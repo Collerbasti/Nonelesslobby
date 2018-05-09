@@ -23,3 +23,13 @@ commands:
      description: Fügt Minigames/Arenen in die liste
   setRang:
      description: Setzt den Rang eines Spielers
+  removeKIcommand:
+     description: Löscht KiCommand
+  Magic:
+     description: Gibt dir die Macht des Easymode
+  addVIP:
+     description: Nicht für Minecraft
+  databaseconnect:
+     description: Connected die DatenBank
+  databasedisconnect:
+     description: Connected die DatenBank

@@ -5,12 +5,16 @@ package Main;
 import java.io.IOException;
 import java.sql.Time;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -41,6 +45,8 @@ public class NonelessEventListener implements Listener
     public boolean GlaDOSListen = false;
     public String GlaDOSFrage = "";
     public String GDOSVersion = "1.0";
+    public String KiName = "BUSI";
+    public String KiNameEditor;
 	public NonelessEventListener(Main plugin) {
         this.plugin = plugin;
         this.plugin.getServer().getPluginManager().registerEvents(this, plugin);
@@ -64,6 +70,18 @@ public class NonelessEventListener implements Listener
 	public void onPlayerJoin(PlayerJoinEvent ev) {	
 		Player p = ev.getPlayer();
 
+		
+		if(Main.Frdb.getBoolean(p.getName()+".VIP.Enable")) {
+			if(Calendar.getInstance().getTime().after((Date) Main.Frdb.get(p.getName()+".VIP.Expression"))){
+				Main.Frdb.set(p.getName()+".VIP.Enable", false);
+				
+				ConsoleCommandSender console = Bukkit.getServer().getConsoleSender();
+				String command = "/manudelsub "+ p.getName()+" VIP" ;
+				Bukkit.dispatchCommand(console, command);
+			}
+		}
+		
+		
 		Main.Frdb.set(p.getName()+".isOnline", true);
 		Main.Frdb.set(p.getName()+".Name", p.getName());
 		MainCounter = MainCounter+1;
@@ -98,19 +116,19 @@ public class NonelessEventListener implements Listener
 		}
 		}
 }
-	// An Timo -- Niemals etwas sagen, dies ist GlaDOS, Sie wird eine kleine unterstützerin in not
+	// An Timo -- Niemals etwas sagen, dies ist BUSI, Er wird eine kleiner unterstützer in not
 	
 	@EventHandler 
 	public void onChat(AsyncPlayerChatEvent ev) {	
 		
 		String Message = ev.getMessage();
-		Message.toLowerCase();
-		if(Message.contains("Häcke") && Message.contains("Server")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
+		Message = Message.toLowerCase();
+		if(Message.contains("häcke") && Message.contains("server")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
 			ev.getPlayer().setHealth(0);
-			Bukkit.broadcastMessage("§4GlaDOS: §fUps ich glaube das war absicht");
+			Bukkit.broadcastMessage("§4"+KiName+": §fUps ich glaube das war absicht");
 			ev.setCancelled(true);
 		}else if(Message.contains("hilf")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
-			Bukkit.broadcastMessage("§4GlaDOS: §f");
+			Bukkit.broadcastMessage("§4"+KiName+": §f");
 			ev.setCancelled(true);
 			ArrayList<String> Glados = new ArrayList<String>();
 			Glados.addAll(Main.GDOS.getStringList("GlaDOS.List"));
@@ -123,56 +141,106 @@ public class NonelessEventListener implements Listener
 			}
 		}else if(Message.contains("häcke") && Message.contains("server")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
 			ev.getPlayer().setHealth(0);
-			Bukkit.broadcastMessage("§4GlaDOS: §fUps ich glaube das war absicht");
+			Bukkit.broadcastMessage("§4"+KiName+": §fUps ich glaube das war absicht");
 			ev.setCancelled(true);
-		}
-		else if(Message.contains("Version")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
-			ev.getPlayer().setHealth(0);
-			Bukkit.broadcastMessage("§4GlaDOS: §fich bin GlaDOS in der Version: "+GDOSVersion);
-			ev.setCancelled(true);
-		}
+			
+			
+			
+		}else if(Message.contains("teleportiere") &Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
+			
+			
+			if(Message.contains("areacity")) {
+				Bukkit.broadcastMessage("§4"+KiName+": §fMach ich");
+				ev.setCancelled(true);
+				Double x = Main.loc.getDouble("AREA.X");
+				Double y = Main.loc.getDouble("AREA.Y");
+				Double z = Main.loc.getDouble("AREA.Z");
+				Float yaw = (float) Main.loc.getDouble("AREA.Yaw");
+				Float pitch = (float) Main.loc.getDouble("AREA.Pitch");
+				org.bukkit.World w = Bukkit.getWorld(Main.loc.getString("AREA.World"));
+				ev.getPlayer().teleport(new Location(w,x,y,z,yaw,pitch));
+				
+			}
+			
+			
+			
 		
+		
+		
+		
+		}else if(Message.contains("version")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
+			Bukkit.broadcastMessage("§4"+KiName+": §fich bin "+KiName+" in der Version: "+GDOSVersion);
+			ev.setCancelled(true);
+		}else if(Message.contains("easymode")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
+		if(Main.GDOS.getBoolean(ev.getPlayer().getName().toString()+".EasyMode.Enable")==false){
+			Bukkit.broadcastMessage("§4"+KiName+": §fOkay ich stelle dein Easymode ein "+ev.getPlayer().getDisplayName());
+			ev.setCancelled(true);
+			Main.GDOS.set(ev.getPlayer().getName().toString()+".EasyMode.Enable",true);
+		}else if(Main.GDOS.getBoolean(ev.getPlayer().getName().toString()+".EasyMode.Enable")){
+			Bukkit.broadcastMessage("§4"+KiName+": §fOkay ich stelle dein Easymode aus "+ev.getPlayer().getDisplayName());
+			ev.setCancelled(true);
+			Main.GDOS.set(ev.getPlayer().getName().toString()+".EasyMode.Enable",false);
+		}
+		}
 		else {
-		if(Message.equalsIgnoreCase("ist der kuchen eine lüge?")) {
-			Bukkit.broadcastMessage("§4GlaDOS: §fNein der Kuchen ist keine §4Lüge §f. Niemand hat das behauptet");
+		if(Message.equalsIgnoreCase("ist der kuchen eine lüge?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")==false) {
+			Bukkit.broadcastMessage("§4"+KiName+": §fNein der Kuchen ist keine §4Lüge §f. Niemand hat das behauptet");
 			ev.setCancelled(true);
 			Main.GDOS.set(ev.getPlayer().getName()+".Enable", true);
-		}else
+		}else if (Message.equalsIgnoreCase("ist der kuchen eine lüge?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")==false){
+			Bukkit.broadcastMessage("§4"+KiName+": §falsob du das nicht schon wüsstest");
+			ev.setCancelled(true);
+			
+		}else	
 		if(GlaDOSListen) {
+			if(KiNameEditor==ev.getPlayer().getName()) {
+			if(Message.contains("abbrechen!!?")) {
+				ev.setCancelled(true);
+				Bukkit.broadcastMessage("§4"+KiName+": §f Ich habe den vorgang abgebrochen");
+				GlaDOSListen = false;
+				GlaDOSFrage = "";
+			}else{
 			ArrayList<String> Glados = new ArrayList<String>();
 			Glados.addAll(Main.GDOS.getStringList("GlaDOS.List"));
 			Glados.add(GlaDOSFrage);
 			Main.GDOS.set("GlaDOS.List", Glados);
-			Main.GDOS.set("GlaDOS."+GlaDOSFrage, ev.getMessage());
+			Main.GDOS.set("GlaDOS."+GlaDOSFrage+".answer", ev.getMessage());
+			Main.GDOS.set("GlaDOS."+GlaDOSFrage+".Player", ev.getPlayer());
 			ev.setCancelled(true);
-			Bukkit.broadcastMessage("§4GlaDOS: §f Absofort werde ich das auf die Frage Antworten Danke Spieler");
+			Bukkit.broadcastMessage("§4"+KiName+": §f Absofort werde ich das auf die Frage Antworten Danke Spieler");
+			
 			GlaDOSListen = false;
 			GlaDOSFrage = "";
 			try {
 				Main.GDOS.save(Main.GlaDOS);
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
-				e.printStackTrace();
+				e.printStackTrace();}
+			}}else {
+				ev.setCancelled(true);
+				Bukkit.broadcastMessage("§4"+KiName+": §f Hey, Sorry aber du bist nicht der den ich meine");
 			}
 		}else {
 		if(Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
 			if(Message.contains("!?")) {
 				if(Message == "!?") {
 					ev.setCancelled(true);
-					Bukkit.broadcastMessage("§4GlaDOS: §f Dazu kann ich nichts sagen");
+					Bukkit.broadcastMessage("§4"+KiName+": §f Dazu kann ich nichts sagen");
 					
 				}else {
 					ArrayList<String> Glados = new ArrayList<String>();
 					Glados.addAll(Main.GDOS.getStringList("GlaDOS.List"));
 					if(Glados.contains(Message)) {
 						ev.setCancelled(true);
-						Bukkit.broadcastMessage("§4GlaDOS:§f "+ Main.GDOS.getString("GlaDOS."+Message));
+						Bukkit.broadcastMessage("§4"+KiName+":§f "+ Main.GDOS.getString("GlaDOS."+Message+".answer"));
 					}else {
 						ev.setCancelled(true);
-						Bukkit.broadcastMessage("§4GlaDOS:§f Dazu weis ich leider keine Antwort");
+						Bukkit.broadcastMessage("§4"+KiName+":§f Dazu weiß ich leider keine Antwort");
 						if(ev.getPlayer().hasPermission("Noneless.GlaDOS")) {
-							Bukkit.broadcastMessage("Doch du darfst mich leiten, Schreibe jetzt einfach die Antwort");
+							Bukkit.broadcastMessage("Doch du darfst mich leiten, Schreibe jetzt einfach die Antwort, mit abbrechen!!? kannst du den vorgang abbrechen ");
 							GlaDOSListen = true;
+							ev.setCancelled(true);
+							KiNameEditor=ev.getPlayer().getName();
 							GlaDOSFrage = Message;
 							
 						}
@@ -183,7 +251,7 @@ public class NonelessEventListener implements Listener
 		}}
 	
 	
-	
+
 	
 	//Glados Ende
 	@EventHandler 
@@ -213,6 +281,76 @@ public class NonelessEventListener implements Listener
 	
 	@EventHandler
 	public void onPlayerClickinLobby(PlayerInteractEvent ev) {
+		
+		
+		
+		
+		
+		//easymode
+		
+		 if(ev.getPlayer().getInventory().getItemInMainHand().getType()==Material.STICK && ev.getPlayer().getInventory().getItemInMainHand().getItemMeta().getDisplayName()=="ZauberStab") {
+			  
+			if(Main.GDOS.getBoolean(ev.getPlayer().getName().toString()+".EasyMode.Enable")) {
+				
+				for(Entity e : ev.getPlayer().getNearbyEntities(10, 10, 10) ) {
+					if(e.getType()==EntityType.CREEPER) {
+						if(Main.GDOS.getInt(ev.getPlayer().getName().toString()+".EasyMode.Magic")>10) {
+
+
+							Double x = e.getLocation().getX();
+							Double y = e.getLocation().getY();
+							Double z = e.getLocation().getZ();
+							Float yaw = (float) e.getLocation().getYaw();
+							Float pitch = (float) e.getLocation().getPitch();
+							org.bukkit.World w = e.getLocation().getWorld();
+							e.teleport(new Location(w,x,y+1000,z,yaw,pitch));
+							
+						Main.GDOS.set(ev.getPlayer().getName().toString()+".EasyMode.Magic",Main.GDOS.getInt(ev.getPlayer().getName().toString()+".EasyMode.Magic")-10);
+						Bukkit.broadcastMessage("§4"+KiName+":§f Da Habe ich Einen Creeper Erwischt");
+						}else {
+							Bukkit.broadcastMessage("§4"+KiName+":§f Leider Habe ich keine Lust den Creeper zu töten, Sorry");	
+						}
+					}
+						
+						if(e.getType()==EntityType.ZOMBIE) {
+							if(Main.GDOS.getInt(ev.getPlayer().getName().toString()+".EasyMode.Magic")>10) {
+								Double x = e.getLocation().getX();
+								Double y = e.getLocation().getY();
+								Double z = e.getLocation().getZ();
+								Float yaw = (float) e.getLocation().getYaw();
+								Float pitch = (float) e.getLocation().getPitch();
+								org.bukkit.World w = e.getLocation().getWorld();
+								e.teleport(new Location(w,x,y+1000,z,yaw,pitch));
+								
+							Main.GDOS.set(ev.getPlayer().getName().toString()+".EasyMode.Magic",Main.GDOS.getInt(ev.getPlayer().getName().toString()+".EasyMode.Magic")-10);
+							Bukkit.broadcastMessage("§4"+KiName+":§f Da Habe ich Einen ZOMBIE Erwischt");
+							}else {
+								Bukkit.broadcastMessage("§4"+KiName+":§f Leider Habe ich keine Lust den ZOMBIE zu töten, Sorry");	
+							}
+					}
+					
+				}
+				
+			}}
+		//easymode end
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 	    Player e = ev.getPlayer();
 	    
 	
@@ -549,7 +687,8 @@ public class NonelessEventListener implements Listener
 	    	Meta.setDisplayName("Warps");
 	    	Lore.setItemMeta(Meta);
 	    	p.getInventory().addItem(Lore);
-	    }
+	    	
+	    } 
 	    	
 	  
 	}

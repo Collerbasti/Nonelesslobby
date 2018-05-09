@@ -13,12 +13,12 @@ import java.io.File;
 import java.io.IOException;
 
 import commands.CMDMagic;
+import commands.CMDMySQLConnect;
+import commands.CMDMySQLdisConnect;
 import commands.CMDaddFriend;
 import commands.CMDaddGame;
 import commands.CMDaddItem;
 import commands.CMDaddVIP;
-import commands.CMDdatabaseconnect;
-import commands.CMDdatabasedisconnect;
 import commands.CMDdelFriend;
 import commands.CMDitemList;
 import commands.CMDremoveKIcommand;
@@ -59,8 +59,8 @@ public class Main extends JavaPlugin implements Listener
 
 		new NonelessEventListener(this);
 		
-		this.getCommand("databasedisconnect").setExecutor(new CMDdatabasedisconnect());
-		this.getCommand("databaseconnect").setExecutor(new CMDdatabaseconnect());
+		this.getCommand("disconnect").setExecutor(new CMDMySQLdisConnect());
+		this.getCommand("connect").setExecutor(new CMDMySQLConnect());
 		this.getCommand("vote").setExecutor(new CMDvote());
 		this.getCommand("spawn").setExecutor(new CMDspawn());
 		this.getCommand("setlobby").setExecutor(new CMDsetlobby());
@@ -168,7 +168,4 @@ public class Main extends JavaPlugin implements Listener
     				e.printStackTrace();
     			}
 }
-
-    
-    
-}
+	}

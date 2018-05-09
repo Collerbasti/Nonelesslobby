@@ -5,6 +5,8 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+import org.bukkit.Bukkit;
+
 public class MySQL {
 	
 	public static String host = "localhost";
@@ -54,8 +56,14 @@ public class MySQL {
   public static  Connection getConnection() {
 	  return con;
   }
+
+public Bukkit getServer() {
+	// TODO Auto-generated method stub
+	return null;
+}
+}
   
     
-}
+
 
 

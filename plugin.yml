@@ -1,8 +1,12 @@
 main: Main.Main
-version: 2.0
+version: 3.0
 name: NonelessLobby
 
 commands:
+  connect: 
+     description: Verbinden zum SQL Server
+  disconnect:
+     description: Verbindung vom SQL Server trennen
   setlobby:
      description: Setze die lobby
   spawn:
@@ -20,16 +24,12 @@ commands:
   report:
      description: Reporte Einen Spieler
   addGame:
-     description: Fügt Minigames/Arenen in die liste
+     description: Fügt Minigames/Arenen iein
   setRang:
      description: Setzt den Rang eines Spielers
   removeKIcommand:
-     description: Löscht KiCommand
+     description: Loecht KiCommand
   Magic:
      description: Gibt dir die Macht des Easymode
   addVIP:
-     description: Nicht für Minecraft
-  databaseconnect:
-     description: Connected die DatenBank
-  databasedisconnect:
-     description: Connected die DatenBank
+     description: Nicht fue Minecraft

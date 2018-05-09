@@ -73,7 +73,7 @@ public class Main extends JavaPlugin implements Listener
 		this.getCommand("setRang").setExecutor(new CMDsetRang());
 		this.getCommand("removeKIcommand").setExecutor(new CMDremoveKIcommand());
 		this.getCommand("Magic").setExecutor(new CMDMagic());
-		this.getCommand("AddVip").setExecutor(new CMDaddVIP());
+		this.getCommand("AddVip").setExecutor(new CMDaddVIP()); 
 		
     	//Setupfiles Erzeugen
 		

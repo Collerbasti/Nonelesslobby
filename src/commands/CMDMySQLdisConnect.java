@@ -17,7 +17,7 @@ public class CMDMySQLdisConnect implements CommandExecutor {
 			return true;
 			
 		}else {
-			Main.MySQL.connect();
+			Main.MySQL.disconnect();
 			p.sendMessage("Du hast dich Getrennt");
 		}
 		}

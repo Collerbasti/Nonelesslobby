@@ -18,12 +18,14 @@ public class MySQL {
 	
     public static void connect() {
     	if(!isConnected()) {
+    		System.out.println("[MySQL] Verbindung wird versucht aufzubauen!");
     		try {
 				con = DriverManager.getConnection("jdbc:mysql://" + host + ":" + port + "/" + database, username, password);
 				System.out.println("[MySQL] Verbindung aufgebaut!");
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+				System.out.println("[MySQL] Verbindung fehlgeschlagen");
 			}
     		
     		try {
@@ -32,7 +34,9 @@ public class MySQL {
         	} catch (SQLException e) {
     			// TODO Auto-generated catch block
     			e.printStackTrace();
-    		 } 
+    		}
+    	}else {
+    		System.out.println("[MySQL] Verbindung fehlgeschlagen 2");
     	}
     }
     
@@ -41,6 +45,7 @@ public class MySQL {
     		try {
 				con.close();
 				System.out.println("[MySQL] Verbindung geschlossen!");
+				con = null;
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

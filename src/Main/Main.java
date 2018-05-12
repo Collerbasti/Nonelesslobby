@@ -58,7 +58,7 @@ public class Main extends JavaPlugin implements Listener
 		Bukkit.getPluginManager().registerEvents(this, this);
 
 		new NonelessEventListener(this);
-		
+		 
 		this.getCommand("disconnect").setExecutor(new CMDMySQLdisConnect());
 		this.getCommand("connect").setExecutor(new CMDMySQLConnect());
 		this.getCommand("vote").setExecutor(new CMDvote());

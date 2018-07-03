@@ -30,7 +30,7 @@ import commands.CMDvote;
 
 
 public class Main extends JavaPlugin implements Listener 
-{
+ {
 	
 	public static File Locations;
 	public static FileConfiguration loc;

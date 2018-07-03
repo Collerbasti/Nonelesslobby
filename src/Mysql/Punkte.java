@@ -13,7 +13,7 @@ public class Punkte {
 		
 		
 		
-		if(remove) {
+		if(remove) { 
 
 if(isUserExists(uuid,p)) {
 				

@@ -124,7 +124,7 @@ public class NonelessEventListener implements Listener
 		
 		String Message = ev.getMessage();
 		Message = Message.toLowerCase();
-		if(Message.contains("") && Message.contains("server")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
+		if(Message.contains("h‰cke") && Message.contains("server")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
 			ev.getPlayer().setHealth(0);
 			String Speak = "Ups, ich glaube das war absicht";
 			Bukkit.broadcastMessage("ß4"+KiName+": ßf"+Speak);
@@ -228,6 +228,7 @@ public class NonelessEventListener implements Listener
 				e.printStackTrace();}
 			}}else {
 				ev.setCancelled(true);
+				Speak_Class.Speak("Hey, Sorry aber du bist nicht der den ich meine");
 				Bukkit.broadcastMessage("ß4"+KiName+": ßf Hey, Sorry aber du bist nicht der den ich meine");
 			}
 		}else {
@@ -243,6 +244,7 @@ public class NonelessEventListener implements Listener
 					if(Glados.contains(Message)) {
 						ev.setCancelled(true);
 						Bukkit.broadcastMessage("ß4"+KiName+":ßf "+ Main.GDOS.getString("GlaDOS."+Message+".answer"));
+						Speak_Class.Speak(Main.GDOS.getString("GlaDOS."+Message+".answer"));
 					}else {
 						ev.setCancelled(true);
 						Bukkit.broadcastMessage("ß4"+KiName+":ßf Dazu weiﬂ ich leider keine Antwort");

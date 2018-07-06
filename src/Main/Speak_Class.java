@@ -12,7 +12,7 @@ public class Speak_Class {
 		
 		
 		new URL("https://noneless.de/currentTrack.php?key=Threams&name="+Text.replaceAll(" ", "%20")).openStream().close();
-			
+			 
 		
 	}
 }

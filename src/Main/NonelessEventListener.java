@@ -44,8 +44,9 @@ public class NonelessEventListener implements Listener
     public boolean Tree = false;
     public boolean GlaDOSListen = false;
     public String GlaDOSFrage = "";
-    public String GDOSVersion = "1.0";
+    public String GDOSVersion = "1.1 c";
     public String KiName = "BUSI";
+    public String News = "Abjetzt kann BUSI Sprechen!! Dafür gehe einfach in den ts: Noneless.de auf den Channel : MINECRAFT_BUSI"; 
     public String KiNameEditor;
 	public NonelessEventListener(Main plugin) {
         this.plugin = plugin;
@@ -119,13 +120,21 @@ public class NonelessEventListener implements Listener
 	// An Timo -- Niemals etwas sagen, dies ist BUSI, Er wird eine kleiner unterstützer in not
 	
 	@EventHandler 
-	public void onChat(AsyncPlayerChatEvent ev) {	
+	public void onChat(AsyncPlayerChatEvent ev) throws IOException {	
 		
 		String Message = ev.getMessage();
 		Message = Message.toLowerCase();
 		if(Message.contains("häcke") && Message.contains("server")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
 			ev.getPlayer().setHealth(0);
-			Bukkit.broadcastMessage("§4"+KiName+": §fUps ich glaube das war absicht");
+			String Speak = "Ups, ich glaube das war absicht";
+			Bukkit.broadcastMessage("§4"+KiName+": §f"+Speak);
+			
+	ev.setCancelled(true);
+					
+			
+		
+				
+					Speak_Class.Speak(Speak);
 			ev.setCancelled(true);
 		}else if(Message.contains("hilf")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
 			Bukkit.broadcastMessage("§4"+KiName+": §f");
@@ -139,9 +148,10 @@ public class NonelessEventListener implements Listener
 				Bukkit.broadcastMessage("§f"+Glados.get(Count2));
 				Count2 = Count2 +1;
 			}
-		}else if(Message.contains("häcke") && Message.contains("server")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
-			ev.getPlayer().setHealth(0);
-			Bukkit.broadcastMessage("§4"+KiName+": §fUps ich glaube das war absicht");
+			
+				
+		
+			
 			ev.setCancelled(true);
 			
 			
@@ -218,6 +228,7 @@ public class NonelessEventListener implements Listener
 				e.printStackTrace();}
 			}}else {
 				ev.setCancelled(true);
+				Speak_Class.Speak("Hey, Sorry aber du bist nicht der den ich meine");
 				Bukkit.broadcastMessage("§4"+KiName+": §f Hey, Sorry aber du bist nicht der den ich meine");
 			}
 		}else {
@@ -233,6 +244,7 @@ public class NonelessEventListener implements Listener
 					if(Glados.contains(Message)) {
 						ev.setCancelled(true);
 						Bukkit.broadcastMessage("§4"+KiName+":§f "+ Main.GDOS.getString("GlaDOS."+Message+".answer"));
+						Speak_Class.Speak(Main.GDOS.getString("GlaDOS."+Message+".answer"));
 					}else {
 						ev.setCancelled(true);
 						Bukkit.broadcastMessage("§4"+KiName+":§f Dazu weiß ich leider keine Antwort");

@@ -44,8 +44,9 @@ public class NonelessEventListener implements Listener
     public boolean Tree = false;
     public boolean GlaDOSListen = false;
     public String GlaDOSFrage = "";
-    public String GDOSVersion = "1.0";
+    public String GDOSVersion = "1.1 c";
     public String KiName = "BUSI";
+    public String News = "Abjetzt kann BUSI Sprechen!! Dafür gehe einfach in den ts: Noneless.de auf den Channel : MINECRAFT_BUSI"; 
     public String KiNameEditor;
 	public NonelessEventListener(Main plugin) {
         this.plugin = plugin;
@@ -119,13 +120,21 @@ public class NonelessEventListener implements Listener
 	// An Timo -- Niemals etwas sagen, dies ist BUSI, Er wird eine kleiner unterstützer in not
 	
 	@EventHandler 
-	public void onChat(AsyncPlayerChatEvent ev) {	
+	public void onChat(AsyncPlayerChatEvent ev) throws IOException {	
 		
 		String Message = ev.getMessage();
 		Message = Message.toLowerCase();
-		if(Message.contains("häcke") && Message.contains("server")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
+		if(Message.contains("") && Message.contains("server")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
 			ev.getPlayer().setHealth(0);
-			Bukkit.broadcastMessage("§4"+KiName+": §fUps ich glaube das war absicht");
+			String Speak = "Ups, ich glaube das war absicht";
+			Bukkit.broadcastMessage("§4"+KiName+": §f"+Speak);
+			Bukkit.broadcastMessage("Test2");
+	ev.setCancelled(true);
+					
+			
+		
+				
+					Speak_Class.Speak(Speak);
 			ev.setCancelled(true);
 		}else if(Message.contains("hilf")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
 			Bukkit.broadcastMessage("§4"+KiName+": §f");
@@ -139,9 +148,10 @@ public class NonelessEventListener implements Listener
 				Bukkit.broadcastMessage("§f"+Glados.get(Count2));
 				Count2 = Count2 +1;
 			}
-		}else if(Message.contains("häcke") && Message.contains("server")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
-			ev.getPlayer().setHealth(0);
-			Bukkit.broadcastMessage("§4"+KiName+": §fUps ich glaube das war absicht");
+			
+				
+		
+			
 			ev.setCancelled(true);
 			
 			

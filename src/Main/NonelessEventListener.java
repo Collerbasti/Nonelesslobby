@@ -128,7 +128,7 @@ public class NonelessEventListener implements Listener
 			ev.getPlayer().setHealth(0);
 			String Speak = "Ups, ich glaube das war absicht";
 			Bukkit.broadcastMessage("§4"+KiName+": §f"+Speak);
-			Bukkit.broadcastMessage("Test2");
+			
 	ev.setCancelled(true);
 					
 			

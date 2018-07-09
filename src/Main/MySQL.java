@@ -35,6 +35,13 @@ public class MySQL {
     			// TODO Auto-generated catch block
     			e.printStackTrace();
     		}
+    		try {
+    			PreparedStatement ps = MySQL.getConnection().prepareStatement("CREATE TABLE IF NOT EXISTS PROFILELIST (NICKNAME VARCHAR(100), SPIELERNAME VARCHAR(100), PASSWORT VARCHAR(100), WEITERES VARCHAR(100))");
+    			ps.executeUpdate();
+        	} catch (SQLException e) {
+    			// TODO Auto-generated catch block
+    			e.printStackTrace();
+    		}
     	}else {
     		System.out.println("[MySQL] Verbindung fehlgeschlagen 2");
     	}

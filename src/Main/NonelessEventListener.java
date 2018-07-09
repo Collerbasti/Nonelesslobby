@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
+
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -34,6 +35,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+
+import io.netty.util.internal.ThreadLocalRandom;
 
 
 public class NonelessEventListener implements Listener 
@@ -72,6 +75,20 @@ public class NonelessEventListener implements Listener
 		Player p = ev.getPlayer();
 
 		
+		String Speak = "Hallo, "+p.getName()+", wilkommen Auf Noneless.de";
+		Bukkit.broadcastMessage("§4"+KiName+": §f"+Speak);
+				
+		
+	
+			
+				try {
+					Speak_Class.Speak(Speak);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+		
+		
 		if(Main.Frdb.getBoolean(p.getName()+".VIP.Enable")) {
 			if(Calendar.getInstance().getTime().after((Date) Main.Frdb.get(p.getName()+".VIP.Expression"))){
 				Main.Frdb.set(p.getName()+".VIP.Enable", false);
@@ -102,7 +119,6 @@ public class NonelessEventListener implements Listener
 		Float yaw = (float) Main.loc.getDouble("spawn.Yaw");
 		Float pitch = (float) Main.loc.getDouble("spawn.Pitch");
 		org.bukkit.World w = Bukkit.getWorld(Main.loc.getString("spawn.World"));
-		p.sendMessage("Hallo");
 		System.out.println("Spieler ist gejoint");	
 		p.teleport(alt);
 		p.teleport(new Location(w,x,y,z,yaw,pitch));
@@ -117,7 +133,7 @@ public class NonelessEventListener implements Listener
 		}
 		}
 }
-	// An Timo -- Niemals etwas sagen, dies ist BUSI, Er wird eine kleiner unterstützer in not
+	//  Glados
 	
 	@EventHandler 
 	public void onChat(AsyncPlayerChatEvent ev) throws IOException {	
@@ -181,6 +197,17 @@ public class NonelessEventListener implements Listener
 		}else if(Message.contains("version")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
 			Bukkit.broadcastMessage("§4"+KiName+": §fich bin "+KiName+" in der Version: "+GDOSVersion);
 			ev.setCancelled(true);
+			
+		}else if(Message.contains("spiele")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")&ev.getPlayer().hasPermission("Noneless.GlaDOS.Song")) {
+				String Lied = ev.getMessage().replaceAll("spiele", "");
+				Lied = Lied.replaceAll("Spiele", "");
+				Lied = Lied.replaceAll("!", "");
+				Lied = Lied.replace("?", " ");
+				String Lied3 = "&Song="+Lied;
+				String Lied2 = "ich versuche das zu Spielen:"+Lied3;
+				Bukkit.broadcastMessage("§4"+KiName+": §fich versuche das zu Spielen:"+Lied);
+				Speak_Class.Speak(Lied2);
+				ev.setCancelled(true);
 		}else if(Message.contains("easymode")&Message.contains("!?")& Main.GDOS.getBoolean(ev.getPlayer().getName()+".Enable")) {
 		if(Main.GDOS.getBoolean(ev.getPlayer().getName().toString()+".EasyMode.Enable")==false){
 			Bukkit.broadcastMessage("§4"+KiName+": §fOkay ich stelle dein Easymode ein "+ev.getPlayer().getDisplayName());
@@ -671,6 +698,19 @@ public class NonelessEventListener implements Listener
 				p.setHealth(20);
 				p.setFoodLevel(20);
 				p.playSound(p.getLocation(), Sound.ENTITY_GENERIC_EAT, 10, 1);
+				
+				int Eat = Main.Frdb.getInt(p.getName()+".Eat")+1;
+				Main.Frdb.set(p.getName()+".Eat", Eat);
+		    	if (Eat > 25) {
+		    		Eat = 0;
+		    		Main.Frdb.set(p.getName()+".Eat", Eat);
+		    		try {
+						Speak_Class.Speak("Mann, ist "+p.getName()+" heute verfressen");
+					} catch (IOException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+		    	}
 			}
 			
 		}
@@ -709,6 +749,27 @@ public class NonelessEventListener implements Listener
 	public void onPlayerleave(PlayerQuitEvent ev) {
 		
 		Player p = ev.getPlayer();
+		String Speak = "";
+		int Count = ThreadLocalRandom.current().nextInt(0, 10 + 1);
+		if(Count < 5) {
+			 Speak = "Schade, "+p.getName()+" musste wohl gehen, ach ich mochte den eh nicht";
+		}else {
+			 Speak = "Schade, "+p.getName()+" musste wohl gehen, dabei wollte ich mich gerade mit dem Befreunden ";
+		}
+		
+		
+		Bukkit.broadcastMessage("§4"+KiName+": §f"+Speak);
+				
+		
+	
+			
+				try {
+					Speak_Class.Speak(Speak);
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+		
 		
 		Main.Frdb.set(p.getName()+".isOnline", false);
 		try {
@@ -793,6 +854,7 @@ public class NonelessEventListener implements Listener
 		    	
 		    	ItemStack Meat = new ItemStack(Material.BAKED_POTATO);
 		    	ItemMeta MMeta =  Meat.getItemMeta(); 
+		    	
 		    	MMeta.setDisplayName("Essen");
 		    	Meat.setItemMeta(MMeta);
 		    	Menue.setItem(20,Meat);
@@ -1016,6 +1078,7 @@ public void InventorySettingsClick(InventoryClickEvent ev) {
 	    	ItemStack Meat = new ItemStack(Material.BAKED_POTATO);
 	    	ItemMeta MMeta =  Meat.getItemMeta(); 
 	    	MMeta.setDisplayName("Essen");
+	    	
 	    	Meat.setItemMeta(MMeta);
 	    	Menue.setItem(20,Meat);
 	    	if(e.hasPermission("Noneless.Creative.World")){

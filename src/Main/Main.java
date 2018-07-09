@@ -12,6 +12,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.IOException;
 
+
 import commands.CMDMagic;
 import commands.CMDMySQLConnect;
 import commands.CMDMySQLdisConnect;
@@ -98,6 +99,13 @@ public class Main extends JavaPlugin implements Listener
     	
     	System.out.println("Das Plugin wurde aktiviert!");	
 
+    	try {
+			Speak_Class.Speak("Der Minecraft Server ist gleich einsatz bereit");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
 
     	 }
     private void ReconnectData() {
@@ -136,6 +144,7 @@ public class Main extends JavaPlugin implements Listener
     					Mysql.Punkte.Update(players.getUniqueId(), 1, players.getName(), false , players);
     				}else {
     					Min = Min+1;
+    					
     				}
     				Frdb.set(players.getName() + ".Online.Min", Min);
     				Frdb.set(players.getName() + ".Online.Std", Std);
@@ -146,8 +155,19 @@ public class Main extends JavaPlugin implements Listener
     	
     	
     	}
+    
+    
+    public void StartTimer2() {
+    
+    Bukkit.getScheduler().scheduleSyncRepeatingTask( this, new Runnable() {
+		@Override
+		public void run() {
+			// TODO Auto-generated method stub
+			
+		}
+	}, 20*60, 20*60);
 	
-
+    }
 	public void onDisable() {
     	MySQL.disconnect();
         for(Player on:Bukkit.getServer().getOnlinePlayers()){
@@ -155,6 +175,12 @@ public class Main extends JavaPlugin implements Listener
             Main.Frdb.set(on.getName()+".isOnline", false);
      
         }
+        try {
+			Speak_Class.Speak("Der Mienecraft Server Startet einmal Neu");
+		} catch (IOException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
         try {
 			GDOS.save(GlaDOS);
 		} catch (IOException e1) {
@@ -169,5 +195,7 @@ public class Main extends JavaPlugin implements Listener
     			}
 }
 	}
+
+
 
  //Hallo internet , HeY WIe GeHtS

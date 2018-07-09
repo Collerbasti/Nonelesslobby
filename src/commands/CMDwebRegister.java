@@ -44,34 +44,7 @@ public class CMDwebRegister implements CommandExecutor {
 								p.sendMessage("Jetzt kannst du dich anmelden online");
 								Main.Frdb.set(p.getName()+".webregister", true);
 								
-								try {
-					    			PreparedStatement ps2 = MySQL.getConnection().prepareStatement("CREATE TABLE IF NOT EXISTS ? (Friend VARCHAR(100))");
-					    			ps2.executeUpdate();
-					    			
-					    			
-					    			int Counter = Main.Frdb.getInt(p.getName()+".Count");
-					    			ArrayList<String> Friends = new ArrayList<String>();
-					    			Friends.addAll(Main.Frdb.getStringList(p.getName()+".Friends"));
-					    			while(Counter > 0) {
-					    			Counter = Counter -1;
-					    			
-					    			}
-					    			try {
-					    				PreparedStatement ps3 = MySQL.getConnection().prepareStatement("INSERT INTO ? (Friends) VALUES (?)");
-					    				ps.setString(1, Friends.get(Counter));
-					    				ps3.executeUpdate();
-					    			}catch(SQLException e) {
-					    				e.printStackTrace();
-					    			}
-					    			
-					    			
-					    			
-					    			
-					    			
-					        	} catch (SQLException e) {
-					    			// TODO Auto-generated catch block
-					    			e.printStackTrace();
-					    		}
+								
 								
 								
 								ps.executeUpdate();
@@ -79,6 +52,43 @@ public class CMDwebRegister implements CommandExecutor {
 								p.sendMessage("sorry aber irgentwas ist schiefgelaufen ( "+ e+" )");
 								e.printStackTrace();
 							}
+							
+							try {
+								String psSt = "CREATE TABLE IF NOT EXISTS "+p.getName()+"_Friends (Friend TEXT(100))";
+				    			PreparedStatement ps2 = MySQL.getConnection().prepareStatement(psSt);
+				    			
+				    			ps2.executeUpdate();
+				    			
+				    			
+				    			int Counter = Main.Frdb.getInt(p.getName()+".Count");
+				    			ArrayList<String> Friends = new ArrayList<String>();
+				    			Friends.addAll(Main.Frdb.getStringList(p.getName()+".Friends"));
+				    			while(Counter > 0) {
+				    			Counter = Counter -1;
+				    			
+				    			
+				    			try {
+				    				PreparedStatement ps3 = MySQL.getConnection().prepareStatement("INSERT INTO "+p.getName()+"_Friends (Friend) VALUES (?)");
+				    			 ps3.setString(1, Friends.get(Counter));
+				    				ps3.executeUpdate();
+				    			}catch(SQLException e) {
+				    				p.sendMessage(" "+e);
+				    				e.printStackTrace();
+				    			}
+				    			
+				    			
+				    			
+				    			
+				    			}
+				        	} catch (SQLException e) {
+				        		p.sendMessage(" "+e);
+				    			// TODO Auto-generated catch block
+				    			e.printStackTrace();
+				    		
+				        	}
+							
+							
+							
 						}else {
 							p.sendMessage("Bitte anderen nutzernamen verwenden");
 						}

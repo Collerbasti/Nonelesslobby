@@ -172,11 +172,12 @@ import Main.MySQL;
 					Friends.add(p2.getName());
 					if(Main.Frdb.getBoolean(p.getName()+".webregister")) {
 					try {
-						PreparedStatement ps = MySQL.getConnection().prepareStatement("INSERT INTO ? (Friend) VALUES (?)");
-						ps.setString(1, p.getName()+"_Friends");
-						ps.setString(2, p2.getName());
+						PreparedStatement ps = MySQL.getConnection().prepareStatement("INSERT INTO "+p.getName()+"_Friends (Friend) VALUES (?)");
+						
+						ps.setString(1, p2.getName());
 						ps.executeUpdate();
 					} catch (SQLException e) {
+						p.sendMessage(" " + e);
 						e.printStackTrace();
 					}}else {
 						p.sendMessage("Benutze /Webregister um den vollenumfang des Servers zu Benutzen");
@@ -189,11 +190,11 @@ import Main.MySQL;
 					
 					if(Main.Frdb.getBoolean(p2.getName()+".webregister")) {
 						try {
-							PreparedStatement ps = MySQL.getConnection().prepareStatement("INSERT INTO ? (Friend) VALUES (?)");
-							ps.setString(1, p2.getName()+"_Friends");
-							ps.setString(2, p.getName());
+							PreparedStatement ps = MySQL.getConnection().prepareStatement("INSERT INTO "+p2.getName()+"_Friends (Friend) VALUES (?)");
+							ps.setString(1, p.getName());
 							ps.executeUpdate();
 						} catch (SQLException e) {
+							p2.sendMessage(" " + e);
 							e.printStackTrace();
 						}}else {
 							p.sendMessage("Benutze /Webregister um den vollenumfang des Servers zu Benutzen");

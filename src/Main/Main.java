@@ -28,6 +28,7 @@ import commands.CMDsetRang;
 import commands.CMDsetlobby;
 import commands.CMDspawn;
 import commands.CMDvote;
+import commands.CMDwebRegister;
 
 
 public class Main extends JavaPlugin implements Listener 
@@ -75,6 +76,7 @@ public class Main extends JavaPlugin implements Listener
 		this.getCommand("removeKIcommand").setExecutor(new CMDremoveKIcommand());
 		this.getCommand("Magic").setExecutor(new CMDMagic());
 		this.getCommand("AddVip").setExecutor(new CMDaddVIP()); 
+		this.getCommand("webRegister").setExecutor(new CMDwebRegister()); 
 		
     	//Setupfiles Erzeugen
 		

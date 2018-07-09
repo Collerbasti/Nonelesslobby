@@ -3,6 +3,8 @@ version: 3.0
 name: NonelessLobby
 
 commands:
+  webRegister:
+     description: ???
   connect: 
      description: Verbinden zum SQL Server
   disconnect:

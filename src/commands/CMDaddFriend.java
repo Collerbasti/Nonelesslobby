@@ -5,7 +5,8 @@ package commands;
 
 
 import java.io.IOException;
-
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 import org.bukkit.Bukkit;
@@ -15,6 +16,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 import Main.Main;
+import Main.MySQL;
 		
 
 
@@ -168,9 +170,36 @@ import Main.Main;
 					
 					Friends.addAll(Main.Frdb.getStringList(p.getName()+".Friends"));
 					Friends.add(p2.getName());
+					if(Main.Frdb.getBoolean(p.getName()+".webregister")) {
+					try {
+						PreparedStatement ps = MySQL.getConnection().prepareStatement("INSERT INTO ? (Friend) VALUES (?)");
+						ps.setString(1, p.getName()+"_Friends");
+						ps.setString(2, p2.getName());
+						ps.executeUpdate();
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}}else {
+						p.sendMessage("Benutze /Webregister um den vollenumfang des Servers zu Benutzen");
+					}
+					
+					
 					Main.Frdb.set(p.getName()+".Friends", Friends);
 					p2Friends.addAll(Main.Frdb.getStringList(args[1]+".Friends"));
 					p2Friends.add(p.getName());
+					
+					if(Main.Frdb.getBoolean(p2.getName()+".webregister")) {
+						try {
+							PreparedStatement ps = MySQL.getConnection().prepareStatement("INSERT INTO ? (Friend) VALUES (?)");
+							ps.setString(1, p2.getName()+"_Friends");
+							ps.setString(2, p.getName());
+							ps.executeUpdate();
+						} catch (SQLException e) {
+							e.printStackTrace();
+						}}else {
+							p.sendMessage("Benutze /Webregister um den vollenumfang des Servers zu Benutzen");
+						}
+					
+					
 					Main.Frdb.set(args[1]+".Friends", p2Friends);
 					int p1Counter = Main.Frdb.getInt(p.getName()+".Count")+1;
 					int p2Counter = Main.Frdb.getInt(args[1] + ".Count")+1;

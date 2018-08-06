@@ -16,7 +16,7 @@ import Main.Main;
 		{
 			
 			if(sender instanceof Player) {
-				if(sender.hasPermission("Noneless.GlaDOS")) {
+				if(sender.hasPermission("Noneless.GlaDOS")) { 
 				Player p = ((Player) sender).getPlayer();
 				ArrayList<String> Glados = new ArrayList<String>();
 				Glados.addAll(Main.GDOS.getStringList("GlaDOS.List"));

@@ -15,7 +15,7 @@ public class CMDMySQLdisConnect implements CommandExecutor {
 			if(!p.hasPermission("Noneless.MySQLdisConnect")) {
 			p.sendMessage("Nein böse");
 			return true;
-			
+			 
 		}else {
 			Main.MySQL.disconnect();
 			p.sendMessage("Du hast dich Getrennt");

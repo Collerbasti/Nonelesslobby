@@ -111,7 +111,7 @@ import Main.MySQL;
 							BecameRequestslist.addAll(Main.Frdb.getStringList(p.getName()+".BecameRequests"));
 							if(BecameRequestslist.contains(args[0])) {
 								p.sendMessage("Du Hast Bereits eine Anfrage von "+args[0]+" Erhalten, bitte mit /addfriend accept "+args[0]+" annehmen");
-								//Annehmen
+								//Annehmen 
 							}else {
 							p2BecameRequestslist.add(p.getName());
 							Main.Frdb.set(args[0]+".BecameRequests", p2BecameRequestslist);

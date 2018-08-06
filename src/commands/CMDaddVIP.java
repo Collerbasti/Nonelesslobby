@@ -16,7 +16,7 @@ public class CMDaddVIP implements CommandExecutor {
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args)  
 	{
-
+ 
 		if(sender instanceof Player) {
 		}else {
 		if(Main.Frdb.getBoolean(args[0]+".VIP.Enable")){

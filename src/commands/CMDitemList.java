@@ -23,7 +23,7 @@ public class CMDitemList implements CommandExecutor
 		if(sender instanceof Player);
 		if(!p.hasPermission("Noneless.itemList")) {
 			p.sendMessage("§cDu darfst diesen Befehl nicht Benutzen");
-		 return true;
+		 return true; 
 		 
 	} else { 
 		int Counter = Main.shp.getInt("Items.Count");

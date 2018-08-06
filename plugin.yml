@@ -1,5 +1,6 @@
 main: Main.Main
 version: 3.0
+api-version: 1.13
 name: NonelessLobby
 
 commands:
@@ -13,6 +14,7 @@ commands:
      description: Setze die lobby
   spawn:
      description: Gehe zum Spawn
+     aliases: [lobby, Area]
   addFriend:
      description: Adde freunde!!!
   delFriend:

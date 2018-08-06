@@ -11,7 +11,9 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import commands.CMDMagic;
 import commands.CMDMySQLConnect;
@@ -52,7 +54,7 @@ public class Main extends JavaPlugin implements Listener
 	@Override	
 
 	public void onEnable() {
-        
+         
 		MySQL.connect();
 		StartTimer();
 		ReconnectData();
@@ -146,6 +148,42 @@ public class Main extends JavaPlugin implements Listener
     					Mysql.Punkte.Update(players.getUniqueId(), 1, players.getName(), false , players);
     				}else {
     					Min = Min+1;
+    					
+    					for(Player on:Bukkit.getServer().getOnlinePlayers()){
+    						
+    						try {
+								PreparedStatement ps3 = MySQL.getConnection().prepareStatement("SELECT * FROM "+on.getName()+"_Friends");
+								ResultSet rs = ps3.executeQuery();
+								
+								while(rs.next()) {
+									if(rs.getString("MESSAGE")!="") {
+										if(rs.getString("ZUGESTELLT")=="") {
+										on.sendMessage("Du hast eine Nachricht von: "+rs.getString("Friend"));
+										on.sendMessage(rs.getString("MESSAGE"));
+										MySQL.getConnection().prepareStatement("UPDATE "+on.getName()+"_Friends SET `ZUGESTELLT`=\"ja\" WHERE Friend LIKE \""+rs.getString("Friend")+"\"").executeUpdate();
+										
+										
+										}
+									}
+								}
+								
+								
+								
+								
+							} catch (SQLException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+								on.sendMessage(" "+e);
+							}
+			    			
+    						
+    						
+    						
+    			     
+    			        }
+    					
+    					
+    					
     					
     				}
     				Frdb.set(players.getName() + ".Online.Min", Min);

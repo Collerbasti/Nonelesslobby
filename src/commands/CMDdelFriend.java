@@ -17,7 +17,7 @@ import org.bukkit.entity.Player;
 
 
 
-
+ 
 	public class CMDdelFriend implements CommandExecutor  
 	{
 		

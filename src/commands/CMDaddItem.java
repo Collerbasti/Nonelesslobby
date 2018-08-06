@@ -13,7 +13,7 @@ import org.bukkit.entity.Player;
 		
 		@Override
 		public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-			
+			 
 			int Count = Main.Main.shp.getInt("Items.Count");
 			ArrayList<String> ItemList = new ArrayList<String>();
 				if(sender instanceof Player) {

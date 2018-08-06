@@ -12,7 +12,7 @@ public class CMDMySQLConnect implements CommandExecutor {
 		Player p = (Player) sender;
 		if(command.getName().equals("connect"));
 		if(sender instanceof Player) {
-			if(!p.hasPermission("Noneless.MySQLConnect")) {
+			if(!p.hasPermission("Noneless.MySQLConnect")) { 
 			p.sendMessage("Nein böse");
 			return true;
 			

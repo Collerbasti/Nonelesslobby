@@ -15,7 +15,7 @@ public class CMDMagic implements CommandExecutor {
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args)  {
 		if(!(sender instanceof Player)) {
 			return false;
-		}
+		} 
 		Player p = (Player) sender;
 		ItemStack Lore = new ItemStack(Material.STICK);
     	ItemMeta Meta = Lore.getItemMeta(); 

@@ -36,11 +36,12 @@ public class CMDwebRegister implements CommandExecutor {
 						
 						if(!isNickExists(args[0], p)) {
 							try {
-								PreparedStatement ps = MySQL.getConnection().prepareStatement("INSERT INTO PROFILELIST (UUID,NICKNAME,SPIELERNAME,PASSWORT) VALUES (?,?,?,?)");
+								PreparedStatement ps = MySQL.getConnection().prepareStatement("INSERT INTO PROFILELIST (UUID,NICKNAME,SPIELERNAME,PASSWORT,WORLD) VALUES (?,?,?,?,?)");
 								ps.setString(1, p.getUniqueId().toString());
 								ps.setString(2, args[0]);
 								ps.setString(3, p.getName());
 								ps.setString(4, args[1]);
+								ps.setString(5, p.getLocation().getWorld().getName());
 								p.sendMessage("Jetzt kannst du dich anmelden online");
 								Main.Frdb.set(p.getName()+".webregister", true);
 								
@@ -54,7 +55,7 @@ public class CMDwebRegister implements CommandExecutor {
 							}
 							
 							try {
-								String psSt = "CREATE TABLE IF NOT EXISTS "+p.getName()+"_Friends (Friend TEXT(100))";
+								String psSt = "CREATE TABLE IF NOT EXISTS "+p.getName()+"_Friends (Friend TEXT(100), MESSAGE TEXT(100), ZUGESTELLT TEXT(100))";
 				    			PreparedStatement ps2 = MySQL.getConnection().prepareStatement(psSt);
 				    			
 				    			ps2.executeUpdate();
@@ -68,7 +69,7 @@ public class CMDwebRegister implements CommandExecutor {
 				    			
 				    			
 				    			try {
-				    				PreparedStatement ps3 = MySQL.getConnection().prepareStatement("INSERT INTO "+p.getName()+"_Friends (Friend) VALUES (?)");
+				    				PreparedStatement ps3 = MySQL.getConnection().prepareStatement("INSERT INTO "+p.getName()+"_Friends (Friend,MESSAGE,ZUGESTELLT) VALUES (?,\"Platzhalter\",\"ja\")");
 				    			 ps3.setString(1, Friends.get(Counter));
 				    				ps3.executeUpdate();
 				    			}catch(SQLException e) {

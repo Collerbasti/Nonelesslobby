@@ -15,7 +15,7 @@ public class CMDvote implements CommandExecutor{
 		p.sendMessage("§4Hier sind die Links zum Voten : "
 				+ "§ahttps://www.minecraft-serverlist.net/vote/46735");
 		p.sendMessage("§ahttps://minecraft-server.eu/vote/index/128837");
-		
+		 
 		return false;
 	}
 

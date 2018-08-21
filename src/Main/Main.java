@@ -2,8 +2,14 @@ package Main;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -14,7 +20,11 @@ import java.io.IOException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
+import commands.CMDHilfe;
 import commands.CMDMagic;
 import commands.CMDMySQLConnect;
 import commands.CMDMySQLdisConnect;
@@ -48,7 +58,10 @@ public class Main extends JavaPlugin implements Listener
 	public static FileConfiguration MiGm;
 	public static File GlaDOS;
 	public static FileConfiguration GDOS;	
+	public static File AdminOnline;
+	public static FileConfiguration AOnline;	
 	public int Timer = 0;
+	public int Timer2 = 0;
 
 	
 	@Override	
@@ -79,6 +92,7 @@ public class Main extends JavaPlugin implements Listener
 		this.getCommand("Magic").setExecutor(new CMDMagic());
 		this.getCommand("AddVip").setExecutor(new CMDaddVIP()); 
 		this.getCommand("webRegister").setExecutor(new CMDwebRegister()); 
+		this.getCommand("Hilfe").setExecutor(new CMDHilfe()); 
 		
     	//Setupfiles Erzeugen
 		
@@ -97,9 +111,12 @@ public class Main extends JavaPlugin implements Listener
     	
     	Main.Minigames = new File("plugins/Noneless","MGames.yml");
     	Main.MiGm = YamlConfiguration.loadConfiguration(Main.Minigames);
-    	
+
     	Main.GlaDOS = new File("plugins/Noneless","GlaDOS.yml");
     	Main.GDOS = YamlConfiguration.loadConfiguration(Main.GlaDOS);
+
+    	Main.AdminOnline = new File("plugins/Noneless","AOnline.yml");
+    	Main.AOnline = YamlConfiguration.loadConfiguration(Main.AdminOnline);
     	
     	System.out.println("Das Plugin wurde aktiviert!");	
 
@@ -135,9 +152,69 @@ public class Main extends JavaPlugin implements Listener
     	Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
     		@Override
     	public void run() {
+    			Timer2 =Timer2+1;
+    			
+    			boolean EnderDragon = false;
+    			if (Timer2==3) {
+    			Timer2 =0;
+
+				
+    			
+    				
+    					for(Entity ent : Bukkit.getWorld("starwars").getEntities()) {
+    						if(ent.getType()==EntityType.ENDER_DRAGON) {
+    							EnderDragon = true;
+    							
+    						}
+    					}
+    					if(EnderDragon) {
+    						double x = 0;
+    						double y = 80;
+    						double z = 0;
+    						float yaw = 0;
+    						float pitch = 0;
+    						String World2 ="starwars";
+    						LivingEntity entity = (LivingEntity) Bukkit.getWorld(World2).spawnEntity(new Location(Bukkit.getWorld(World2), x, y, z, yaw, pitch), EntityType.CREEPER);
+    						entity.setCustomName("The NoneDragon");
+    						
+    						EnderDragon =  false;
+    					
+    					
+    				
+    			}
+    			}
+    			
+    			
+    			
+    			
     			
     			for(Player players : Bukkit.getOnlinePlayers()) {
     				
+    				if(players.hasPermission("Noneless.Admin")) {
+    					Date date = new Date();
+    					Calendar calendar = GregorianCalendar.getInstance(); // creates a new calendar instance
+    					calendar.setTime(date);   // assigns calendar to given date 
+    					int hour = calendar.get(Calendar.HOUR_OF_DAY); // gets hour in 24h format
+    				
+    					int Counter = Main.AOnline.getInt(players.getName()+"."+Integer.toString(hour))+1;
+    					Main.AOnline.set(players.getName()+"."+Integer.toString(hour), Counter);
+    					
+    					
+    					try {
+							Main.AOnline.save(Main.AdminOnline);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+    				}
+    				
+    				
+    				
+    				
+    				
+    				if(EnderDragon) {
+    				players.playSound(players.getLocation(), Sound.ENTITY_ENDER_DRAGON_AMBIENT, 1, 1);
+    				}
     				int Min = Frdb.getInt(players.getName() + ".Online.Min");
     				int Std = Frdb.getInt(players.getName() + ".Online.Std");
     						Main.GDOS.set(players.getName().toString()+".EasyMode.Magic",Main.GDOS.getInt(players.getName().toString()+".EasyMode.Magic")+1);
@@ -150,7 +227,7 @@ public class Main extends JavaPlugin implements Listener
     					Min = Min+1;
     					
     					for(Player on:Bukkit.getServer().getOnlinePlayers()){
-    						
+    						if(Frdb.getBoolean(on.getName()+".webregister")) {
     						try {
 								PreparedStatement ps3 = MySQL.getConnection().prepareStatement("SELECT * FROM "+on.getName()+"_Friends");
 								ResultSet rs = ps3.executeQuery();
@@ -177,13 +254,13 @@ public class Main extends JavaPlugin implements Listener
 							}
 			    			
     						
-    						
+    							
     						
     			     
     			        }
     					
     					
-    					
+    					}
     					
     				}
     				Frdb.set(players.getName() + ".Online.Min", Min);

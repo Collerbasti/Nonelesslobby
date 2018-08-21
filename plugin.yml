@@ -36,4 +36,6 @@ commands:
   Magic:
      description: Gibt dir die Macht des Easymode
   addVIP:
-     description: Nicht fue Minecraft
+     description: Nicht fuer Minecraft
+  hilfe:
+     description: Zeigt wann Wahrscheinlich welcher Operator/Admin online ist

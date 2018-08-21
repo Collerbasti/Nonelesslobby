@@ -9,7 +9,7 @@ import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-
+import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -35,8 +35,16 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.fusesource.jansi.Ansi.Color;
+
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
 
 
 public class NonelessEventListener implements Listener 
@@ -134,7 +142,11 @@ public class NonelessEventListener implements Listener
 			First = true;
 		}
 		}
-}
+		
+	
+				
+	
+	}
 	// An Timo -- Niemals etwas sagen, dies ist BUSI, Er wird eine kleiner unterstützer in not
 	
 	@EventHandler 
@@ -746,6 +758,71 @@ public class NonelessEventListener implements Listener
 	    	Meta.setDisplayName("Warps");
 	    	Lore.setItemMeta(Meta);
 	    	p.getInventory().setItem(8,Lore);
+	    	
+	    	
+	    	
+	    	
+	    	ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
+			BookMeta bookMeta = (BookMeta) book.getItemMeta();
+					
+					
+		
+		
+			BaseComponent[] page1 = new ComponentBuilder("Hallo und herzlich Wilkommen in der Noneunity \n\n").append("Hier kommst du direkt zu unsserer Webseite")
+			        .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://Noneless.de"))
+			        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Noneless.de").create()))
+			        .create();
+			BaseComponent[] page2 = new ComponentBuilder("Noneunity Inhalt \n\n").append("Seite 3: Datenschutz hinweise "+ChatColor.RED+"(Bitte Lesen)\n\n")
+			        .event(new ClickEvent(ClickEvent.Action.CHANGE_PAGE, "3" ))
+			        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Seite 3").create()))
+			        .append("Seite 4: Wichtige Befehle \n\n")
+			        .event(new ClickEvent(ClickEvent.Action.CHANGE_PAGE, "4" ))
+			        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Seite 4").create()))
+			        .append("Seite 5: Entwickler und Wichtige Personen \n\n")
+			        .event(new ClickEvent(ClickEvent.Action.CHANGE_PAGE, "5" ))
+			        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Seite 5").create()))
+			        .append("Seite 6: Weiteres \n")
+			        .event(new ClickEvent(ClickEvent.Action.CHANGE_PAGE, "6" ))
+			        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Seite 6").create()))
+			        .create();
+			
+			
+			
+			BaseComponent[] page3 = new ComponentBuilder("Noneunity Datenschutz Eure Daten sind uns Wichtig wir werden uns bemühen eure date zu sichern, für den vollen funktions umfang werden euer Spielername auf unserer Webseite veröffentlicht, dies passiert sobalt ihr über eine Stunde online seit.").append(ChatColor.GREEN+" Webseite")
+			        .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://Noneless.de"))
+			        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Noneless.de").create()))
+			        .create();
+			BaseComponent[] page5 = new ComponentBuilder("Wilkommen in der Noneunity \n\n Collerbasti: Admin Entwickler\n\n _Timo__: Vermieter\n\nSheireen25: Builder\n\n").append(" Webseite")
+			        .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://Noneless.de"))
+			        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Noneless.de").create()))
+			        .create();
+			BaseComponent[] page4 = new ComponentBuilder("Befehle:\n\n /lobby /spawn").event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder(" Bringen euch zurück zum Spawn").create()))
+					.append("\n\n/webregister").event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("um euch auf unserere webseite zu registrieren").create()))
+					.append(ChatColor.GREEN+"\n\n\nWebseite")
+			        .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://Noneless.de"))
+			        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Noneless.de").create()))
+			        .create();
+			BaseComponent[] page6 = new ComponentBuilder("Hier könnte deine Werbung Stehen ^^ \n\n").append("Webseite")
+			        .event(new ClickEvent(ClickEvent.Action.OPEN_URL, "https://Noneless.de"))
+			        .event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("Noneless.de").create()))
+			        .create();
+			
+			bookMeta.spigot().addPage(page1);
+			bookMeta.spigot().addPage(page2);
+			bookMeta.spigot().addPage(page3);
+			bookMeta.spigot().addPage(page4);
+			bookMeta.spigot().addPage(page5);
+			bookMeta.spigot().addPage(page6);
+					bookMeta.setTitle("Interactive Book");
+					bookMeta.setAuthor("Noneless");
+					book.setItemMeta(bookMeta);
+					
+					p.getInventory().setItem(1,book);
+					
+	    	
+	    	
+	    	
+	    	
 	    	p.getPlayer().updateInventory();
 	    	
 	    } 

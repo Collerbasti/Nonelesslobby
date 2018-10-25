@@ -45,7 +45,7 @@ import commands.CMDwebRegister;
 
 public class Main extends JavaPlugin implements Listener 
  {
-	
+	//
 	public static File Locations;
 	public static FileConfiguration loc;
 	public static File Friends;

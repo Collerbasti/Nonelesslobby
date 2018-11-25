@@ -13,8 +13,10 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.plugin.messaging.PluginMessageListener;
 
-
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.sql.PreparedStatement;
@@ -43,7 +45,7 @@ import commands.CMDvote;
 import commands.CMDwebRegister;
 
 
-public class Main extends JavaPlugin implements Listener 
+public class Main extends JavaPlugin implements Listener  
  {
 	
 	public static File Locations;
@@ -72,10 +74,11 @@ public class Main extends JavaPlugin implements Listener
 		StartTimer();
 		ReconnectData();
 
-		Bukkit.getPluginManager().registerEvents(this, this);
+		Bukkit.getPluginManager().registerEvents((Listener) this, this);
 
 		new NonelessEventListener(this);
-		 
+		Bukkit.getMessenger().registerOutgoingPluginChannel(this, "BungeeCord");
+		
 		this.getCommand("disconnect").setExecutor(new CMDMySQLdisConnect());
 		this.getCommand("connect").setExecutor(new CMDMySQLConnect());
 		this.getCommand("vote").setExecutor(new CMDvote());
@@ -129,7 +132,24 @@ public class Main extends JavaPlugin implements Listener
 
 
     	 }
-    private void ReconnectData() {
+
+	
+	
+	public void teleportToServer(Player player, String server) {
+	    ByteArrayOutputStream b = new ByteArrayOutputStream();
+	    DataOutputStream out = new DataOutputStream(b);
+	    try {
+	        out.writeUTF("Connect");
+	        out.writeUTF(server);
+	    } catch (IOException e) {
+	        e.printStackTrace();
+	    }
+	    player.sendPluginMessage(this, "BungeeCord", b.toByteArray());
+	}
+
+	
+	
+	private void ReconnectData() {
 		
     	
     	Bukkit.getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
@@ -311,6 +331,10 @@ public class Main extends JavaPlugin implements Listener
     				e.printStackTrace();
     			}
 }
+
+
+
+	
 	}
 
 

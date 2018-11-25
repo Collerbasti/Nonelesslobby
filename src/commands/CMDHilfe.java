@@ -207,6 +207,9 @@ public class CMDHilfe implements CommandExecutor {
 				
 				int endCounter= Counter_0111;
 				int endTimer = timer112;
+				if(endTimer<0) {
+					endTimer = endTimer +24;
+				}
 			sender.sendMessage(players.getName()+" ist Wahrscheinlich so gegen "+Integer.toString(endTimer)+":00 online");
 			if(sender == players) {
 				sender.sendMessage(Integer.toString(endCounter)+" Pnk");

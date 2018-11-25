@@ -102,7 +102,7 @@ public class CMDwebRegister implements CommandExecutor {
 					
 					
 				}else {
-					p.sendMessage("Bitte gebe folgendes an: register Nickname Passwort Passwortwdhl");
+					p.sendMessage("Bitte gebe folgendes an: /webregister Nickname Passwort Passwortwdhl");
 				}
 			}
 			

@@ -11,7 +11,6 @@ import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
 
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -450,7 +449,7 @@ public void TeleporttoServer(Player p, String Server) {
 		ArrayList<String> Friends = new ArrayList<String>();
 		Player p = (Player) ev.getWhoClicked();
 		
-		if(ev.getInventory().getName().equalsIgnoreCase(p.getName()+"§b Warps")){
+		if(ev.getInventory().getName().equalsIgnoreCase(p.getName()+"§b Noneless Lobby")){
 			ev.setCancelled(true);
 			
 			

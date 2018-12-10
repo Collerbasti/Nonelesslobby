@@ -221,7 +221,7 @@ public class Main extends JavaPlugin implements Listener
     				if(Min == 60) {
     					Min = 0;
     					Std = Std+1;
-    					players.sendMessage("Du bist nun insgesammt : "+Std+" Stunden auf dem Server, dafür bekommst du einen Punkt");
+    					players.sendMessage("Du bist nun insgesammt : "+Std+" Stunden auf dem Server, dafï¿½r bekommst du einen Punkt");
     					Mysql.Punkte.Update(players.getUniqueId(), 1, players.getName(), false , players);
     				}else {
     					Min = Min+1;
@@ -292,12 +292,6 @@ public class Main extends JavaPlugin implements Listener
             Main.Frdb.set(on.getName()+".isOnline", false);
      
         }
-        try {
-			Speak_Class.Speak("Der Mienecraft Server Startet einmal Neu");
-		} catch (IOException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
         try {
 			GDOS.save(GlaDOS);
 		} catch (IOException e1) {

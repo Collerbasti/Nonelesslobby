@@ -125,7 +125,7 @@ import Main.MySQL;
 							p.sendMessage("Du hast "+args[0]+" eine Anfrage Geschickt");
 						}
 							
-						
+						 
 						}
 						
 						}

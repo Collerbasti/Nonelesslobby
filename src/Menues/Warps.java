@@ -10,6 +10,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
 public class Warps {
+@SuppressWarnings("deprecation")
 public static void Spawn(Player ep) {
 	
 	Inventory Menue = ep.getServer().createInventory(null, 27,ep.getName()+"§b Noneless Lobby");
@@ -43,6 +44,20 @@ public static void Spawn(Player ep) {
 	Meat.setItemMeta(MMeta);
 	Items.add("21");
 	Menue.setItem(21,Meat);
+	
+	ItemStack Cmd = new ItemStack(Material.GOLDEN_PICKAXE);
+	ItemMeta MCmd =  Cmd.getItemMeta(); 
+	MCmd.setDisplayName("SkyBlock");
+	Cmd.setItemMeta(MCmd);
+	Items.add("24");
+	Menue.setItem(24,Cmd);
+	
+	ItemStack Games = new ItemStack(Material.GOLDEN_PICKAXE);
+	ItemMeta MGames =  Games.getItemMeta(); 
+	MGames.setDisplayName("Games");
+	Games.setItemMeta(MGames);
+	Items.add("25");
+	Menue.setItem(25,Games);
 	
 	if(ep.hasPermission("Noneless.Creative.World")){
 		ItemStack Creative = new ItemStack(Material.REDSTONE);

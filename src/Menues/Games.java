@@ -11,6 +11,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import Main.Main;
 
 public class Games {
+	@SuppressWarnings("deprecation")
 	public static void Spawn(Player p) {
 		Inventory Games = p.getServer().createInventory(null, 27, p.getName()+"§b Minispiele");
 		

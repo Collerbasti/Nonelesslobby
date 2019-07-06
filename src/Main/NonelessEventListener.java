@@ -38,9 +38,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.SkullMeta;
-import org.bukkit.plugin.Plugin;
-import org.fusesource.jansi.Ansi.Color;
 
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -59,7 +56,7 @@ public class NonelessEventListener implements Listener
 		
 	
 	
-    private final Main plugin;
+    private static Main plugin;
     public int MainCounter = 0; 
     public boolean First = false;
     public boolean Tree = false;
@@ -71,8 +68,8 @@ public class NonelessEventListener implements Listener
     public String KiNameEditor;
    
 	public NonelessEventListener(Main plugin) {
-        this.plugin = plugin;
-        this.plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        NonelessEventListener.plugin = plugin;
+        NonelessEventListener.plugin.getServer().getPluginManager().registerEvents(this, plugin);
         
     }
 	@SuppressWarnings("deprecation")
@@ -427,7 +424,7 @@ public class NonelessEventListener implements Listener
 		}
 	}
 	
-public void TeleporttoServer(Player p, String Server) {
+public static void TeleporttoServer(Player p, String Server) {
 	ByteArrayOutputStream b = new ByteArrayOutputStream();
 	DataOutputStream out = new DataOutputStream(b);
 	 
@@ -449,7 +446,7 @@ public void TeleporttoServer(Player p, String Server) {
 		ArrayList<String> Friends = new ArrayList<String>();
 		Player p = (Player) ev.getWhoClicked();
 		
-		if(ev.getInventory().getName().equalsIgnoreCase(p.getName()+"§b Noneless Lobby")){
+		if(p.getOpenInventory().getTitle().equalsIgnoreCase(p.getName()+"§b Noneless Lobby")){
 			ev.setCancelled(true);
 			
 			
@@ -520,6 +517,14 @@ public void TeleporttoServer(Player p, String Server) {
 				p.setHealth(20);
 				p.setFoodLevel(20);
 				p.playSound(p.getLocation(), Sound.ENTITY_GENERIC_EAT, 10, 1);
+			}else	if(ev.getCurrentItem().getType() == Material.GOLDEN_PICKAXE) {
+				if(ev.getCurrentItem().getItemMeta().getDisplayName().contains("SkyBlock")) {
+					TeleporttoServer(p, "survival_2");
+					}else if(ev.getCurrentItem().getItemMeta().getDisplayName().contains("Games")) {
+						TeleporttoServer(p, "games");
+					}
+				
+				
 			}
 			
 		}
@@ -679,7 +684,7 @@ public void TeleporttoServer(Player p, String Server) {
 	@EventHandler
 	public void InventoryFriendsClick(InventoryClickEvent ev) {
 		Player p = (Player) ev.getWhoClicked();
-		if(ev.getInventory().getName().equalsIgnoreCase(p.getName()+"§b Freunde")){
+		if(p.getOpenInventory().getTitle().equalsIgnoreCase(p.getName()+"§b Freunde")){
 			ev.setCancelled(true);
 			
 			
@@ -719,7 +724,7 @@ public void TeleporttoServer(Player p, String Server) {
 @EventHandler
 public void InventorySettingsClick(InventoryClickEvent ev) {
 	Player p = (Player) ev.getWhoClicked();
-	if(ev.getInventory().getName().equalsIgnoreCase(p.getName()+"§b Settings")){
+	if( p.getOpenInventory().getTitle().equalsIgnoreCase(p.getName()+"§b Settings")){
 		if(ev.getCurrentItem().getType() ==Material.RED_WOOL && ev.getCurrentItem().getItemMeta().getDisplayName().equalsIgnoreCase("Teleportieren von Freunden zu Einem Verboten")) {
 			Main.Frdb.set(p.getName()+".AllowFriendsTp", true);
 			MainCounter = MainCounter+1;
@@ -752,7 +757,7 @@ public void InventorySettingsClick(InventoryClickEvent ev) {
 	    	
 	    	
 //------Menue
-		} else if(ev.getInventory().getName().equalsIgnoreCase(p.getName()+"§b Settings")){
+		} else if(p.getOpenInventory().getTitle().equalsIgnoreCase(p.getName()+"§b Settings")){
 			if(ev.getCurrentItem().getType() ==Material.GREEN_WOOL && ev.getCurrentItem().getItemMeta().getDisplayName().equalsIgnoreCase("Gamemode Creative")) {
 				Main.Frdb.set(p.getName()+".Gamemode", false);
 				p.setGameMode(GameMode.ADVENTURE);

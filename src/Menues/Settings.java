@@ -9,6 +9,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 import Main.Main;
 
 public class Settings {
+	@SuppressWarnings("deprecation")
 	public static void Spawn(Player p) {
 		Inventory Settings = p.getServer().createInventory(null, 27,p.getName()+"§b Settings");
 		

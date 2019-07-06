@@ -13,6 +13,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 import Main.Main;
 
 public class Freunde {
+	@SuppressWarnings("deprecation")
 	public static void Spawn(Player p) {
 
 

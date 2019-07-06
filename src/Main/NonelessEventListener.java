@@ -282,13 +282,26 @@ public class NonelessEventListener implements Listener
 					}else {
 						ev.setCancelled(true);
 						Bukkit.broadcastMessage("ß4"+KiName+":ßf Dazu weiﬂ ich leider keine Antwort");
-						if(ev.getPlayer().hasPermission("Noneless.GlaDOS")) {
-							Bukkit.broadcastMessage("Doch du darfst mich leiten, Schreibe jetzt einfach die Antwort, mit abbrechen!!? kannst du den vorgang abbrechen ");
-							GlaDOSListen = true;
-							ev.setCancelled(true);
-							KiNameEditor=ev.getPlayer().getName();
-							GlaDOSFrage = Message;
+						
+						if(!Busi.web.isConnected()) {
+							Busi.web.connect();
+						}
+						
+						if(Busi.web.isConnected()) {
+							Bukkit.broadcastMessage("BUSI: "+Busi.web.Answere(Message));
+							ev.getPlayer().sendMessage(Message);
 							
+							
+							
+							
+						}else {
+							if(ev.getPlayer().hasPermission("Noneless.GlaDOS")) {
+								Bukkit.broadcastMessage("Doch du darfst mich leiten, Schreibe jetzt einfach die Antwort, mit abbrechen!!? kannst du den vorgang abbrechen ");
+								GlaDOSListen = true;
+								ev.setCancelled(true);
+								KiNameEditor=ev.getPlayer().getName();
+								GlaDOSFrage = Message;
+							}
 						}
 					}
 				}

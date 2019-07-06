@@ -69,7 +69,7 @@ public class Main extends JavaPlugin implements Listener
 	@Override	
 
 	public void onEnable() {
-         
+         //Test 1234
 		MySQL.connect();
 		StartTimer();
 		ReconnectData();

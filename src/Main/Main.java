@@ -123,7 +123,7 @@ public class Main extends JavaPlugin implements Listener
     	
     	System.out.println("Das Plugin wurde aktiviert!");	
 
-    	
+    	 
 
 
     	 }

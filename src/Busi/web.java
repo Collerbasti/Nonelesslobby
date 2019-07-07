@@ -74,7 +74,7 @@ public Bukkit getServer() {
 		if(Request != null || Request != "")
 		{
 			try {
-				pss = "SELECT * FROM Requests WHERE 'Quest' LIKE \""+Request+"\"";
+				pss = "SELECT * FROM Requests WHERE `Quest` LIKE \""+Request+"\"";
 			PreparedStatement ps = Busi.web.getConnection().prepareStatement(pss);
 			ResultSet rs = ps.executeQuery();
 			while(rs.next()) {

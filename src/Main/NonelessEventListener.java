@@ -175,7 +175,13 @@ public class NonelessEventListener implements Listener
 					Speak_Class.Speak(Speak);
 			ev.setCancelled(true);
 		}else if(Message.contains("hilf")&Message.contains("!?")) {
-			Bukkit.broadcastMessage("ß4"+KiName+": ßf");
+			if(!Busi.web.isConnected()) {
+				Busi.web.connect();
+			}
+			if(!Busi.web.listallquest(KiName)) {
+				Bukkit.broadcastMessage("ß4"+KiName+": ßf Ich habe derzeit ein paar schwierigkeiten mich mit der Datenbank zu verbinden");
+			}
+			Bukkit.broadcastMessage("ß4"+KiName+": ßf mconly: ");
 			ev.setCancelled(true);
 			ArrayList<String> Glados = new ArrayList<String>();
 			Glados.addAll(Main.GDOS.getStringList("GlaDOS.List"));
@@ -281,14 +287,14 @@ public class NonelessEventListener implements Listener
 						Speak_Class.Speak(Main.GDOS.getString("GlaDOS."+Message+".answer"));
 					}else {
 						ev.setCancelled(true);
-						Bukkit.broadcastMessage("ß4"+KiName+":ßf Dazu weiﬂ ich leider keine Antwort");
+						
 						
 						if(!Busi.web.isConnected()) {
 							Busi.web.connect();
 						}
 						
 						if(Busi.web.isConnected()) {
-							Bukkit.broadcastMessage("BUSI: "+Busi.web.Answere(Message));
+							Bukkit.broadcastMessage("ß4"+KiName+":ßf "+Busi.web.Answere(Message));
 							
 							
 							

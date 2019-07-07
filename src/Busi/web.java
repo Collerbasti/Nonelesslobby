@@ -66,11 +66,30 @@ public Bukkit getServer() {
 	// TODO Auto-generated method stub
 	return null;
 }
-	
+
+
+	public static Boolean listallquest(String KiName) {
+		Bukkit.broadcastMessage("§4"+KiName+": §f online: ");
+		try {
+			String pss = "SELECT * FROM Requests WHERE 1";
+		PreparedStatement ps = Busi.web.getConnection().prepareStatement(pss);
+		ResultSet rs = ps.executeQuery();
+		while(rs.next()) {
+			
+				
+				Bukkit.broadcastMessage(rs.getString("Quest")+"!?");
+		}
+		
+		}catch (Exception e) {
+			return false;
+		}
+		return true;
+	}
 	
 	public static String Answere(String Request) {
 		String Answere = null;
 		String pss = null;
+		Request = Request.replace("!?", "");
 		if(Request != null || Request != "")
 		{
 			try {

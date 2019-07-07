@@ -289,7 +289,7 @@ public class NonelessEventListener implements Listener
 						
 						if(Busi.web.isConnected()) {
 							Bukkit.broadcastMessage("BUSI: "+Busi.web.Answere(Message));
-							ev.getPlayer().sendMessage(Message);
+							
 							
 							
 							

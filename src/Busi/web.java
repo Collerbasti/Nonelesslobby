@@ -70,11 +70,12 @@ public Bukkit getServer() {
 	
 	public static String Answere(String Request) {
 		String Answere = null;
+		String pss = null;
 		if(Request != null || Request != "")
 		{
 			try {
-			PreparedStatement ps = Busi.web.getConnection().prepareStatement("SELECT * FROM Requests WHERE 'Quest' LIKE \"?\"");
-			ps.setString(1, Request);
+				pss = "SELECT * FROM Requests WHERE 'Quest' LIKE \""+Request+"\"";
+			PreparedStatement ps = Busi.web.getConnection().prepareStatement(pss);
 			ResultSet rs = ps.executeQuery();
 			while(rs.next()) {
 				
@@ -86,7 +87,9 @@ public Bukkit getServer() {
 				// TODO: handle exception
 			}
 		}
-		
+		if(Answere ==null||Answere == "") {
+			Answere = "Ich weis leider keine Anstwort darauf : "+pss;
+		}
 	return Answere;
 	}
 }

@@ -1,41 +1,50 @@
-main: Main.Main
-version: 3.0
-api-version: 1.13
+main: de.noneless.Main
+version: 3.1
+api-version: '1.20'
 name: NonelessLobby
+
+# Paper-spezifische Konfiguration
+website: noneless.de
+authors: [NonelessTeam]
+description: Ein Lobby-System für NonelessMC
+load: STARTUP
+
+softdepend:
+  - Essentials
 
 commands:
   webRegister:
-     description: ???
+     description: Webseiten-Registrierung
   connect: 
      description: Verbinden zum SQL Server
   disconnect:
      description: Verbindung vom SQL Server trennen
   setlobby:
-     description: Setze die lobby
+     description: Setze die Lobby
   spawn:
      description: Gehe zum Spawn
      aliases: [lobby, Area]
   addFriend:
-     description: Adde freunde!!!
+     description: Füge Freunde hinzu
   delFriend:
-     description: Entfernt den angegebenen Freund
+     description: Entferne einen Freund
   vote:
-     description: Bekomme den Vote Link
+     description: Bekomme den Vote-Link
   addItem:
-     description: Adde das Item zur Liste
+     description: Füge ein Item zur Liste hinzu
   itemList:
-     description: Siehe die Item Liste
+     description: Zeige die Item-Liste
   report:
-     description: Reporte Einen Spieler
+     description: Melde einen Spieler
   addGame:
-     description: Fügt Minigames/Arenen iein
+     description: Füge Minigames/Arenen hinzu
   setRang:
-     description: Setzt den Rang eines Spielers
+     description: Setze den Rang eines Spielers
   removeKIcommand:
-     description: Loecht KiCommand
+     description: Lösche KI-Kommando
   Magic:
-     description: Gibt dir die Macht des Easymode
+     description: Aktiviere den Easymode
   addVIP:
-     description: Nicht fuer Minecraft
+     description: VIP-Verwaltung
   hilfe:
-     description: Zeigt wann Wahrscheinlich welcher Operator/Admin online ist
+     description: Zeigt die Admin-Onlinezeiten

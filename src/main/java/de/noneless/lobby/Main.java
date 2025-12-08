@@ -30,6 +30,8 @@ public class Main extends JavaPlugin {
         // Lade Konfiguration zuerst
         loadConfig();
         
+        // Lade MySQL-Konfiguration vor der Datenbank-Initialisierung
+        ConfigManager.loadMySQLConfig();
         Punkte.initializeDatabase();
         
         // Initialisiere Settings-Konfigurationen

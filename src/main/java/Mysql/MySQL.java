@@ -13,12 +13,12 @@ import org.bukkit.Bukkit;
  * Provides high-performance database connections with automatic connection management.
  */
 public class MySQL {
-    // These values should ideally be loaded from a config file
-    public static String host = "ms2778.gamedata.io";
+    // Default values - should be overridden by config
+    public static String host = "localhost";
     public static String port = "3306";
-    public static String database = "ni506153_1_DB";
-    public static String username = "ni506153_1_DB";
-    public static String password = "y77ei7XP";
+    public static String database = "nonelesslobby";
+    public static String username = "lobby";
+    public static String password = "changeme";
 
     private static HikariDataSource dataSource;
 

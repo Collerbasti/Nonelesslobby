@@ -158,4 +158,37 @@ public class ConfigManager {
         ));
         lobbyLogged = true;
     }
+    
+    /**
+     * Loads MySQL configuration from config.yml
+     * Should be called before initializing database
+     */
+    public static void loadMySQLConfig() {
+        if (plugin == null) {
+            // Log warning if plugin is not initialized
+            if (Bukkit.getLogger() != null) {
+                Bukkit.getLogger().warning("[NonelessLobby] Cannot load MySQL config - plugin not initialized");
+            }
+            return;
+        }
+        
+        // Save default config if it doesn't exist
+        plugin.saveDefaultConfig();
+        FileConfiguration mainConfig = plugin.getConfig();
+        
+        // Load MySQL settings with defaults
+        boolean mysqlEnabled = mainConfig.getBoolean("mysql.enabled", false);
+        
+        if (mysqlEnabled) {
+            Mysql.MySQL.host = mainConfig.getString("mysql.host", "localhost");
+            Mysql.MySQL.port = mainConfig.getString("mysql.port", "3306");
+            Mysql.MySQL.database = mainConfig.getString("mysql.database", "nonelesslobby");
+            Mysql.MySQL.username = mainConfig.getString("mysql.username", "lobby");
+            Mysql.MySQL.password = mainConfig.getString("mysql.password", "changeme");
+            
+            plugin.getLogger().info("MySQL-Konfiguration erfolgreich geladen.");
+        } else {
+            plugin.getLogger().info("MySQL ist deaktiviert in der Konfiguration.");
+        }
+    }
 }

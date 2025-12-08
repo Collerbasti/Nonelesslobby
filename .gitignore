@@ -31,3 +31,7 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Test server directory
+minecraft-test-server/
+/minecraft-test-server/

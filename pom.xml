@@ -6,6 +6,185 @@
 
     <groupId>de.noneless</groupId>
     <artifactId>NonelessLobby</artifactId>
+    <version>3.1</version>
+    <packaging>jar</packaging>
+
+    <name>NonelessLobby</name>
+    <description>Lobby Plugin mit Punktesystem</description>
+
+    <properties>
+        <java.version>17</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+    </properties>
+
+    <repositories>
+        <!-- JitPack (DecentHolograms) -->
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+
+        <!-- PaperMC Repository -->
+        <repository>
+            <id>papermc</id>
+            <url>https://repo.papermc.io/repository/maven-public/</url>
+        </repository>
+
+        <!-- Spigot Repository -->
+        <repository>
+            <id>spigot-repo</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+        </repository>
+
+        <!-- Sonatype OSS -->
+        <repository>
+            <id>sonatype</id>
+            <url>https://oss.sonatype.org/content/groups/public/</url>
+        </repository>
+
+        <!-- Citizens2 Repository -->
+        <repository>
+            <id>citizens</id>
+            <url>https://repo.citizensnpcs.co/</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <!-- Paper API (provided) -->
+        <dependency>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
+            <version>1.20.4-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Adventure API (used by many modern plugins) -->
+        <dependency>
+            <groupId>net.kyori</groupId>
+            <artifactId>adventure-api</artifactId>
+            <version>4.14.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Citizens2 API -->
+        <dependency>
+            <groupId>net.citizensnpcs</groupId>
+            <artifactId>citizens-main</artifactId>
+            <version>2.0.35-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- DecentHolograms (from JitPack) -->
+        <dependency>
+            <groupId>com.github.DecentSoftware-eu</groupId>
+            <artifactId>DecentHolograms</artifactId>
+            <version>2.9.8</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- MySQL Connector (optional compile) -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.33</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- GSON for JSON handling -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>${project.basedir}</directory>
+                <includes>
+                    <include>plugin.yml</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+
+        <plugins>
+            <!-- Compiler Plugin -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <encoding>UTF-8</encoding>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+
+            <!-- Shade Plugin to produce distributable jar -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <minimizeJar>true</minimizeJar>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Optional: FTP upload after packaging (keeps original configuration if set) -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <id>ftp-upload</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <skip>false</skip>
+                            <target>
+                                <echo message="Uploading NonelessLobby to configured FTP server..." />
+                                <!-- FTP config intentionally left for user configuration -->
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>de.noneless</groupId>
+    <artifactId>NonelessLobby</artifactId>
+<<<<<<< HEAD
     <version>3.0</version>
     <packaging>jar</packaging>
 
@@ -30,16 +209,31 @@
         </repository>
 
         <!-- PaperMC Repository -->
+=======
+    <version>3.1</version>
+
+    <properties>
+        <java.version>17</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    </properties>
+
+    <repositories>
+>>>>>>> 21f10707116fbacbeeb391bf6d38798c1f8ec58a
         <repository>
             <id>papermc</id>
             <url>https://repo.papermc.io/repository/maven-public/</url>
         </repository>
+<<<<<<< HEAD
 
         <!-- Spigot Repository -->
+=======
+>>>>>>> 21f10707116fbacbeeb391bf6d38798c1f8ec58a
         <repository>
             <id>spigot-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
+<<<<<<< HEAD
         
         <!-- Sonatype Repository -->
         <repository>
@@ -55,10 +249,30 @@
     </repositories>
 
     <dependencies>
+=======
+    </repositories>
+
+    <dependencies>
+        <!-- Spigot API -->
+        <dependency>
+            <groupId>org.spigotmc</groupId>
+            <artifactId>spigot-api</artifactId>
+            <version>1.20.4-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.kyori</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+>>>>>>> 21f10707116fbacbeeb391bf6d38798c1f8ec58a
         <!-- Paper API -->
         <dependency>
             <groupId>io.papermc.paper</groupId>
             <artifactId>paper-api</artifactId>
+<<<<<<< HEAD
             <version>1.21.10-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
@@ -85,11 +299,39 @@
             <artifactId>DecentHolograms</artifactId>
             <version>2.9.8</version>
             <scope>provided</scope>
+=======
+            <version>1.20.4-R0.1-SNAPSHOT</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- Adventure API -->
+        <dependency>
+            <groupId>net.kyori</groupId>
+            <artifactId>adventure-api</artifactId>
+            <version>4.14.0</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- MySQL Connector -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.33</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- GSON -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
+>>>>>>> 21f10707116fbacbeeb391bf6d38798c1f8ec58a
         </dependency>
     </dependencies>
 
     <build>
         <defaultGoal>clean package</defaultGoal>
+<<<<<<< HEAD
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
@@ -105,11 +347,16 @@
 
         <plugins>
             <!-- Compiler Plugin -->
+=======
+        <sourceDirectory>src</sourceDirectory>
+        <plugins>
+>>>>>>> 21f10707116fbacbeeb391bf6d38798c1f8ec58a
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
+<<<<<<< HEAD
                     <source>17</source>
                     <target>17</target>
                     <encoding>UTF-8</encoding>
@@ -117,6 +364,16 @@
             </plugin>
 
             <!-- Shade Plugin für Dependencies -->
+=======
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <encoding>UTF-8</encoding>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+>>>>>>> 21f10707116fbacbeeb391bf6d38798c1f8ec58a
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -128,6 +385,7 @@
                             <goal>shade</goal>
                         </goals>
                         <configuration>
+<<<<<<< HEAD
                             <relocations>
                                 <relocation>
                                     <pattern>com.mysql</pattern>
@@ -144,10 +402,15 @@
                                     </excludes>
                                 </filter>
                             </filters>
+=======
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <minimizeJar>true</minimizeJar>
+>>>>>>> 21f10707116fbacbeeb391bf6d38798c1f8ec58a
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+<<<<<<< HEAD
 
             <!-- FTP Upload Plugin -->
             <plugin>
@@ -190,3 +453,21 @@
         </plugins>
     </build>
 </project>
+=======
+        </plugins>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>${project.basedir}</directory>
+                <includes>
+                    <include>plugin.yml</include>
+                </includes>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+    </build>
+</project> 
+>>>>>>> 21f10707116fbacbeeb391bf6d38798c1f8ec58a

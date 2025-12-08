@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\Mysql\Punkte.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\listeners\EssentialsWarpMenuListener.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\friends\FriendRequestSession.java
@@ -56,3 +57,36 @@ C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\li
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\commands\CMDLobby.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\listeners\WarpsListener.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\util\GamemodeEnforcer.java
+=======
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDaddFriend.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDMagic.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDvote.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\NonelessEventListener.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\Menues\HomesMenu.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDreport.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDaddItem.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDaddVIP.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\ItemBuilder\ItemBuilder.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\Menues\Warps.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDHilfe.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDremoveKIcommand.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDaddGame.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\Main.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\Menues\WarpsMenu.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\TodoList.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\Menues\Games.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\Busi\web.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDspawn.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDsetRang.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\Menues\Settings.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDMySQLdisConnect.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\MySQL.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\Menues\Freunde.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDsetlobby.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDitemList.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\Speak_Class.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\Mysql\Punkte.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDdelFriend.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDMySQLConnect.java
+C:\Users\webde\OneDrive\Documents\GitHub\Nonelesslobbyold\src\de\noneless\commands\CMDwebRegister.java
+>>>>>>> 21f10707116fbacbeeb391bf6d38798c1f8ec58a

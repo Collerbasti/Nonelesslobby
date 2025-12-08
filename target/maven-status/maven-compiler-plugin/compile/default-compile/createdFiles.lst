@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 de\noneless\lobby\listeners\MenuListener.class
 de\noneless\lobby\listeners\WorldMoveProtectionListener.class
 de\noneless\lobby\listeners\NPCMenuListener$EditContext.class
@@ -76,3 +77,42 @@ de\noneless\lobby\listeners\EssentialsWarpMenuListener.class
 de\noneless\lobby\Menues\FriendsMenu.class
 de\noneless\lobby\commands\CMDWorldMover$Direction.class
 de\noneless\lobby\commands\CMDLobby.class
+=======
+de\noneless\commands\CMDsetlobby.class
+de\noneless\Mysql\Punkte.class
+de\noneless\Main$2.class
+de\noneless\MySQL.class
+de\noneless\NonelessEventListener$1.class
+de\noneless\Menues\Freunde.class
+de\noneless\commands\CMDremoveKIcommand.class
+de\noneless\Menues\HomesMenu.class
+de\noneless\commands\CMDMySQLConnect.class
+de\noneless\Main$Menues.class
+de\noneless\commands\CMDaddFriend.class
+de\noneless\commands\CMDwebRegister.class
+de\noneless\TodoList.class
+de\noneless\commands\CMDreport.class
+de\noneless\commands\CMDHilfe.class
+de\noneless\Main$1.class
+de\noneless\Menues\Settings.class
+de\noneless\commands\CMDMySQLdisConnect.class
+de\noneless\Busi\web.class
+de\noneless\Speak_Class$1.class
+de\noneless\commands\CMDdelFriend.class
+de\noneless\commands\CMDMagic.class
+de\noneless\commands\CMDitemList.class
+de\noneless\commands\CMDspawn.class
+de\noneless\Main$3.class
+de\noneless\Menues\WarpsMenu.class
+de\noneless\commands\CMDaddItem.class
+de\noneless\commands\CMDaddVIP.class
+de\noneless\Main.class
+de\noneless\commands\CMDaddGame.class
+de\noneless\commands\CMDvote.class
+de\noneless\Menues\Warps.class
+de\noneless\ItemBuilder\ItemBuilder.class
+de\noneless\Menues\Games.class
+de\noneless\NonelessEventListener.class
+de\noneless\Speak_Class.class
+de\noneless\commands\CMDsetRang.class
+>>>>>>> 21f10707116fbacbeeb391bf6d38798c1f8ec58a

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="maven-antrun-" default="main">
+  <target name="main">
+    <echo message="Uploading NonelessLobby to FTP server..." />
+    <ftp server="ms3693.gamedata.io" password="sLW73ryk" remotedir="/minecraftbukkit/plugins/" action="put" userid="ni506153_1" passive="yes" verbose="yes">
+      <fileset includes="NonelessLobby-3.0.jar" dir="C:\Users\webde\Desktop\Projekte\Nonelesslobby\target" />
+    </ftp>
+    <echo message="NonelessLobby FTP upload completed successfully!" />
+  </target>
+</project>

@@ -120,7 +120,7 @@ public class PlayerListener implements Listener {
             player.teleport(lobbyLocation);
             player.sendMessage(ChatColor.GREEN + "Willkommen in der Lobby!");
         }
-        applyGamemodeSetting(player);
+        GamemodeEnforcer.enforceImmediate(player);
         giveLobbyItems(player);
         LobbyScoreboard.update(player);
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), LobbyScoreboard::updateAll, 1L);

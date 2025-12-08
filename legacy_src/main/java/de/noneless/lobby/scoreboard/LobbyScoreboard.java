@@ -33,7 +33,7 @@ public class LobbyScoreboard {
     // Cache last player count to avoid rebuilding scoreboards when nothing changed
     private static int lastPlayerCount = -1;
     private static final Map<UUID, Long> lastUpdateTime = new HashMap<>();
-    private static final long MIN_UPDATE_INTERVAL = 100L; // Min 5 seconds between individual updates
+    private static final long MIN_UPDATE_INTERVAL = 5000L; // Min 5 seconds (5000ms) between individual updates
 
     private LobbyScoreboard() {}
 

@@ -902,7 +902,7 @@ public class NPCManager {
                 DHAPI.moveHologram(hologram, updated);
             } catch (Exception ignored) { }
         }, CHAT_HOLOGRAM_FOLLOW_INTERVAL, CHAT_HOLOGRAM_FOLLOW_INTERVAL);
-        BukkitTask cleanupTask = Bukkit.getScheduler().runTaskLater(plugin, () -> destroyNpcBubble(npc), CHAT_HOLOGRAM_LIFETIME_TICKS);
+        BukkitTask cleanupTask = Bukkit.getScheduler().runTaskLater(plugin, () -> destroyNpcBubble(npc), chatHologramLifetimeTicks);
         npcChatBubbles.put(npc, new ActiveNpcBubble(hologramName, followTask, cleanupTask, previousNameplateState));
     }
 
@@ -1497,13 +1497,17 @@ public class NPCManager {
         if (template == null || context == null) {
             return null;
         }
-        String result = template
-            .replace("{A}", context.getFirstName())
-            .replace("{a}", context.getFirstName())
-            .replace("{FIRST}", context.getFirstName())
-            .replace("{B}", context.getSecondName())
-            .replace("{b}", context.getSecondName())
-            .replace("{SECOND}", context.getSecondName());
+        String result = template;
+        // Ersetze Conversation-Namen mit farbigem Text (LIGHT_PURPLE)
+        String coloredFirstName = ChatColor.LIGHT_PURPLE + context.getFirstName() + ChatColor.WHITE;
+        String coloredSecondName = ChatColor.LIGHT_PURPLE + context.getSecondName() + ChatColor.WHITE;
+        result = result
+            .replace("{A}", coloredFirstName)
+            .replace("{a}", coloredFirstName)
+            .replace("{FIRST}", coloredFirstName)
+            .replace("{B}", coloredSecondName)
+            .replace("{b}", coloredSecondName)
+            .replace("{SECOND}", coloredSecondName);
         String selfName = null;
         if (line != null) {
             switch (line.getSpeaker()) {
@@ -1602,13 +1606,17 @@ public class NPCManager {
             if (playerName == null || playerName.isEmpty()) {
                 return null;
             }
-            result = result.replace("{SPIELERNAME}", playerName)
-                           .replace("{PLAYER}", playerName)
-                           .replace("{PLAYERNAME}", playerName);
+            // Ersetze Spieler-Platzhalter mit farbigem Text (LIGHT_PURPLE)
+            String coloredPlayerName = ChatColor.LIGHT_PURPLE + playerName + ChatColor.WHITE;
+            result = result.replace("{SPIELERNAME}", coloredPlayerName)
+                           .replace("{PLAYER}", coloredPlayerName)
+                           .replace("{PLAYERNAME}", coloredPlayerName);
         }
 
         if (selfName != null && !selfName.isEmpty()) {
-            result = result.replace("{SELF}", selfName);
+            // Ersetze SELF-Platzhalter mit farbigem Text (LIGHT_PURPLE)
+            String coloredSelfName = ChatColor.LIGHT_PURPLE + selfName + ChatColor.WHITE;
+            result = result.replace("{SELF}", coloredSelfName);
         }
 
         if (result.contains("{NPC}") || result.contains("{NPC2}")) {
@@ -1618,7 +1626,9 @@ public class NPCManager {
                 if (primary == null || primary.isEmpty()) {
                     primary = "NPC";
                 }
-                result = result.replace("{NPC}", primary);
+                // Ersetze {NPC} mit farbigem Text (DARK_PURPLE)
+                String coloredNPC = ChatColor.DARK_PURPLE + primary + ChatColor.WHITE;
+                result = result.replace("{NPC}", coloredNPC);
             }
 
             if (result.contains("{NPC2}")) {
@@ -1626,7 +1636,9 @@ public class NPCManager {
                 if (secondary == null || secondary.isEmpty()) {
                     secondary = "NPC";
                 }
-                result = result.replace("{NPC2}", secondary);
+                // Ersetze {NPC2} mit farbigem Text (DARK_PURPLE)
+                String coloredNPC2 = ChatColor.DARK_PURPLE + secondary + ChatColor.WHITE;
+                result = result.replace("{NPC2}", coloredNPC2);
             }
         }
 

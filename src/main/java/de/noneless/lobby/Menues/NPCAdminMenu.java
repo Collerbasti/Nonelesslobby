@@ -57,17 +57,17 @@ public class NPCAdminMenu {
         // Hologramm Höhe
         inv.setItem(10, createItem(Material.ARMOR_STAND, ChatColor.AQUA + "Hologramm Höhe",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + String.format("%.2f", manager.getChatHologramVerticalOffset()),
-                ChatColor.GRAY + "Rechtsklick: Eingabe"));
+                ChatColor.GRAY + "Linksklick: +0.1 | Rechtsklick: -0.1"));
         
         // Hologramm Lebensdauer
         inv.setItem(11, createItem(Material.REDSTONE, ChatColor.LIGHT_PURPLE + "Hologramm Lebensdauer",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getChatHologramLifetimeTicks() + " Ticks",
-                ChatColor.GRAY + "Rechtsklick: Eingabe"));
+                ChatColor.GRAY + "Linksklick: +10 | Rechtsklick: -10"));
         
         // Hologramm Follow Intervall
         inv.setItem(12, createItem(Material.REPEATER, ChatColor.LIGHT_PURPLE + "Hologramm Follow Intervall",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getChatHologramFollowInterval() + " Ticks",
-                ChatColor.GRAY + "Rechtsklick: Eingabe"));
+                ChatColor.GRAY + "Nur Anzeige (konstant)"));
         
         // Gespräche aktiviert
         String conversationStatus = manager.isConversationsEnabled() ? ChatColor.GREEN + "AN" : ChatColor.RED + "AUS";
@@ -78,27 +78,27 @@ public class NPCAdminMenu {
         // Min Interval
         inv.setItem(15, createItem(Material.CLOCK, ChatColor.YELLOW + "Min. Gesprächs-Interval",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getConversationMinIntervalSeconds() + "s",
-                ChatColor.GRAY + "Rechtsklick: Eingabe"));
+                ChatColor.GRAY + "Linksklick: +10s | Rechtsklick: -10s"));
         
         // Max Interval
         inv.setItem(16, createItem(Material.CLOCK, ChatColor.YELLOW + "Max. Gesprächs-Interval",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getConversationMaxIntervalSeconds() + "s",
-                ChatColor.GRAY + "Rechtsklick: Eingabe"));
+                ChatColor.GRAY + "Linksklick: +10s | Rechtsklick: -10s"));
         
         // Line Delay
         inv.setItem(18, createItem(Material.REPEATER, ChatColor.AQUA + "Dialog-Zeilen Verzögerung",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getConversationLineDelayTicks() + " Ticks",
-                ChatColor.GRAY + "Rechtsklick: Eingabe"));
+                ChatColor.GRAY + "Linksklick: +5 | Rechtsklick: -5"));
         
         // Gather Delay
         inv.setItem(19, createItem(Material.REPEATER, ChatColor.AQUA + "Gather Verzögerung",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getConversationGatherDelayTicks() + " Ticks",
-                ChatColor.GRAY + "Rechtsklick: Eingabe"));
+                ChatColor.GRAY + "Linksklick: +5 | Rechtsklick: -5"));
         
         // Audience Radius
         inv.setItem(20, createItem(Material.SPYGLASS, ChatColor.DARK_AQUA + "Publikums Reichweite",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + String.format("%.1f", manager.getConversationAudienceRadius()) + " Blöcke",
-                ChatColor.GRAY + "Rechtsklick: Eingabe"));
+                ChatColor.GRAY + "Linksklick: +5 | Rechtsklick: -5"));
         
         // Conversation Prefix
         inv.setItem(24, createItem(Material.BOOK, ChatColor.LIGHT_PURPLE + "Gespräch Präfix",

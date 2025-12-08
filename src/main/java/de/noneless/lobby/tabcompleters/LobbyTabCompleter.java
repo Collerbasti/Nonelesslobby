@@ -41,7 +41,7 @@ public class LobbyTabCompleter implements TabCompleter {
             case "warps":
             case "warp":
                 if (args.length == 1) {
-                    return filterList(Arrays.asList("city", "spawn", "arena", "shops", "pvp"), args[0]);
+                    return filterList(getEssentialsWarps(), args[0]);
                 }
                 return new ArrayList<>();
                 
@@ -138,6 +138,90 @@ public class LobbyTabCompleter implements TabCompleter {
                 .map(Player::getName)
                 .filter(name -> name.toLowerCase().startsWith(arg.toLowerCase()))
                 .collect(Collectors.toList());
+    }
+    
+    /**
+     * Holt alle verfügbaren Essentials-Warps
+     */
+    private List<String> getEssentialsWarps() {
+        List<String> warps = new ArrayList<>();
+        try {
+            // Versuche, Essentials zu finden
+            if (!Bukkit.getPluginManager().isPluginEnabled("Essentials")) {
+                // Fallback: Hardcodierte Liste wenn Essentials nicht verfügbar
+                return Arrays.asList("spawn");
+            }
+            
+            // Versuche, die Essentials Warps zu laden
+            Class<?> essentialsClass = Class.forName("com.earth2me.essentials.Essentials");
+            Object essentialsInstance = Bukkit.getPluginManager().getPlugin("Essentials");
+            
+            if (essentialsInstance != null) {
+                // Versuche auf die Warps zuzugreifen über Reflection
+                try {
+                    var warpManagerField = essentialsClass.getDeclaredMethod("getWarps");
+                    warpManagerField.setAccessible(true);
+                    Object warpManager = warpManagerField.invoke(essentialsInstance);
+                    
+                    if (warpManager != null) {
+                        var getWarpListMethod = warpManager.getClass().getDeclaredMethod("getList");
+                        getWarpListMethod.setAccessible(true);
+                        Object warpList = getWarpListMethod.invoke(warpManager);
+                        
+                        if (warpList instanceof java.util.Collection) {
+                            for (Object warp : (java.util.Collection<?>) warpList) {
+                                if (warp != null) {
+                                    warps.add(warp.toString());
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // Fallback auf Dateibasierte Warps
+                    warps.addAll(getWarpsFromFile());
+                }
+            }
+        } catch (Exception e) {
+            // Fallback: Standard-Warps
+            warps = Arrays.asList("spawn");
+        }
+        
+        return warps.isEmpty() ? Arrays.asList("spawn") : warps;
+    }
+    
+    /**
+     * Versucht, Warps aus der Essentials Konfigurationsdatei zu laden
+     */
+    private List<String> getWarpsFromFile() {
+        List<String> warps = new ArrayList<>();
+        try {
+            var essentialsPlugin = Bukkit.getPluginManager().getPlugin("Essentials");
+            if (essentialsPlugin == null) {
+                return warps;
+            }
+            java.io.File essentialsDir = essentialsPlugin.getDataFolder();
+            java.io.File warpsFile = new java.io.File(essentialsDir, "warps.yml");
+            
+            if (warpsFile.exists()) {
+                java.io.BufferedReader reader = new java.io.BufferedReader(new java.io.FileReader(warpsFile));
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    if (line.startsWith("  ") || line.startsWith("\t")) {
+                        continue;
+                    }
+                    if (line.contains(":")) {
+                        String warpName = line.split(":")[0].trim();
+                        if (!warpName.isEmpty() && !warpName.startsWith("#")) {
+                            warps.add(warpName);
+                        }
+                    }
+                }
+                reader.close();
+            }
+        } catch (Exception e) {
+            // Stille Exception - verwende Fallback
+        }
+        return warps;
     }
     
     /**

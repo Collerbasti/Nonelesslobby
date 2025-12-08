@@ -102,6 +102,22 @@ commands:
     usage: /friend <add|remove|list|accept|deny|tp> [spieler]
     aliases: [friends, f]
     permission: nonelesslobby.friends
+  
+  annehmen:
+    description: Akzeptiert eine Freundschaftsanfrage
+    usage: /annehmen
+    permission: nonelesslobby.friends
+  
+  ablehnen:
+    description: Lehnt eine Freundschaftsanfrage ab
+    usage: /ablehnen
+    permission: nonelesslobby.friends
+  
+  testfriendrequest:
+    description: Admin-Command zum Testen von Freundschaftsanfragen
+    usage: /testfriendrequest <spielername>
+    aliases: [testfriend, tfr]
+    permission: nonelesslobby.admin
     
   # === ADMIN COMMANDS ===
   lobbyreload:

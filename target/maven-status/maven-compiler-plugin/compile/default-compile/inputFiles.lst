@@ -1,9 +1,11 @@
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\Mysql\Punkte.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\listeners\EssentialsWarpMenuListener.java
+C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\friends\FriendRequestSession.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\Menues\PointsAdminMenu.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\commands\CMDSettings.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\listeners\LobbyWorldListener.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\friends\FriendManager.java
+C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\commands\CMDDenyFriend.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\listeners\FriendsListener.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\Menues\PointsPlayerListMenu.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\commands\CMDSetLobby.java
@@ -16,12 +18,14 @@ C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\Me
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\tabcompleters\LobbyTabCompleter.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\Config\GamemodeSettingsConfig.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\Menues\WorldGamemodeEditMenu.java
+C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\commands\CMDAcceptFriend.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\listeners\WorldMoveProtectionListener.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\scoreboard\LobbyScoreboard.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\Main.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\gui\GuiManager.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\api\ScoreboardAPI.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\commands\CMDServerInfo.java
+C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\commands\CMDTestFriendRequest.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\Menues\Settings.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\api\PunkteAPI.java
 C:\Users\webde\Desktop\Projekte\Nonelesslobby\src\main\java\de\noneless\lobby\listeners\PlayerListener.java

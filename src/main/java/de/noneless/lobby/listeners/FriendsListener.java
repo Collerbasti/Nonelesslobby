@@ -4,6 +4,7 @@ import de.noneless.lobby.Main;
 import de.noneless.lobby.Menues.FriendsMenu;
 import friends.FriendManager;
 import friends.FriendManager.FriendRequestResult;
+import friends.FriendRequestSession;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
@@ -112,7 +113,8 @@ public class FriendsListener implements Listener {
                 player.sendMessage(ChatColor.GREEN + "Anfrage an " + targetName + " gesendet.");
                 Player target = Bukkit.getPlayerExact(targetName);
                 if (target != null && target.isOnline()) {
-                    target.sendMessage(ChatColor.AQUA + player.getName() + " möchte dein Freund sein. Öffne das Freunde-Menü, um anzunehmen.");
+                    // Neue Chat-basierte Ansicht statt Menü-Nachricht
+                    FriendRequestSession.createSession(target, player.getName());
                 }
                 break;
             case ALREADY_FRIENDS:

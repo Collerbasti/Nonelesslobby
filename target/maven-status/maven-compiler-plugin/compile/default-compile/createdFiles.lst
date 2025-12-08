@@ -23,6 +23,7 @@ npc\NPCManager.class
 de\noneless\lobby\commands\CMDWarps.class
 de\noneless\lobby\listeners\FriendsListener.class
 de\noneless\lobby\world\WorldMoveState.class
+de\noneless\lobby\commands\CMDTestFriendRequest.class
 Config\GamemodeSettingsConfig.class
 de\noneless\lobby\listeners\LobbyWorldListener.class
 de\noneless\lobby\listeners\WarpsListener.class
@@ -35,11 +36,13 @@ de\noneless\lobby\Menues\GamemodeAdminMenu.class
 de\noneless\lobby\commands\CMDPunkteleaderboard.class
 de\noneless\lobby\Menues\Warps.class
 de\noneless\lobby\world\WorldMoverStateStorage.class
+friends\FriendRequestSession.class
 de\noneless\lobby\listeners\NPCMenuListener$LineInput.class
 de\noneless\lobby\listeners\PlayerListener.class
 de\noneless\lobby\world\WorldMoveJob$BorderWindow.class
 de\noneless\lobby\api\PunkteAPI.class
 de\noneless\lobby\Menues\Warps$MenuHolder.class
+de\noneless\lobby\commands\CMDDenyFriend.class
 de\noneless\lobby\commands\CMDProfile.class
 npc\NPCManager$ConversationPersonaRole.class
 de\noneless\lobby\Menues\Settings.class
@@ -49,6 +52,7 @@ de\noneless\lobby\scoreboard\LobbyScoreboard.class
 de\noneless\lobby\world\WorldMoveJob$ChunkCoordinate.class
 de\noneless\lobby\commands\CMDPunkteAdmin.class
 de\noneless\lobby\tabcompleters\LobbyTabCompleter.class
+friends\FriendRequestSession$FriendRequestData.class
 de\noneless\lobby\Menues\PointsPlayerListMenu.class
 de\noneless\lobby\listeners\NPCMenuListener.class
 Config\ConfigManager.class
@@ -66,6 +70,7 @@ de\noneless\lobby\Menues\WorldGamemodeEditMenu.class
 de\noneless\lobby\Menues\PointsAdminMenu.class
 npc\NPCManager$ActiveNpcBubble.class
 de\noneless\lobby\util\GamemodeEnforcer.class
+de\noneless\lobby\commands\CMDAcceptFriend.class
 de\noneless\lobby\commands\CMDServerInfo.class
 de\noneless\lobby\listeners\EssentialsWarpMenuListener.class
 de\noneless\lobby\Menues\FriendsMenu.class

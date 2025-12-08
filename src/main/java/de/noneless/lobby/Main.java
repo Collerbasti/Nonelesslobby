@@ -101,6 +101,9 @@ public class Main extends JavaPlugin {
         getCommand("punkteadmin").setExecutor(new de.noneless.lobby.commands.CMDPunkteAdmin());
         getCommand("punktegeben").setExecutor(new de.noneless.lobby.commands.CMDPunkteGeben());
         getCommand("friend").setExecutor(new de.noneless.lobby.commands.CMDFriend());
+        getCommand("annehmen").setExecutor(new de.noneless.lobby.commands.CMDAcceptFriend());
+        getCommand("ablehnen").setExecutor(new de.noneless.lobby.commands.CMDDenyFriend());
+        getCommand("testfriendrequest").setExecutor(new de.noneless.lobby.commands.CMDTestFriendRequest());
         getCommand("serverinfo").setExecutor(new de.noneless.lobby.commands.CMDServerInfo());
         getCommand("lobbynpc").setExecutor(new de.noneless.lobby.commands.CMDNPCManager());
         getCommand("settings").setExecutor(new de.noneless.lobby.commands.CMDSettings());

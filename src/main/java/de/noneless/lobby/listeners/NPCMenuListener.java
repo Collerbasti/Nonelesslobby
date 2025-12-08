@@ -46,6 +46,7 @@ public class NPCMenuListener implements Listener {
         ADD_CONVERSATION_LINE,
         EDIT_CONVERSATION_LINE,
         SETTINGS_HOLOGRAM_HEIGHT,
+        SETTINGS_HOLOGRAM_LIFETIME,
         SETTINGS_CONVERSATION_MIN_INTERVAL,
         SETTINGS_CONVERSATION_MAX_INTERVAL,
         SETTINGS_CONVERSATION_LINE_DELAY,
@@ -333,21 +334,38 @@ public class NPCMenuListener implements Listener {
             if (clicked == null || !clicked.hasItemMeta()) return;
             Material type = clicked.getType();
             if (type == Material.ARMOR_STAND) {
-                beginEdit(player, EditType.SETTINGS_HOLOGRAM_HEIGHT, null, null,
-                        "Neue Hologramm-Höhe eingeben (z.B. 3.0):");
+                // Hologramm Höhe: +0.1 / -0.1
+                double current = manager.getChatHologramVerticalOffset();
+                double newValue = event.isLeftClick() ? current + 0.1 : current - 0.1;
+                manager.setChatHologramVerticalOffset(newValue);
+                player.sendMessage(ChatColor.GREEN + "Hologramm-Höhe: " + String.format("%.2f", newValue));
+                menu.openSettings(player);
+            } else if (type == Material.REDSTONE) {
+                // Hologram Lebensdauer: +10 / -10 Ticks
+                long current = manager.getChatHologramLifetimeTicks();
+                long newValue = event.isLeftClick() ? current + 10 : current - 10;
+                manager.setChatHologramLifetimeTicks(newValue);
+                player.sendMessage(ChatColor.GREEN + "Hologramm-Lebensdauer: " + newValue + " Ticks");
+                menu.openSettings(player);
             } else if (type == Material.REPEATER) {
                 // Überprüfe welcher REPEATER geklickt wurde via Slot
                 if (event.getSlot() == 12) {
                     // Hologram Follow Interval - Read-Only, ignorieren
                     return;
                 } else if (event.getSlot() == 18) {
-                    // Dialog-Zeilen Verzögerung
-                    beginEdit(player, EditType.SETTINGS_CONVERSATION_LINE_DELAY, null, null,
-                            "Neue Dialog-Zeilen-Verzögerung eingeben (Ticks, min. 10):");
+                    // Dialog-Zeilen Verzögerung: +5 / -5 Ticks
+                    int current = manager.getConversationLineDelayTicks();
+                    int newValue = event.isLeftClick() ? current + 5 : current - 5;
+                    manager.setConversationLineDelayTicks(newValue);
+                    player.sendMessage(ChatColor.GREEN + "Dialog-Zeilen Verzögerung: " + newValue + " Ticks");
+                    menu.openSettings(player);
                 } else if (event.getSlot() == 19) {
-                    // Gather Verzögerung
-                    beginEdit(player, EditType.SETTINGS_CONVERSATION_GATHER_DELAY, null, null,
-                            "Neue Gather-Verzögerung eingeben (Ticks, min. 0):");
+                    // Gather Verzögerung: +5 / -5 Ticks
+                    int current = manager.getConversationGatherDelayTicks();
+                    int newValue = event.isLeftClick() ? current + 5 : current - 5;
+                    manager.setConversationGatherDelayTicks(newValue);
+                    player.sendMessage(ChatColor.GREEN + "Gather Verzögerung: " + newValue + " Ticks");
+                    menu.openSettings(player);
                 }
             } else if (type == Material.LEVER) {
                 // Gespräche aktiviert/deaktiviert - Toggle
@@ -359,20 +377,29 @@ public class NPCMenuListener implements Listener {
             } else if (type == Material.CLOCK) {
                 // Überprüfe welche CLOCK geklickt wurde via Slot
                 if (event.getSlot() == 15) {
-                    // Min. Gesprächs-Interval
-                    beginEdit(player, EditType.SETTINGS_CONVERSATION_MIN_INTERVAL, null, null,
-                            "Minimales Gesprächs-Intervall eingeben (Sekunden, min. 30):");
+                    // Min. Gesprächs-Interval: +10 / -10 Sekunden
+                    int current = manager.getConversationMinIntervalSeconds();
+                    int newValue = event.isLeftClick() ? current + 10 : current - 10;
+                    manager.setConversationMinIntervalSeconds(newValue);
+                    player.sendMessage(ChatColor.GREEN + "Min. Gesprächs-Intervall: " + newValue + "s");
+                    menu.openSettings(player);
                 } else if (event.getSlot() == 16) {
-                    // Max. Gesprächs-Interval
-                    beginEdit(player, EditType.SETTINGS_CONVERSATION_MAX_INTERVAL, null, null,
-                            "Maximales Gesprächs-Intervall eingeben (Sekunden):");
+                    // Max. Gesprächs-Interval: +10 / -10 Sekunden
+                    int current = manager.getConversationMaxIntervalSeconds();
+                    int newValue = event.isLeftClick() ? current + 10 : current - 10;
+                    manager.setConversationMaxIntervalSeconds(newValue);
+                    player.sendMessage(ChatColor.GREEN + "Max. Gesprächs-Intervall: " + newValue + "s");
+                    menu.openSettings(player);
                 }
             } else if (type == Material.SPYGLASS) {
-                // Publikums Reichweite
-                beginEdit(player, EditType.SETTINGS_CONVERSATION_AUDIENCE_RADIUS, null, null,
-                        "Neue Publikums-Reichweite eingeben (Blöcke, min. 5.0):");
+                // Publikums Reichweite: +5 / -5 Blöcke
+                double current = manager.getConversationAudienceRadius();
+                double newValue = event.isLeftClick() ? current + 5 : current - 5;
+                manager.setConversationAudienceRadius(newValue);
+                player.sendMessage(ChatColor.GREEN + "Publikums Reichweite: " + String.format("%.1f", newValue) + " Blöcke");
+                menu.openSettings(player);
             } else if (type == Material.BOOK) {
-                // Gespräch Präfix
+                // Gespräch Präfix - nur mit Chat editierbar
                 beginEdit(player, EditType.SETTINGS_CONVERSATION_PREFIX, null, null,
                         "Neuer Gespräch-Präfix eingeben (z.B. &5[NPC-Privat]):");
             } else if (type == Material.ARROW) {
@@ -456,7 +483,39 @@ public class NPCMenuListener implements Listener {
         editSessions.put(player.getUniqueId(), new EditContext(type, reference, secondary));
         player.closeInventory();
         player.sendMessage(ChatColor.YELLOW + prompt);
+        
+        // Zeige Platzhalter-Hilfe für Chat und Konversations-Linien
+        if (type == EditType.ADD_CHAT || type == EditType.EDIT_CHAT || 
+            type == EditType.ADD_PERSONALITY_LINE || type == EditType.EDIT_PERSONALITY_LINE ||
+            type == EditType.ADD_CONVERSATION_LINE || type == EditType.EDIT_CONVERSATION_LINE) {
+            showPlaceholderHelp(player, type);
+        }
+        
         player.sendMessage(ChatColor.GRAY + "(Tippe 'abbrechen' um zu stoppen)");
+    }
+    
+    private void showPlaceholderHelp(Player player, EditType type) {
+        player.sendMessage("");
+        player.sendMessage(ChatColor.GOLD + "=== Verfügbare Platzhalter ===");
+        player.sendMessage(ChatColor.AQUA + "Spieler-Platzhalter:");
+        player.sendMessage(ChatColor.WHITE + "  {SPIELERNAME}, {PLAYER}, {PLAYERNAME} → Name des Spielers");
+        player.sendMessage(ChatColor.WHITE + "  {SELF} → Name des sprechenden NPCs");
+        player.sendMessage("");
+        
+        if (type == EditType.ADD_CHAT || type == EditType.EDIT_CHAT ||
+            type == EditType.ADD_PERSONALITY_LINE || type == EditType.EDIT_PERSONALITY_LINE) {
+            player.sendMessage(ChatColor.AQUA + "NPC-Platzhalter:");
+            player.sendMessage(ChatColor.WHITE + "  {NPC}, {NPC2} → Name eines anderen NPCs");
+            player.sendMessage(ChatColor.WHITE + "  {NPCXX} → Name eines anderen NPCs (XX = beliebige Zahl)");
+        }
+        
+        if (type == EditType.ADD_CONVERSATION_LINE || type == EditType.EDIT_CONVERSATION_LINE) {
+            player.sendMessage(ChatColor.AQUA + "Konversations-Platzhalter:");
+            player.sendMessage(ChatColor.WHITE + "  {A}, {a}, {FIRST} → Name des ersten Gesprächs-Partners");
+            player.sendMessage(ChatColor.WHITE + "  {B}, {b}, {SECOND} → Name des zweiten Gesprächs-Partners");
+        }
+        
+        player.sendMessage("");
     }
 
     private void handleChatInput(Player player, EditContext context, String message) {
@@ -616,6 +675,21 @@ public class NPCMenuListener implements Listener {
                     manager.setChatHologramVerticalOffset(height);
                     success = true;
                     player.sendMessage(ChatColor.GREEN + "Hologramm-Höhe auf " + height + " gesetzt.");
+                } catch (NumberFormatException ex) {
+                    player.sendMessage(ChatColor.RED + "Ungültige Zahl eingegeben.");
+                }
+                menu.openSettings(player);
+                break;
+            case SETTINGS_HOLOGRAM_LIFETIME:
+                try {
+                    long ticks = Long.parseLong(message);
+                    if (ticks < 20) {
+                        player.sendMessage(ChatColor.RED + "Lebensdauer muss mindestens 20 Ticks sein (1 Sekunde).");
+                        break;
+                    }
+                    manager.setChatHologramLifetimeTicks(ticks);
+                    success = true;
+                    player.sendMessage(ChatColor.GREEN + "Hologramm-Lebensdauer auf " + ticks + " Ticks gesetzt.");
                 } catch (NumberFormatException ex) {
                     player.sendMessage(ChatColor.RED + "Ungültige Zahl eingegeben.");
                 }

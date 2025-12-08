@@ -1,4 +1,33 @@
+# Build directories
 /bin/
 target/
 # ignore built artifact (specific jar still allowed if needed)
 !target/NonelessLobby-3.1.jar
+
+# Compiled class files
+*.class
+
+# Build scripts and outputs
+*.bat
+*.ps1
+build_output.txt
+dependency-reduced-pom.xml
+
+# IDE files
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+
+# Maven
+.mvn/
+mvnw
+mvnw.cmd
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

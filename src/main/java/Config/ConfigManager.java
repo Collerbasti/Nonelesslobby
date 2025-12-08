@@ -165,6 +165,10 @@ public class ConfigManager {
      */
     public static void loadMySQLConfig() {
         if (plugin == null) {
+            // Log warning if plugin is not initialized
+            if (Bukkit.getLogger() != null) {
+                Bukkit.getLogger().warning("[NonelessLobby] Cannot load MySQL config - plugin not initialized");
+            }
             return;
         }
         
@@ -182,7 +186,7 @@ public class ConfigManager {
             Mysql.MySQL.username = mainConfig.getString("mysql.username", "lobby");
             Mysql.MySQL.password = mainConfig.getString("mysql.password", "changeme");
             
-            plugin.getLogger().info("MySQL-Konfiguration geladen. Host: " + Mysql.MySQL.host);
+            plugin.getLogger().info("MySQL-Konfiguration erfolgreich geladen.");
         } else {
             plugin.getLogger().info("MySQL ist deaktiviert in der Konfiguration.");
         }

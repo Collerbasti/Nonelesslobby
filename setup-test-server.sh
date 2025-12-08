@@ -153,7 +153,7 @@ mysql:
   port: 3306
   database: nonelesslobby
   username: lobby
-  password: change_me
+  password: changeme
 
 # Lobby Settings
 lobby:

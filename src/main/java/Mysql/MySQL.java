@@ -63,7 +63,7 @@ public class MySQL {
             logger().info("[Lobby-MySQL] Verbindungspool erstellt.");
         } catch (Exception e) {
             logger().severe("[Lobby-MySQL] Fehler beim Erstellen des Pools: " + e.getMessage());
-            e.printStackTrace();
+            logger().severe("[Lobby-MySQL] Stack trace: " + java.util.Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -94,3 +94,6 @@ public class MySQL {
         return dataSource.getConnection();
     }
 }
+
+
+

@@ -1,47 +1,59 @@
 package Mysql;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import Mysql.MySQL;
 
 public class Punkte {
-    // Cache für bessere Performance
-    private static Map<UUID, Integer> pointsCache = new HashMap<>();
+    // Thread-safe cache for better performance
+    private static final Map<UUID, Integer> pointsCache = new ConcurrentHashMap<>();
+    
+    // Track dirty entries that need to be saved
+    private static final Map<UUID, Integer> dirtyCache = new ConcurrentHashMap<>();
     
     /**
-     * Holt die Punkte eines Spielers aus der Datenbank
+     * Gets a player's points from cache or database
      */
     public static int getPoints(UUID uuid) {
-        // Prüfe zuerst den Cache
+        // Check cache first
         if (pointsCache.containsKey(uuid)) {
             return pointsCache.get(uuid);
         }
         
-        try {
-            PreparedStatement ps = MySQL.getConnection().prepareStatement(
-                "SELECT points FROM player_points WHERE uuid = ?");
+        // Load from database
+        return loadPointsFromDatabase(uuid);
+    }
+    
+    /**
+     * Loads points from database synchronously (for initial load)
+     */
+    private static int loadPointsFromDatabase(UUID uuid) {
+        try (Connection conn = MySQL.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                "SELECT points FROM player_points WHERE uuid = ?")) {
+            
             ps.setString(1, uuid.toString());
-            ResultSet rs = ps.executeQuery();
             
-            int points = 0;
-            if (rs.next()) {
-                points = rs.getInt("points");
+            try (ResultSet rs = ps.executeQuery()) {
+                int points = 0;
+                if (rs.next()) {
+                    points = rs.getInt("points");
+                }
+                
+                // Cache the result
+                pointsCache.put(uuid, points);
+                return points;
             }
-            
-            // In Cache speichern
-            pointsCache.put(uuid, points);
-            
-            rs.close();
-            ps.close();
-            return points;
-            
         } catch (SQLException e) {
             e.printStackTrace();
             return 0;
@@ -49,29 +61,43 @@ public class Punkte {
     }
     
     /**
-     * Setzt die Punkte eines Spielers
+     * Sets a player's points - updates cache and marks for async save
      */
     public static void setPoints(UUID uuid, int points) {
-        try {
-            PreparedStatement ps = MySQL.getConnection().prepareStatement(
+        // Update cache immediately
+        pointsCache.put(uuid, points);
+        dirtyCache.put(uuid, points);
+        
+        // Save asynchronously
+        Bukkit.getScheduler().runTaskAsynchronously(
+            Bukkit.getPluginManager().getPlugin("NonelessLobby"), 
+            () -> savePointsToDatabase(uuid, points)
+        );
+    }
+    
+    /**
+     * Saves points to database (called async)
+     */
+    private static void savePointsToDatabase(UUID uuid, int points) {
+        try (Connection conn = MySQL.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
                 "INSERT INTO player_points (uuid, points) VALUES (?, ?) " +
-                "ON DUPLICATE KEY UPDATE points = ?");
+                "ON DUPLICATE KEY UPDATE points = ?")) {
+            
             ps.setString(1, uuid.toString());
             ps.setInt(2, points);
             ps.setInt(3, points);
             ps.executeUpdate();
-            ps.close();
             
-            // Cache aktualisieren
-            pointsCache.put(uuid, points);
-            
+            // Remove from dirty cache after successful save
+            dirtyCache.remove(uuid);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
     
     /**
-     * Fügt Punkte hinzu
+     * Adds points to a player
      */
     public static void addPoints(UUID uuid, int amount) {
         int currentPoints = getPoints(uuid);
@@ -79,7 +105,7 @@ public class Punkte {
     }
     
     /**
-     * Entfernt Punkte
+     * Removes points from a player
      */
     public static void removePoints(UUID uuid, int amount) {
         int currentPoints = getPoints(uuid);
@@ -87,7 +113,7 @@ public class Punkte {
     }
     
     /**
-     * Aktualisiert Punkte mit Nachricht an den Spieler
+     * Updates points with a message to the player
      */
     public static void updatePoints(UUID uuid, int amount, String reason, boolean add, Player player) {
         int currentPoints = getPoints(uuid);
@@ -106,48 +132,60 @@ public class Punkte {
     }
     
     /**
-     * Initialisiert die Datenbanktabelle
+     * Initializes the database table
      */
     public static void initializeDatabase() {
-        try {
-            PreparedStatement ps = MySQL.getConnection().prepareStatement(
-                "CREATE TABLE IF NOT EXISTS player_points (" +
-                "uuid VARCHAR(36) PRIMARY KEY, " +
-                "points INT DEFAULT 0, " +
-                "last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" +
-                ")");
-            ps.executeUpdate();
-            ps.close();
-            
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        Bukkit.getScheduler().runTaskAsynchronously(
+            Bukkit.getPluginManager().getPlugin("NonelessLobby"),
+            () -> {
+                try (Connection conn = MySQL.getConnection();
+                     PreparedStatement ps = conn.prepareStatement(
+                        "CREATE TABLE IF NOT EXISTS player_points (" +
+                        "uuid VARCHAR(36) PRIMARY KEY, " +
+                        "points INT DEFAULT 0, " +
+                        "last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, " +
+                        "INDEX idx_points (points)" + // Add index for faster leaderboard queries
+                        ")")) {
+                    ps.executeUpdate();
+                    Bukkit.getLogger().info("[Lobby-MySQL] player_points table initialized");
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        );
     }
     
     /**
-     * Leert den Cache (nützlich beim Plugin-Reload)
+     * Clears the cache (useful for plugin reload)
      */
     public static void clearCache() {
         pointsCache.clear();
+        dirtyCache.clear();
     }
     
     /**
-     * Lädt die Punkte eines Spielers in den Cache
+     * Loads a player's points into cache
      */
     public static void loadPlayerToCache(UUID uuid) {
-        getPoints(uuid); // Lädt automatisch in den Cache
+        getPoints(uuid); // This automatically loads into cache
     }
 
     /**
-     * Speichert alle gecachten Punkte in die Datenbank.
-     * Wird beim Plugin-Disable aufgerufen.
+     * Saves all dirty cached points to database using batch operations.
+     * Called when plugin disables.
      */
     public static void saveAllPoints() {
-        try {
-            PreparedStatement ps = MySQL.getConnection().prepareStatement(
-                "INSERT INTO player_points (uuid, points) VALUES (?, ?) ON DUPLICATE KEY UPDATE points = ?");
+        if (dirtyCache.isEmpty()) {
+            return;
+        }
+        
+        try (Connection conn = MySQL.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                "INSERT INTO player_points (uuid, points) VALUES (?, ?) " +
+                "ON DUPLICATE KEY UPDATE points = ?")) {
 
-            for (Map.Entry<UUID, Integer> entry : pointsCache.entrySet()) {
+            // Use batch operations for better performance
+            for (Map.Entry<UUID, Integer> entry : dirtyCache.entrySet()) {
                 ps.setString(1, entry.getKey().toString());
                 ps.setInt(2, entry.getValue());
                 ps.setInt(3, entry.getValue());
@@ -155,7 +193,8 @@ public class Punkte {
             }
 
             ps.executeBatch();
-            ps.close();
+            dirtyCache.clear();
+            Bukkit.getLogger().info("[Lobby-MySQL] Alle Punkte gespeichert");
         } catch (SQLException e) {
             e.printStackTrace();
         }

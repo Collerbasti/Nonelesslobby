@@ -264,7 +264,7 @@ public class SettingsListener implements Listener {
             openSettingsMenu(player);
         } catch (Exception e) {
             player.sendMessage(ChatColor.RED + "Fehler beim Ändern der Freunde-Teleport Einstellung!");
-            e.printStackTrace();
+            Bukkit.getLogger().severe("[SettingsListener] Error toggling friend TP: " + e.getMessage());
         }
     }
 
@@ -280,7 +280,7 @@ public class SettingsListener implements Listener {
             openSettingsMenu(player);
         } catch (Exception e) {
             player.sendMessage(ChatColor.RED + "Fehler beim Ändern der Coins-Einstellung!");
-            e.printStackTrace();
+            Bukkit.getLogger().severe("[SettingsListener] Error toggling coins: " + e.getMessage());
         }
     }
 
@@ -296,7 +296,7 @@ public class SettingsListener implements Listener {
             openSettingsMenu(player);
         } catch (Exception e) {
             player.sendMessage(ChatColor.RED + "Fehler beim Ändern der Admin-Sichtbarkeit!");
-            e.printStackTrace();
+            Bukkit.getLogger().severe("[SettingsListener] Error toggling admin visibility: " + e.getMessage());
         }
     }
 
@@ -319,7 +319,7 @@ public class SettingsListener implements Listener {
             settingsMenu.Spawn(player);
         } catch (Exception e) {
             player.sendMessage(ChatColor.RED + "Fehler beim Öffnen des Settings-Menüs!");
-            e.printStackTrace();
+            Bukkit.getLogger().severe("[SettingsListener] Error opening settings menu: " + e.getMessage());
         }
     }
 
@@ -372,7 +372,7 @@ public class SettingsListener implements Listener {
             openSettingsMenu(player);
         } catch (Exception e) {
             player.sendMessage(ChatColor.RED + "Fehler beim Umschalten der NPC-Chat Einstellung!");
-            e.printStackTrace();
+            Bukkit.getLogger().severe("[SettingsListener] Error toggling NPC chat: " + e.getMessage());
         }
     }
 

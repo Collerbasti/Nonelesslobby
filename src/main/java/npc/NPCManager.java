@@ -393,7 +393,7 @@ public class NPCManager {
             
         } catch (Exception e) {
             plugin.getLogger().severe("Fehler beim Spawnen der NPCs: " + e.getMessage());
-            e.printStackTrace();
+            plugin.getLogger().severe("Stack trace: " + java.util.Arrays.toString(e.getStackTrace()));
         }
     }
     
@@ -441,7 +441,7 @@ public class NPCManager {
                                                
         } catch (Exception e) {
             plugin.getLogger().warning("Fehler beim Spawnen von NPC " + index + ": " + e.getMessage());
-            e.printStackTrace();
+            plugin.getLogger().warning("Stack trace: " + java.util.Arrays.toString(e.getStackTrace()));
         }
     }
     

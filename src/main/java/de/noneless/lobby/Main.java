@@ -182,7 +182,7 @@ public class Main extends JavaPlugin {
             }
         } catch (java.io.IOException e) {
             getLogger().warning("§cFehler beim Speichern der Konfigurationen: " + e.getMessage());
-            e.printStackTrace();
+            getLogger().warning("Stack trace: " + java.util.Arrays.toString(e.getStackTrace()));
         }
     }
     

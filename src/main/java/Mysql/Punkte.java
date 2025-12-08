@@ -55,7 +55,7 @@ public class Punkte {
                 return points;
             }
         } catch (SQLException e) {
-            e.printStackTrace();
+            Bukkit.getLogger().severe("[Lobby-MySQL] Error getting points: " + e.getMessage());
             return 0;
         }
     }
@@ -92,7 +92,7 @@ public class Punkte {
             // Remove from dirty cache after successful save
             dirtyCache.remove(uuid);
         } catch (SQLException e) {
-            e.printStackTrace();
+            Bukkit.getLogger().severe("[Lobby-MySQL] Error setting points: " + e.getMessage());
         }
     }
     
@@ -149,7 +149,7 @@ public class Punkte {
                     ps.executeUpdate();
                     Bukkit.getLogger().info("[Lobby-MySQL] player_points table initialized");
                 } catch (SQLException e) {
-                    e.printStackTrace();
+                    Bukkit.getLogger().severe("[Lobby-MySQL] Error initializing table: " + e.getMessage());
                 }
             }
         );
@@ -196,7 +196,7 @@ public class Punkte {
             dirtyCache.clear();
             Bukkit.getLogger().info("[Lobby-MySQL] Alle Punkte gespeichert");
         } catch (SQLException e) {
-            e.printStackTrace();
+            Bukkit.getLogger().severe("[Lobby-MySQL] Error saving all points: " + e.getMessage());
         }
     }
 }

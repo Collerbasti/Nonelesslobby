@@ -64,7 +64,7 @@ public class FriendManager {
             friendConfig.save(friendFile);
             isDirty = false;
         } catch (IOException e) {
-            e.printStackTrace();
+            Bukkit.getLogger().severe("[FriendManager] Error saving friends config: " + e.getMessage());
         }
     }
     

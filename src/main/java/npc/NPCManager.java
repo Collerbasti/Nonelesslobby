@@ -902,7 +902,7 @@ public class NPCManager {
                 DHAPI.moveHologram(hologram, updated);
             } catch (Exception ignored) { }
         }, CHAT_HOLOGRAM_FOLLOW_INTERVAL, CHAT_HOLOGRAM_FOLLOW_INTERVAL);
-        BukkitTask cleanupTask = Bukkit.getScheduler().runTaskLater(plugin, () -> destroyNpcBubble(npc), CHAT_HOLOGRAM_LIFETIME_TICKS);
+        BukkitTask cleanupTask = Bukkit.getScheduler().runTaskLater(plugin, () -> destroyNpcBubble(npc), chatHologramLifetimeTicks);
         npcChatBubbles.put(npc, new ActiveNpcBubble(hologramName, followTask, cleanupTask, previousNameplateState));
     }
 

@@ -1,12 +1,14 @@
 package gui;
 
+import org.bukkit.Bukkit;
+
 public class GuiManager {
     
     public static void initialize() {
-        System.out.println("GuiManager wird initialisiert...");
+        Bukkit.getLogger().info("[GuiManager] Initialisierung...");
     }
     
     public static void shutdown() {
-        System.out.println("GuiManager wird heruntergefahren...");
+        Bukkit.getLogger().info("[GuiManager] Herunterfahren...");
     }
 }

@@ -1,12 +1,14 @@
 package player;
 
+import org.bukkit.Bukkit;
+
 public class PlayerManager {
     
     public static void initialize() {
-        System.out.println("PlayerManager wird initialisiert...");
+        Bukkit.getLogger().info("[PlayerManager] Initialisierung...");
     }
     
     public static void shutdown() {
-        System.out.println("PlayerManager wird heruntergefahren...");
+        Bukkit.getLogger().info("[PlayerManager] Herunterfahren...");
     }
 }

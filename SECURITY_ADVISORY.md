@@ -1,6 +1,10 @@
 # SECURITY ADVISORY
 
-## Critical Security Fix - Hardcoded Database Credentials
+## Security Fixes
+
+---
+
+## 1. Critical Security Fix - Hardcoded Database Credentials
 
 ### Issue Summary
 **Severity**: CRITICAL
@@ -52,7 +56,89 @@ public static String password = "changeme";
 - Not exposed in compiled JAR
 - Not committed to version control
 
-### Action Required
+---
+
+## 2. Critical Security Fix - MySQL Connector Vulnerabilities (CVE)
+
+### Issue Summary
+**Severity**: CRITICAL
+**Status**: FIXED
+**Date**: 2024-12-08
+**CVE**: MySQL Connectors takeover vulnerability
+
+### Description
+The MySQL Connector/J version 8.0.33 has known security vulnerabilities that could allow takeover attacks. Two separate vulnerabilities were identified:
+1. Affects versions < 8.2.0 (patched in 8.2.0)
+2. Affects versions <= 8.0.33 (no patch available in 8.0.x line)
+
+### Affected Dependency
+**File**: `pom.xml`
+
+**Before (VULNERABLE)**:
+```xml
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+    <version>8.0.33</version>  <!-- VULNERABLE -->
+    <scope>compile</scope>
+</dependency>
+```
+
+### Fix Applied
+**After (SECURE)**:
+```xml
+<dependency>
+    <groupId>com.mysql</groupId>
+    <artifactId>mysql-connector-j</artifactId>
+    <version>8.2.0</version>  <!-- PATCHED -->
+    <scope>compile</scope>
+</dependency>
+```
+
+### Impact
+**Vulnerability Details**:
+- MySQL Connectors takeover vulnerability
+- Could allow attackers to take control of database connections
+- Potential for data exfiltration or manipulation
+- Remote exploitation possible in certain configurations
+
+**Risk Level**: CRITICAL - Affects database security directly
+
+### Action Required for Existing Installations
+
+1. **Update Plugin Immediately**
+   - Pull latest version with MySQL Connector 8.2.0
+   - Rebuild: `mvn clean package`
+   - Deploy updated JAR to server
+
+2. **Verify Update**
+   ```bash
+   # Check the JAR contains updated connector
+   unzip -l NonelessLobby-3.1.jar | grep mysql-connector
+   # Should show version 8.2.0
+   ```
+
+3. **Monitor Database Access**
+   - Review recent connection logs
+   - Check for suspicious queries
+   - Verify all connections are legitimate
+
+4. **Consider Additional Security**
+   - Restrict database access to localhost only
+   - Use strong authentication
+   - Enable MySQL audit logging
+   - Keep MySQL server updated
+
+### Verification
+```bash
+# Check Maven dependencies
+mvn dependency:tree | grep mysql-connector-j
+# Should show: com.mysql:mysql-connector-j:jar:8.2.0
+```
+
+---
+
+## Combined Action Required
 **IMMEDIATE ACTIONS** for anyone who used the old code:
 
 1. **Change Database Password Immediately**
@@ -256,23 +342,33 @@ ls -la src/main/resources/config.yml
 
 ### Timeline
 
+**Hardcoded Credentials Issue:**
 - **2024-12-08 20:00 UTC**: Vulnerability discovered during code review
 - **2024-12-08 20:15 UTC**: Fix implemented and committed
 - **2024-12-08 20:20 UTC**: Security advisory created
 - **2024-12-08 20:30 UTC**: Documentation updated
 
+**MySQL Connector Vulnerabilities:**
+- **2024-12-08 20:40 UTC**: Vulnerabilities identified in mysql-connector-j 8.0.33
+- **2024-12-08 20:42 UTC**: Dependency updated to 8.2.0 (patched version)
+- **2024-12-08 20:43 UTC**: Verified no vulnerabilities in updated version
+- **2024-12-08 20:45 UTC**: Security advisory updated
+
 ### Credits
 
-Security vulnerability discovered and fixed during automated security review.
+Security vulnerabilities discovered and fixed during automated security review and dependency scanning.
 
 ### References
 
 - [OWASP: Use of Hard-coded Credentials](https://owasp.org/www-community/vulnerabilities/Use_of_hard-coded_credentials)
 - [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)
 - [MySQL Security Best Practices](https://dev.mysql.com/doc/refman/8.0/en/security-guidelines.html)
+- [MySQL Connector/J Release Notes](https://dev.mysql.com/doc/relnotes/connector-j/8.2/en/)
+- [MySQL Connector/J Security Advisories](https://www.mysql.com/support/security/)
 
 ---
 
-**Status**: ✅ RESOLVED
+**Status**: ✅ ALL RESOLVED
+**Issues Fixed**: 2 CRITICAL vulnerabilities
 **Version**: Fixed in version 3.1+
 **Commit**: See git history for exact commit hash

@@ -1,8 +1,10 @@
 package friends;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +14,9 @@ public class FriendManager {
 
     private static File friendFile;
     private static FileConfiguration friendConfig;
+    private static boolean isDirty = false;
+    private static BukkitTask autoSaveTask;
+    private static final long AUTO_SAVE_INTERVAL = 20L * 60; // Save every 60 seconds
 
     public static void initialize(JavaPlugin plugin) {
         friendFile = new File(plugin.getDataFolder(), "friends.yml");
@@ -24,21 +29,51 @@ public class FriendManager {
             }
         }
         friendConfig = YamlConfiguration.loadConfiguration(friendFile);
+        
+        // Start auto-save task to periodically save if dirty
+        autoSaveTask = Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () -> {
+            if (isDirty) {
+                saveNow();
+            }
+        }, AUTO_SAVE_INTERVAL, AUTO_SAVE_INTERVAL);
     }
 
     public static void shutdown() {
-        save();
+        if (autoSaveTask != null) {
+            autoSaveTask.cancel();
+            autoSaveTask = null;
+        }
+        saveNow(); // Force save on shutdown
     }
 
-    public static void save() {
+    /**
+     * Mark configuration as dirty (needs saving)
+     */
+    private static void markDirty() {
+        isDirty = true;
+    }
+
+    /**
+     * Save immediately (synchronous)
+     */
+    private static void saveNow() {
         if (friendFile == null || friendConfig == null) {
             return;
         }
         try {
             friendConfig.save(friendFile);
+            isDirty = false;
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+    
+    /**
+     * Deprecated: Use markDirty() instead for batched saves
+     */
+    @Deprecated
+    public static void save() {
+        saveNow();
     }
 
     public static List<String> getFriends(String playerName) {
@@ -59,7 +94,7 @@ public class FriendManager {
         }
         pending.add(requester);
         friendConfig.set(requestKey(target), pending);
-        save();
+        markDirty(); // Changed from save()
         return FriendRequestResult.SENT;
     }
 
@@ -74,7 +109,7 @@ public class FriendManager {
         if (!removed) return false;
         friendConfig.set(requestKey(receiver), pending);
         addFriend(receiver, requester);
-        save();
+        markDirty(); // Changed from save()
         return true;
     }
 
@@ -83,7 +118,7 @@ public class FriendManager {
         boolean removed = pending.removeIf(name -> name.equalsIgnoreCase(requester));
         if (removed) {
             friendConfig.set(requestKey(receiver), pending);
-            save();
+            markDirty(); // Changed from save()
         }
         return removed;
     }
@@ -98,7 +133,7 @@ public class FriendManager {
         if (targetFriends.add(owner)) {
             friendConfig.set(playerKey(newFriend), new ArrayList<>(targetFriends));
         }
-        save();
+        markDirty(); // Changed from save()
     }
 
     public static void removeFriend(String owner, String friend) {
@@ -111,7 +146,7 @@ public class FriendManager {
         if (otherFriends.remove(owner)) {
             friendConfig.set(playerKey(friend), new ArrayList<>(otherFriends));
         }
-        save();
+        markDirty(); // Changed from save()
     }
 
     public static boolean areFriends(String a, String b) {

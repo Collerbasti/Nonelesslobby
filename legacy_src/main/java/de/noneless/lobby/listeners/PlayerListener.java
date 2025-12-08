@@ -6,6 +6,7 @@ import de.noneless.lobby.Main;
 import de.noneless.lobby.Menues.FriendsMenu;
 import de.noneless.lobby.Menues.Warps;
 import de.noneless.lobby.scoreboard.LobbyScoreboard;
+import de.noneless.lobby.util.GamemodeEnforcer;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -50,7 +51,7 @@ public class PlayerListener implements Listener {
         if (event.isCancelled()) return;
         Player player = event.getPlayer();
         Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
-            applyGamemodeSetting(player);
+            GamemodeEnforcer.enforceImmediate(player);
             LobbyScoreboard.update(player);
         });
     }
@@ -59,7 +60,7 @@ public class PlayerListener implements Listener {
     public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
         Bukkit.getScheduler().runTask(Main.getInstance(), () -> {
             Player player = event.getPlayer();
-            applyGamemodeSetting(player);
+            GamemodeEnforcer.enforceImmediate(player);
             LobbyScoreboard.update(player);
         });
     }
@@ -79,6 +80,7 @@ public class PlayerListener implements Listener {
     
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
+        GamemodeEnforcer.clearPlayer(event.getPlayer());
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), LobbyScoreboard::updateAll, 1L);
     }
 

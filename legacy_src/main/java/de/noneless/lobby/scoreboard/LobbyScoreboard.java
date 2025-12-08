@@ -11,9 +11,7 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 public class LobbyScoreboard {
 
@@ -31,6 +29,11 @@ public class LobbyScoreboard {
 
     private static JavaPlugin plugin;
     private static BukkitTask autoUpdateTask;
+    
+    // Cache last player count to avoid rebuilding scoreboards when nothing changed
+    private static int lastPlayerCount = -1;
+    private static final Map<UUID, Long> lastUpdateTime = new HashMap<>();
+    private static final long MIN_UPDATE_INTERVAL = 100L; // Min 5 seconds between individual updates
 
     private LobbyScoreboard() {}
 
@@ -41,6 +44,16 @@ public class LobbyScoreboard {
 
     public static void update(Player player) {
         if (plugin == null) return;
+        
+        // Rate limiting: don't update same player too frequently
+        UUID playerId = player.getUniqueId();
+        Long lastUpdate = lastUpdateTime.get(playerId);
+        long now = System.currentTimeMillis();
+        if (lastUpdate != null && (now - lastUpdate) < MIN_UPDATE_INTERVAL) {
+            return; // Skip update, too soon
+        }
+        lastUpdateTime.put(playerId, now);
+        
         Location lobby = ConfigManager.getLobbyLocation();
         if (lobby == null || lobby.getWorld() == null) return;
         if (!player.getWorld().equals(lobby.getWorld())) {
@@ -51,6 +64,11 @@ public class LobbyScoreboard {
             }
             return;
         }
+        
+        updateScoreboard(player);
+    }
+    
+    private static void updateScoreboard(Player player) {
         org.bukkit.scoreboard.ScoreboardManager sbManager = Bukkit.getScoreboardManager();
         if (sbManager == null) return;
         Scoreboard board = sbManager.getNewScoreboard();
@@ -58,7 +76,8 @@ public class LobbyScoreboard {
         objective.setDisplaySlot(DisplaySlot.SIDEBAR);
 
         int score = 15;
-        score = addLine(objective, "§fSpieler: §a" + Bukkit.getOnlinePlayers().size(), score);
+        int currentPlayerCount = Bukkit.getOnlinePlayers().size();
+        score = addLine(objective, "§fSpieler: §a" + currentPlayerCount, score);
         score = addLine(objective, "§8----------------", score);
         score = addLine(objective, "§bVerfügbare Befehle:", score);
 
@@ -79,6 +98,15 @@ public class LobbyScoreboard {
 
     public static void updateAll() {
         if (plugin == null) return;
+        
+        int currentPlayerCount = Bukkit.getOnlinePlayers().size();
+        
+        // Only update if player count changed or custom lines were modified
+        if (lastPlayerCount == currentPlayerCount) {
+            return; // Skip update, nothing changed
+        }
+        
+        lastPlayerCount = currentPlayerCount;
         Bukkit.getOnlinePlayers().forEach(LobbyScoreboard::update);
     }
     
@@ -87,12 +115,14 @@ public class LobbyScoreboard {
             autoUpdateTask.cancel();
             autoUpdateTask = null;
         }
+        lastUpdateTime.clear();
     }
 
     public static void setCustomLine(int index, String text) {
         if (plugin == null) return;
         if (index < 0 || index >= customLines.length) return;
         customLines[index] = text;
+        lastPlayerCount = -1; // Force update on next updateAll()
         updateAll();
     }
 

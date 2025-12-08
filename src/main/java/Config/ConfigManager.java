@@ -158,4 +158,33 @@ public class ConfigManager {
         ));
         lobbyLogged = true;
     }
+    
+    /**
+     * Loads MySQL configuration from config.yml
+     * Should be called before initializing database
+     */
+    public static void loadMySQLConfig() {
+        if (plugin == null) {
+            return;
+        }
+        
+        // Save default config if it doesn't exist
+        plugin.saveDefaultConfig();
+        FileConfiguration mainConfig = plugin.getConfig();
+        
+        // Load MySQL settings with defaults
+        boolean mysqlEnabled = mainConfig.getBoolean("mysql.enabled", false);
+        
+        if (mysqlEnabled) {
+            Mysql.MySQL.host = mainConfig.getString("mysql.host", "localhost");
+            Mysql.MySQL.port = mainConfig.getString("mysql.port", "3306");
+            Mysql.MySQL.database = mainConfig.getString("mysql.database", "nonelesslobby");
+            Mysql.MySQL.username = mainConfig.getString("mysql.username", "lobby");
+            Mysql.MySQL.password = mainConfig.getString("mysql.password", "changeme");
+            
+            plugin.getLogger().info("MySQL-Konfiguration geladen. Host: " + Mysql.MySQL.host);
+        } else {
+            plugin.getLogger().info("MySQL ist deaktiviert in der Konfiguration.");
+        }
+    }
 }

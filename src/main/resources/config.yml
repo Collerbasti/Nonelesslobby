@@ -1,0 +1,181 @@
+# ======================================
+#  NonelessLobby Configuration
+# ======================================
+# Version: 3.1
+# 
+# This is the main configuration file for NonelessLobby
+# Configure MySQL, lobby settings, and plugin features here
+
+# ======================================
+#  MySQL Database Configuration
+# ======================================
+# Enable MySQL to store player points and stats persistently
+# If disabled, data will be stored in memory only (lost on restart)
+mysql:
+  enabled: false
+  host: localhost
+  port: 3306
+  database: nonelesslobby
+  username: lobby
+  password: changeme
+  # Connection pool settings
+  pool:
+    maximum-pool-size: 10
+    minimum-idle: 2
+
+# ======================================
+#  Lobby Settings
+# ======================================
+lobby:
+  # Teleport players to lobby spawn on join
+  spawn-on-join: true
+  
+  # Protect lobby world from modifications
+  protect-lobby-world: true
+  
+  # Disable player damage in lobby
+  disable-damage: true
+  
+  # Disable hunger in lobby
+  disable-hunger: true
+  
+  # Disable item dropping in lobby
+  disable-item-drop: true
+  
+  # Disable item pickup in lobby
+  disable-item-pickup: true
+  
+  # Disable block breaking in lobby
+  disable-block-break: true
+  
+  # Disable block placing in lobby
+  disable-block-place: true
+  
+  # Allow flight in lobby
+  allow-flight: true
+
+# ======================================
+#  Scoreboard Configuration
+# ======================================
+scoreboard:
+  # Enable scoreboard display
+  enabled: true
+  
+  # Update interval in ticks (20 ticks = 1 second)
+  update-interval: 20
+  
+  # Scoreboard title
+  title: "§6§l⚡ NonelessLobby ⚡"
+
+# ======================================
+#  NPC Configuration (requires Citizens)
+# ======================================
+npcs:
+  # Enable NPC features (requires Citizens plugin)
+  enabled: false
+  
+  # Auto-spawn NPCs on server start
+  auto-spawn: true
+  
+  # NPC respawn delay in ticks
+  respawn-delay: 100
+
+# ======================================
+#  Friends System
+# ======================================
+friends:
+  # Enable friends system
+  enabled: true
+  
+  # Maximum number of friends per player
+  max-friends: 50
+  
+  # Friend request timeout in seconds
+  request-timeout: 60
+  
+  # Allow teleporting to friends
+  allow-teleport: true
+
+# ======================================
+#  Points System
+# ======================================
+points:
+  # Enable points system (requires MySQL)
+  enabled: false
+  
+  # Starting points for new players
+  starting-points: 0
+  
+  # Points for actions
+  rewards:
+    daily-login: 10
+    first-join: 100
+
+# ======================================
+#  Warps System
+# ======================================
+warps:
+  # Enable warps system
+  enabled: true
+  
+  # Delay before teleport in seconds
+  teleport-delay: 3
+
+# ======================================
+#  Messages
+# ======================================
+messages:
+  prefix: "§8[§6NonelessLobby§8]§r "
+  
+  lobby:
+    teleport: "§aDu wurdest zur Lobby teleportiert!"
+    not-set: "§cLobby-Spawn ist nicht gesetzt! Verwende §e/setlobby"
+    set: "§aLobby-Spawn wurde gesetzt!"
+  
+  friends:
+    request-sent: "§aFreundschaftsanfrage gesendet!"
+    request-received: "§e{player} möchte dein Freund sein! §a/annehmen §coder §4/ablehnen"
+    accepted: "§aFreundschaftsanfrage akzeptiert!"
+    denied: "§cFreundschaftsanfrage abgelehnt!"
+    removed: "§cFreund entfernt!"
+    already-friends: "§cIhr seid bereits befreundet!"
+    max-friends: "§cDu hast die maximale Anzahl an Freunden erreicht!"
+  
+  points:
+    gained: "§a+{amount} Punkte! §7({reason})"
+    lost: "§c-{amount} Punkte! §7({reason})"
+    current: "§eDu hast §6{points} §ePunkte!"
+
+# ======================================
+#  Advanced Settings
+# ======================================
+advanced:
+  # Debug mode (prints additional information to console)
+  debug: false
+  
+  # Async database operations
+  async-database: true
+  
+  # Cache player data in memory
+  cache-player-data: true
+  
+  # Auto-save interval in minutes
+  auto-save-interval: 5
+
+# ======================================
+#  World Mover Settings
+# ======================================
+world-mover:
+  # Blocks processed per tick
+  blocks-per-tick: 100
+  
+  # Chunks loaded per tick
+  chunks-per-tick: 5
+  
+  # Enable backup before moving
+  backup-before-move: true
+
+# ======================================
+#  Don't edit below unless you know what you're doing
+# ======================================
+config-version: 1

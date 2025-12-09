@@ -51,6 +51,7 @@ public class NPCManager {
     private final Map<NPC, BukkitTask> movementTasks;
     private final Map<NPC, BukkitTask> lookTasks;
     private final Map<NPC, BukkitTask> chatTasks;
+    private final Map<NPC, BukkitTask> pairFollowTasks;
     private final Map<UUID, NPC> entityNpcMap;
     private final Map<String, List<String>> npcNamePersonalities;
     private final Map<String, List<String>> personalityChatMap;
@@ -66,6 +67,79 @@ public class NPCManager {
     private FileConfiguration npcConfig;
     private final File npcDataFile;
     private FileConfiguration npcData;
+    private final Map<String, SpawnEntry> savedSpawns = new LinkedHashMap<>();
+    // pairing: npcId -> PairEntry (internal) - legacy ID-based
+    private final Map<Integer, PairEntry> pairs = new LinkedHashMap<>();
+    // name-based pairing: name -> NamePairEntry
+    private final Map<String, NamePairEntry> namePairs = new LinkedHashMap<>();
+    // Points of Interest: poiName -> POIEntry
+    private final Map<String, POIEntry> pointsOfInterest = new LinkedHashMap<>();
+    // Tracking welcher NPC wo ist: npcName -> "lobby" oder poi-Name
+    private final Map<String, String> npcCurrentLocation = new LinkedHashMap<>();
+
+    private static final class POIEntry {
+        final String name;
+        final Location location;
+        final Set<String> allowedNPCNames;
+
+        POIEntry(String name, Location location) {
+            this.name = name;
+            this.location = location;
+            this.allowedNPCNames = new LinkedHashSet<>();
+        }
+    }
+
+    public static final class POIInfo {
+        public final String name;
+        public final Location location;
+        public final List<String> allowedNPCNames;
+
+        public POIInfo(String name, Location location, List<String> allowedNPCNames) {
+            this.name = name;
+            this.location = location;
+            this.allowedNPCNames = allowedNPCNames;
+        }
+    }
+
+    private static final class PairEntry {
+        final int partnerId;
+        final String prefix;
+
+        PairEntry(int partnerId, String prefix) {
+            this.partnerId = partnerId;
+            this.prefix = prefix;
+        }
+    }
+
+    private static final class NamePairEntry {
+        final String partnerName;
+        final String prefix;
+
+        NamePairEntry(String partnerName, String prefix) {
+            this.partnerName = partnerName;
+            this.prefix = prefix;
+        }
+    }
+
+    public static final class PairInfo {
+        public final int partnerId;
+        public final String prefix;
+
+        public PairInfo(int partnerId, String prefix) {
+            this.partnerId = partnerId;
+            this.prefix = prefix;
+        }
+    }
+
+    public static final class NamePairInfo {
+        public final String partnerName;
+        public final String prefix;
+
+        public NamePairInfo(String partnerName, String prefix) {
+            this.partnerName = partnerName;
+            this.prefix = prefix;
+        }
+    }
     private boolean citizensAvailable = false;
     private BukkitTask conversationLoopTask;
     private ConversationContext activeConversation;
@@ -138,7 +212,7 @@ public class NPCManager {
     }
     
     public void setConversationLineDelayTicks(int ticks) {
-        this.conversationLineDelayTicks = Math.max(10, ticks);
+        this.conversationLineDelayTicks = Math.max(20, ticks);
         if (npcConfig != null) {
             npcConfig.set("npcConversations.lineDelayTicks", conversationLineDelayTicks);
             saveNpcConfig();
@@ -220,13 +294,14 @@ public class NPCManager {
         this.conversationScripts = new ArrayList<>();
         this.conversationTasks = new ArrayList<>();
         this.npcChatBubbles = new IdentityHashMap<>();
+        this.pairFollowTasks = new IdentityHashMap<>();
         this.npcConfigFile = new File(plugin.getDataFolder(), "npc_config.yml");
         this.npcDataFile = new File(plugin.getDataFolder(), "lobby_npcs.yml");
         this.conversationPrefix = ChatColor.DARK_PURPLE + "[Privat]";
         this.conversationAudienceRadiusSquared = 2500;
         this.conversationMinIntervalSeconds = 120;
         this.conversationMaxIntervalSeconds = 240;
-        this.conversationLineDelayTicks = 40;
+        this.conversationLineDelayTicks = 100;
         this.conversationGatherDelayTicks = 60;
         this.hologramsAvailable = Bukkit.getPluginManager().isPluginEnabled("DecentHolograms");
         if (!this.hologramsAvailable) {
@@ -234,12 +309,200 @@ public class NPCManager {
         }
         loadNpcConfig();
         loadNpcData();
+        loadPairs();
+        loadNamePairs();
+        loadPOIs();
         this.citizensAvailable = checkCitizensAvailability();
         if (this.citizensAvailable) {
             cleanupExistingLobbyNPCs();
             cleanupPersistedNPCs();
+            // spawn persistent saved spawn points
+            try {
+                for (SpawnEntry entry : new ArrayList<>(savedSpawns.values())) {
+                    if (entry != null) {
+                        spawnNpcForEntry(entry);
+                    }
+                }
+            } catch (Exception ignored) { }
         }
         scheduleInitialLobbyReset();
+        startPairProximityChecker();
+    }
+
+    private BukkitTask pairProximityTask;
+
+    /**
+     * Startet einen periodischen Task der prüft ob Paare nahe beieinander stehen
+     * und Herzpartikel spawnt, sowie manchmal gemeinsam springen lässt
+     */
+    private void startPairProximityChecker() {
+        if (pairProximityTask != null) {
+            pairProximityTask.cancel();
+        }
+        
+        pairProximityTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (!citizensAvailable || lobbyNPCs.isEmpty()) return;
+            
+            // Prüfe alle NPC-Paare auf Nähe
+            List<NPC> npcs = new ArrayList<>(lobbyNPCs);
+            Set<String> alreadyChecked = new LinkedHashSet<>();
+            
+            for (NPC npc : npcs) {
+                if (npc == null || !npc.isSpawned()) continue;
+                String name = getNPCDisplayName(npc);
+                if (alreadyChecked.contains(name)) continue;
+                
+                NamePairInfo pairInfo = getNamePairFor(name);
+                if (pairInfo == null) continue;
+                
+                // Finde den Partner
+                for (NPC other : npcs) {
+                    if (other == null || other == npc || !other.isSpawned()) continue;
+                    String otherName = getNPCDisplayName(other);
+                    
+                    if (pairInfo.partnerName.equalsIgnoreCase(otherName)) {
+                        Entity e1 = npc.getEntity();
+                        Entity e2 = other.getEntity();
+                        
+                        if (e1 != null && e2 != null) {
+                            double distance = e1.getLocation().distance(e2.getLocation());
+                            if (distance <= 3.0) {
+                                // Paare sind nahe - Herzpartikel spawnen (weniger intensiv)
+                                spawnSubtleLoveParticles(npc);
+                                spawnSubtleLoveParticles(other);
+                                
+                                // 15% Chance für gemeinsamen Liebessprung!
+                                if (random.nextDouble() < 0.15) {
+                                    performCoupleJump(npc, other);
+                                }
+                            }
+                        }
+                        
+                        alreadyChecked.add(name);
+                        alreadyChecked.add(otherName);
+                        break;
+                    }
+                }
+            }
+        }, 40L, 60L); // Alle 3 Sekunden prüfen (60 Ticks)
+    }
+    
+    /**
+     * Lässt ein NPC-Paar gemeinsam springen mit vielen Herzpartikeln
+     */
+    private void performCoupleJump(NPC npc1, NPC npc2) {
+        if (npc1 == null || npc2 == null) return;
+        if (!npc1.isSpawned() || !npc2.isSpawned()) return;
+        
+        Entity e1 = npc1.getEntity();
+        Entity e2 = npc2.getEntity();
+        
+        if (!(e1 instanceof LivingEntity) || !(e2 instanceof LivingEntity)) return;
+        
+        LivingEntity living1 = (LivingEntity) e1;
+        LivingEntity living2 = (LivingEntity) e2;
+        
+        // Beide schauen sich an
+        Location loc1 = e1.getLocation();
+        Location loc2 = e2.getLocation();
+        
+        // NPC1 schaut zu NPC2
+        org.bukkit.util.Vector dir1 = loc2.toVector().subtract(loc1.toVector()).normalize();
+        loc1.setDirection(dir1);
+        e1.teleport(loc1);
+        
+        // NPC2 schaut zu NPC1
+        org.bukkit.util.Vector dir2 = loc1.toVector().subtract(loc2.toVector()).normalize();
+        loc2.setDirection(dir2);
+        e2.teleport(loc2);
+        
+        // Synchronisierter Sprung mit Velocity
+        org.bukkit.util.Vector jumpVelocity = new org.bukkit.util.Vector(0, 0.5, 0);
+        living1.setVelocity(jumpVelocity);
+        living2.setVelocity(jumpVelocity);
+        
+        // Viele Herzpartikel während des Sprungs
+        spawnJumpLoveParticles(npc1, npc2);
+        
+        // Nochmal Herzpartikel nach kurzer Verzögerung (in der Luft)
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            spawnJumpLoveParticles(npc1, npc2);
+        }, 5L);
+        
+        // Und beim Landen
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            spawnJumpLoveParticles(npc1, npc2);
+        }, 10L);
+    }
+    
+    /**
+     * Spawnt viele Herzpartikel für den Liebessprung zwischen zwei NPCs
+     */
+    private void spawnJumpLoveParticles(NPC npc1, NPC npc2) {
+        if (npc1 == null || npc2 == null) return;
+        
+        Entity e1 = npc1.isSpawned() ? npc1.getEntity() : null;
+        Entity e2 = npc2.isSpawned() ? npc2.getEntity() : null;
+        
+        if (e1 != null) {
+            Location loc = e1.getLocation().add(0, 1.5, 0);
+            e1.getWorld().spawnParticle(
+                org.bukkit.Particle.HEART,
+                loc,
+                5,      // 5 Herzen
+                0.5,    // X-Spread
+                0.4,    // Y-Spread
+                0.5,    // Z-Spread
+                0.1     // Speed
+            );
+        }
+        
+        if (e2 != null) {
+            Location loc = e2.getLocation().add(0, 1.5, 0);
+            e2.getWorld().spawnParticle(
+                org.bukkit.Particle.HEART,
+                loc,
+                5,      // 5 Herzen
+                0.5,    // X-Spread
+                0.4,    // Y-Spread
+                0.5,    // Z-Spread
+                0.1     // Speed
+            );
+        }
+        
+        // Herzpartikel auch zwischen den beiden NPCs
+        if (e1 != null && e2 != null) {
+            Location mid = e1.getLocation().add(e2.getLocation()).multiply(0.5).add(0, 1.5, 0);
+            e1.getWorld().spawnParticle(
+                org.bukkit.Particle.HEART,
+                mid,
+                3,      // 3 Herzen in der Mitte
+                0.3,    // X-Spread
+                0.3,    // Y-Spread
+                0.3,    // Z-Spread
+                0.05    // Speed
+            );
+        }
+    }
+
+    /**
+     * Spawnt dezente Herzpartikel (für Nähe-Check)
+     */
+    private void spawnSubtleLoveParticles(NPC npc) {
+        if (npc == null || !npc.isSpawned()) return;
+        Entity entity = npc.getEntity();
+        if (entity == null) return;
+        
+        Location loc = entity.getLocation().add(0, 2.0, 0);
+        entity.getWorld().spawnParticle(
+            org.bukkit.Particle.HEART,
+            loc,
+            1,      // Nur 1 Herz
+            0.3,    // X-Spread
+            0.2,    // Y-Spread
+            0.3,    // Z-Spread
+            0.0     // Speed
+        );
     }
     
     public void reloadNpcConfig() {
@@ -301,6 +564,317 @@ public class NPCManager {
             npcData.set("npcIds", new ArrayList<>());
             saveNpcData();
         }
+        // load spawn points if present
+        loadSpawnPoints();
+    }
+
+    private void loadSpawnPoints() {
+        savedSpawns.clear();
+        if (npcData == null) return;
+        ConfigurationSection spawns = npcData.getConfigurationSection("spawns");
+        if (spawns == null) return;
+        for (String key : spawns.getKeys(false)) {
+            ConfigurationSection s = spawns.getConfigurationSection(key);
+            if (s == null) continue;
+            Location loc = deserializeLocation(s.getConfigurationSection("location"));
+            int npcId = s.getInt("npcId", -1);
+            SpawnEntry entry = new SpawnEntry(key, loc, npcId >= 0 ? npcId : null);
+            savedSpawns.put(key, entry);
+        }
+    }
+
+    private void saveSpawnPoints() {
+        if (npcData == null) return;
+        ConfigurationSection base = npcData.getConfigurationSection("spawns");
+        if (base == null) base = npcData.createSection("spawns");
+        for (Map.Entry<String, SpawnEntry> e : savedSpawns.entrySet()) {
+            String key = e.getKey();
+            SpawnEntry se = e.getValue();
+            ConfigurationSection s = base.getConfigurationSection(key);
+            if (s == null) s = base.createSection(key);
+            if (se.location != null) {
+                ConfigurationSection locSec = s.getConfigurationSection("location");
+                if (locSec == null) locSec = s.createSection("location");
+                serializeLocation(se.location, locSec);
+            }
+            if (se.npcId != null) {
+                s.set("npcId", se.npcId);
+            } else {
+                s.set("npcId", null);
+            }
+        }
+        // remove any keys that are not in savedSpawns
+        List<String> toRemove = new ArrayList<>();
+        for (String key : npcData.getConfigurationSection("spawns").getKeys(false)) {
+            if (!savedSpawns.containsKey(key)) toRemove.add(key);
+        }
+        for (String rem : toRemove) {
+            npcData.set("spawns." + rem, null);
+        }
+        saveNpcData();
+    }
+
+    private static final class SpawnEntry {
+        final String name;
+        final Location location;
+        Integer npcId;
+
+        SpawnEntry(String name, Location location, Integer npcId) {
+            this.name = name;
+            this.location = location;
+            this.npcId = npcId;
+        }
+    }
+
+    private ConfigurationSection ensureLocationSection(ConfigurationSection parent) {
+        if (parent == null) return null;
+        ConfigurationSection loc = parent.getConfigurationSection("location");
+        if (loc == null) loc = parent.createSection("location");
+        return loc;
+    }
+
+    private void serializeLocation(Location loc, ConfigurationSection section) {
+        if (loc == null || section == null) return;
+        section.set("world", loc.getWorld() == null ? null : loc.getWorld().getName());
+        section.set("x", loc.getX());
+        section.set("y", loc.getY());
+        section.set("z", loc.getZ());
+        section.set("yaw", (double) loc.getYaw());
+        section.set("pitch", (double) loc.getPitch());
+    }
+
+    private Location deserializeLocation(ConfigurationSection section) {
+        if (section == null) return null;
+        try {
+            String worldName = section.getString("world");
+            World world = worldName == null ? null : Bukkit.getWorld(worldName);
+            double x = section.getDouble("x", Double.NaN);
+            double y = section.getDouble("y", Double.NaN);
+            double z = section.getDouble("z", Double.NaN);
+            double yaw = section.getDouble("yaw", 0.0);
+            double pitch = section.getDouble("pitch", 0.0);
+            if (Double.isNaN(x) || Double.isNaN(y) || Double.isNaN(z) || world == null) return null;
+            Location loc = new Location(world, x, y, z);
+            loc.setYaw((float) yaw);
+            loc.setPitch((float) pitch);
+            return loc;
+        } catch (Exception ignored) { return null; }
+    }
+
+    // Public API for spawn point management
+    public boolean addSpawnPoint(String name, Location location) {
+        if (name == null || name.isBlank() || location == null) return false;
+        String key = name.trim();
+        if (savedSpawns.containsKey(key)) return false;
+        SpawnEntry entry = new SpawnEntry(key, location.clone(), null);
+        savedSpawns.put(key, entry);
+        // create NPC immediately if possible
+        if (isCitizensAvailable()) {
+            spawnNpcForEntry(entry);
+        }
+        saveSpawnPoints();
+        return true;
+    }
+
+    public boolean removeSpawnPoint(String name) {
+        if (name == null || name.isBlank()) return false;
+        String key = name.trim();
+        SpawnEntry entry = savedSpawns.remove(key);
+        if (entry == null) return false;
+        // destroy NPC if exists
+        try {
+            if (entry.npcId != null && isCitizensAvailable()) {
+                NPCRegistry registry = CitizensAPI.getNPCRegistry();
+                NPC npc = registry.getById(entry.npcId);
+                if (npc != null) {
+                    removePersistentNpcEntry(npc);
+                    if (npc.isSpawned()) npc.despawn();
+                    npc.destroy();
+                }
+            }
+        } catch (Exception ignored) { }
+        saveSpawnPoints();
+        return true;
+    }
+
+    public List<String> listSpawnPoints() {
+        return new ArrayList<>(savedSpawns.keySet());
+    }
+
+    public boolean spawnAt(String name) {
+        if (name == null || name.isBlank()) return false;
+        SpawnEntry entry = savedSpawns.get(name.trim());
+        if (entry == null) return false;
+        if (!isCitizensAvailable()) return false;
+        return spawnNpcForEntry(entry);
+    }
+
+    // ===== Pair management API =====
+    public synchronized Map<Integer, String> getActiveNpcIdNameMap() {
+        Map<Integer, String> out = new LinkedHashMap<>();
+        if (!isCitizensAvailable()) return out;
+        try {
+            NPCRegistry registry = CitizensAPI.getNPCRegistry();
+            for (NPC npc : registry) {
+                try {
+                    if (npc == null) continue;
+                    if (!npc.data().has("lobby-npc")) continue;
+                    out.put(npc.getId(), getNPCDisplayName(npc));
+                } catch (Exception ignored) { }
+            }
+        } catch (Exception ignored) { }
+        return out;
+    }
+
+    public synchronized boolean setPair(int npcId, Integer partnerId, String prefix) {
+        if (npcId <= 0) return false;
+        if (partnerId != null && partnerId.intValue() == npcId) return false;
+        if (partnerId == null) {
+            // remove mapping for npcId and its counterpart (if reciprocal)
+            PairEntry old = pairs.remove(npcId);
+            if (old != null) {
+                pairs.remove(old.partnerId);
+            }
+            savePairs();
+            return true;
+        }
+        PairEntry entry = new PairEntry(partnerId, prefix);
+        pairs.put(npcId, entry);
+        // ensure reciprocal mapping
+        pairs.put(partnerId, new PairEntry(npcId, prefix));
+        savePairs();
+        try {
+            if (isCitizensAvailable()) {
+                NPCRegistry registry = CitizensAPI.getNPCRegistry();
+                NPC a = registry.getById(npcId);
+                NPC b = registry.getById(partnerId);
+                if (a != null) schedulePairFollower(a);
+                if (b != null) schedulePairFollower(b);
+            }
+        } catch (Exception ignored) { }
+        return true;
+    }
+
+    public synchronized boolean removePair(int npcId) {
+        return setPair(npcId, null, null);
+    }
+
+    public synchronized PairInfo getPairFor(int npcId) {
+        PairEntry pe = pairs.get(npcId);
+        if (pe == null) return null;
+        return new PairInfo(pe.partnerId, pe.prefix);
+    }
+
+    private final String[] defaultAffectionatePrefixes = new String[]{"mein Schatz ", "meine Maus ", "mein Schatzie ", "mein Liebling "};
+
+    public String resolveAffectionateReference(NPC speaker, NPC referenced, String referencedName) {
+        if (speaker == null || referenced == null) return referencedName;
+        
+        String speakerName = getNPCDisplayName(speaker);
+        String refName = getNPCDisplayName(referenced);
+        
+        // Zuerst namensbasierte Paarung prüfen (neues System)
+        NamePairInfo namePair = getNamePairFor(speakerName);
+        if (namePair != null && namePair.partnerName.equalsIgnoreCase(refName)) {
+            String pref = namePair.prefix;
+            if (pref == null || pref.isBlank()) {
+                pref = defaultAffectionatePrefixes[random.nextInt(defaultAffectionatePrefixes.length)];
+            }
+            // Herzpartikel spawnen bei liebevoller Ansprache
+            spawnLoveParticles(speaker);
+            spawnLoveParticles(referenced);
+            return pref + referencedName;
+        }
+        
+        // Fallback: ID-basierte Paarung (altes System)
+        PairInfo pe = getPairFor(speaker.getId());
+        if (pe == null) return referencedName;
+        if (pe.partnerId != referenced.getId()) return referencedName;
+        String pref = pe.prefix;
+        if (pref == null || pref.isBlank()) {
+            pref = defaultAffectionatePrefixes[random.nextInt(defaultAffectionatePrefixes.length)];
+        }
+        // Herzpartikel spawnen bei liebevoller Ansprache
+        spawnLoveParticles(speaker);
+        spawnLoveParticles(referenced);
+        return pref + referencedName;
+    }
+
+    /**
+     * Spawnt Herzpartikel um einen NPC herum
+     */
+    private void spawnLoveParticles(NPC npc) {
+        if (npc == null || !npc.isSpawned()) return;
+        Entity entity = npc.getEntity();
+        if (entity == null) return;
+        
+        Location loc = entity.getLocation().add(0, 1.5, 0);
+        entity.getWorld().spawnParticle(
+            org.bukkit.Particle.HEART,
+            loc,
+            5,      // Anzahl
+            0.5,    // X-Spread
+            0.5,    // Y-Spread
+            0.5,    // Z-Spread
+            0.1     // Speed
+        );
+    }
+
+    /**
+     * Prüft ob zwei NPCs ein Paar sind und nahe beieinander stehen
+     */
+    private boolean arePairedAndClose(NPC npc1, NPC npc2, double maxDistance) {
+        if (npc1 == null || npc2 == null || !npc1.isSpawned() || !npc2.isSpawned()) return false;
+        
+        String name1 = getNPCDisplayName(npc1);
+        String name2 = getNPCDisplayName(npc2);
+        
+        // Prüfe namensbasierte Paarung
+        NamePairInfo pair = getNamePairFor(name1);
+        if (pair != null && pair.partnerName.equalsIgnoreCase(name2)) {
+            Entity e1 = npc1.getEntity();
+            Entity e2 = npc2.getEntity();
+            if (e1 != null && e2 != null) {
+                return e1.getLocation().distance(e2.getLocation()) <= maxDistance;
+            }
+        }
+        return false;
+    }
+
+
+    private boolean spawnNpcForEntry(SpawnEntry entry) {
+        if (entry == null || entry.location == null) return false;
+        try {
+            NPCRegistry registry = CitizensAPI.getNPCRegistry();
+            NPC npc = null;
+            if (entry.npcId != null) {
+                npc = registry.getById(entry.npcId);
+            }
+            if (npc == null) {
+                String npcName = generateUniqueNPCName();
+                npc = registry.createNPC(org.bukkit.entity.EntityType.PLAYER, npcName);
+                boolean spawned = npc.spawn(entry.location);
+                if (!spawned) {
+                    // attempt create without spawn to still record id
+                }
+                entry.npcId = npc.getId();
+            } else {
+                if (!npc.isSpawned()) {
+                    npc.spawn(entry.location);
+                } else {
+                    Entity ent = npc.getEntity();
+                    if (ent != null) ent.teleport(entry.location);
+                }
+            }
+            configureNPC(npc, npc.getName());
+            registerNPCEntity(npc);
+            addPersistentNpcEntry(npc);
+            saveSpawnPoints();
+            return true;
+        } catch (Exception e) {
+            plugin.getLogger().warning("Fehler beim Spawnen des gespeicherten NPCs '" + entry.name + "': " + e.getMessage());
+            return false;
+        }
     }
 
     private void scheduleInitialLobbyReset() {
@@ -332,6 +906,494 @@ public class NPCManager {
             plugin.getLogger().warning("Konnte lobby_npcs.yml nicht speichern: " + e.getMessage());
         }
     }
+
+    private void loadPairs() {
+        pairs.clear();
+        if (npcData == null) return;
+        ConfigurationSection sec = npcData.getConfigurationSection("pairs");
+        if (sec == null) return;
+        for (String key : sec.getKeys(false)) {
+            try {
+                int npcId = Integer.parseInt(key);
+                ConfigurationSection p = sec.getConfigurationSection(key);
+                if (p == null) continue;
+                int partner = p.getInt("partner", -1);
+                String prefix = p.getString("prefix", null);
+                if (partner >= 0) {
+                    pairs.put(npcId, new PairEntry(partner, prefix));
+                }
+            } catch (Exception ignored) { }
+        }
+    }
+
+    private void savePairs() {
+        if (npcData == null) return;
+        ConfigurationSection sec = npcData.getConfigurationSection("pairs");
+        if (sec == null) sec = npcData.createSection("pairs");
+        // write entries
+        for (Map.Entry<Integer, PairEntry> e : pairs.entrySet()) {
+            String key = String.valueOf(e.getKey());
+            PairEntry pe = e.getValue();
+            ConfigurationSection p = sec.getConfigurationSection(key);
+            if (p == null) p = sec.createSection(key);
+            p.set("partner", pe.partnerId);
+            p.set("prefix", pe.prefix);
+        }
+        // remove removed keys
+        List<String> toRemove = new ArrayList<>();
+        for (String k : sec.getKeys(false)) {
+            try {
+                int id = Integer.parseInt(k);
+                if (!pairs.containsKey(id)) toRemove.add(k);
+            } catch (Exception ignored) { }
+        }
+        for (String r : toRemove) {
+            npcData.set("pairs." + r, null);
+        }
+        saveNpcData();
+    }
+
+    // ===== Name-based pair management =====
+    
+    private void loadNamePairs() {
+        namePairs.clear();
+        if (npcData == null) return;
+        ConfigurationSection sec = npcData.getConfigurationSection("namePairs");
+        if (sec == null) return;
+        for (String name : sec.getKeys(false)) {
+            try {
+                ConfigurationSection p = sec.getConfigurationSection(name);
+                if (p == null) continue;
+                String partner = p.getString("partner", null);
+                String prefix = p.getString("prefix", null);
+                if (partner != null && !partner.isBlank()) {
+                    namePairs.put(name, new NamePairEntry(partner, prefix));
+                }
+            } catch (Exception ignored) { }
+        }
+    }
+
+    private void saveNamePairs() {
+        if (npcData == null) return;
+        // Clear old section
+        npcData.set("namePairs", null);
+        ConfigurationSection sec = npcData.createSection("namePairs");
+        // Write entries
+        for (Map.Entry<String, NamePairEntry> e : namePairs.entrySet()) {
+            String name = e.getKey();
+            NamePairEntry pe = e.getValue();
+            ConfigurationSection p = sec.createSection(name);
+            p.set("partner", pe.partnerName);
+            p.set("prefix", pe.prefix);
+        }
+        saveNpcData();
+    }
+
+    /**
+     * Setzt ein Namenspaar. Wenn partnerName null ist, wird die Paarung entfernt.
+     */
+    public synchronized boolean setNamePair(String name, String partnerName, String prefix) {
+        if (name == null || name.isBlank()) return false;
+        if (partnerName != null && partnerName.equalsIgnoreCase(name)) return false;
+        
+        if (partnerName == null || partnerName.isBlank()) {
+            // Paarung entfernen
+            NamePairEntry old = namePairs.remove(name);
+            if (old != null) {
+                namePairs.remove(old.partnerName);
+            }
+            saveNamePairs();
+            return true;
+        }
+        
+        // Paarung setzen (beidseitig)
+        namePairs.put(name, new NamePairEntry(partnerName, prefix));
+        namePairs.put(partnerName, new NamePairEntry(name, prefix));
+        saveNamePairs();
+        return true;
+    }
+
+    /**
+     * Entfernt die Paarung für einen Namen.
+     */
+    public synchronized boolean removeNamePair(String name) {
+        return setNamePair(name, null, null);
+    }
+
+    /**
+     * Gibt die Paar-Info für einen Namen zurück.
+     */
+    public synchronized NamePairInfo getNamePairFor(String name) {
+        if (name == null) return null;
+        NamePairEntry pe = namePairs.get(name);
+        if (pe == null) return null;
+        return new NamePairInfo(pe.partnerName, pe.prefix);
+    }
+
+    /**
+     * Gibt alle Namenspaarungen als Map zurück (Name -> Partner).
+     */
+    public synchronized Map<String, String> getAllNamePairs() {
+        Map<String, String> result = new LinkedHashMap<>();
+        for (Map.Entry<String, NamePairEntry> e : namePairs.entrySet()) {
+            result.put(e.getKey(), e.getValue().partnerName);
+        }
+        return result;
+    }
+
+    /**
+     * Prüft ob zwei Namen gepaart sind.
+     */
+    public synchronized boolean areNamesPaired(String name1, String name2) {
+        if (name1 == null || name2 == null) return false;
+        NamePairEntry pe = namePairs.get(name1);
+        return pe != null && pe.partnerName.equalsIgnoreCase(name2);
+    }
+
+    /**
+     * Löst eine Referenz auf einen Partner auf (für Gespräche).
+     */
+    public String resolveAffectionateNameReference(String speakerName, String referencedName) {
+        if (speakerName == null || referencedName == null) return referencedName;
+        NamePairInfo pe = getNamePairFor(speakerName);
+        if (pe == null) return referencedName;
+        if (!pe.partnerName.equalsIgnoreCase(referencedName)) return referencedName;
+        String pref = pe.prefix;
+        if (pref == null || pref.isBlank()) {
+            pref = defaultAffectionatePrefixes[random.nextInt(defaultAffectionatePrefixes.length)];
+        }
+        return pref + referencedName;
+    }
+
+    // ===== Points of Interest (POI) Management =====
+
+    private void loadPOIs() {
+        pointsOfInterest.clear();
+        if (npcData == null) return;
+        ConfigurationSection sec = npcData.getConfigurationSection("pointsOfInterest");
+        if (sec == null) return;
+        for (String poiName : sec.getKeys(false)) {
+            try {
+                ConfigurationSection p = sec.getConfigurationSection(poiName);
+                if (p == null) continue;
+                String worldName = p.getString("world", null);
+                if (worldName == null) continue;
+                World world = Bukkit.getWorld(worldName);
+                if (world == null) {
+                    plugin.getLogger().warning("POI '" + poiName + "': Welt '" + worldName + "' nicht gefunden!");
+                    continue;
+                }
+                double x = p.getDouble("x", 0);
+                double y = p.getDouble("y", 64);
+                double z = p.getDouble("z", 0);
+                float yaw = (float) p.getDouble("yaw", 0);
+                float pitch = (float) p.getDouble("pitch", 0);
+                Location loc = new Location(world, x, y, z, yaw, pitch);
+                POIEntry entry = new POIEntry(poiName, loc);
+                
+                List<String> allowedNPCs = p.getStringList("allowedNPCs");
+                if (allowedNPCs != null) {
+                    entry.allowedNPCNames.addAll(allowedNPCs);
+                }
+                
+                pointsOfInterest.put(poiName.toLowerCase(), entry);
+            } catch (Exception e) {
+                plugin.getLogger().warning("Fehler beim Laden von POI '" + poiName + "': " + e.getMessage());
+            }
+        }
+        plugin.getLogger().info("Loaded " + pointsOfInterest.size() + " Points of Interest.");
+    }
+
+    private void savePOIs() {
+        if (npcData == null) return;
+        npcData.set("pointsOfInterest", null);
+        ConfigurationSection sec = npcData.createSection("pointsOfInterest");
+        for (Map.Entry<String, POIEntry> e : pointsOfInterest.entrySet()) {
+            POIEntry poi = e.getValue();
+            ConfigurationSection p = sec.createSection(poi.name);
+            p.set("world", poi.location.getWorld().getName());
+            p.set("x", poi.location.getX());
+            p.set("y", poi.location.getY());
+            p.set("z", poi.location.getZ());
+            p.set("yaw", poi.location.getYaw());
+            p.set("pitch", poi.location.getPitch());
+            p.set("allowedNPCs", new ArrayList<>(poi.allowedNPCNames));
+        }
+        saveNpcData();
+    }
+
+    /**
+     * Erstellt einen neuen POI an der gegebenen Location.
+     */
+    public synchronized boolean createPOI(String name, Location location) {
+        if (name == null || name.isBlank() || location == null || location.getWorld() == null) return false;
+        String key = name.toLowerCase();
+        if (pointsOfInterest.containsKey(key)) return false;
+        
+        POIEntry entry = new POIEntry(name, location.clone());
+        pointsOfInterest.put(key, entry);
+        savePOIs();
+        return true;
+    }
+
+    /**
+     * Entfernt einen POI.
+     */
+    public synchronized boolean removePOI(String name) {
+        if (name == null) return false;
+        String key = name.toLowerCase();
+        POIEntry removed = pointsOfInterest.remove(key);
+        if (removed != null) {
+            // NPCs die dort waren zurück zur Lobby schicken
+            for (Map.Entry<String, String> e : new ArrayList<>(npcCurrentLocation.entrySet())) {
+                if (key.equals(e.getValue())) {
+                    npcCurrentLocation.put(e.getKey(), "lobby");
+                }
+            }
+            savePOIs();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Aktualisiert die Location eines POIs.
+     */
+    public synchronized boolean updatePOILocation(String name, Location location) {
+        if (name == null || location == null || location.getWorld() == null) return false;
+        String key = name.toLowerCase();
+        POIEntry old = pointsOfInterest.get(key);
+        if (old == null) return false;
+        
+        POIEntry newEntry = new POIEntry(old.name, location.clone());
+        newEntry.allowedNPCNames.addAll(old.allowedNPCNames);
+        pointsOfInterest.put(key, newEntry);
+        savePOIs();
+        return true;
+    }
+
+    /**
+     * Fügt einen NPC-Namen zur erlaubten Liste eines POIs hinzu.
+     */
+    public synchronized boolean addNPCToPOI(String poiName, String npcName) {
+        if (poiName == null || npcName == null) return false;
+        String key = poiName.toLowerCase();
+        POIEntry poi = pointsOfInterest.get(key);
+        if (poi == null) return false;
+        
+        if (poi.allowedNPCNames.add(npcName)) {
+            savePOIs();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Entfernt einen NPC-Namen von der erlaubten Liste eines POIs.
+     */
+    public synchronized boolean removeNPCFromPOI(String poiName, String npcName) {
+        if (poiName == null || npcName == null) return false;
+        String key = poiName.toLowerCase();
+        POIEntry poi = pointsOfInterest.get(key);
+        if (poi == null) return false;
+        
+        if (poi.allowedNPCNames.remove(npcName)) {
+            savePOIs();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Gibt Infos über einen POI zurück.
+     */
+    public synchronized POIInfo getPOI(String name) {
+        if (name == null) return null;
+        String key = name.toLowerCase();
+        POIEntry poi = pointsOfInterest.get(key);
+        if (poi == null) return null;
+        return new POIInfo(poi.name, poi.location.clone(), new ArrayList<>(poi.allowedNPCNames));
+    }
+
+    /**
+     * Gibt alle POI-Namen zurück.
+     */
+    public synchronized List<String> getAllPOINames() {
+        List<String> names = new ArrayList<>();
+        for (POIEntry poi : pointsOfInterest.values()) {
+            names.add(poi.name);
+        }
+        return names;
+    }
+
+    /**
+     * Gibt alle POIs als Liste von POIInfo zurück.
+     */
+    public synchronized List<POIInfo> getAllPOIs() {
+        List<POIInfo> result = new ArrayList<>();
+        for (POIEntry poi : pointsOfInterest.values()) {
+            result.add(new POIInfo(poi.name, poi.location.clone(), new ArrayList<>(poi.allowedNPCNames)));
+        }
+        return result;
+    }
+
+    /**
+     * Gibt alle erlaubten NPC-Namen für einen POI zurück.
+     */
+    public synchronized List<String> getAllowedNPCsForPOI(String poiName) {
+        if (poiName == null) return new ArrayList<>();
+        String key = poiName.toLowerCase();
+        POIEntry poi = pointsOfInterest.get(key);
+        if (poi == null) return new ArrayList<>();
+        return new ArrayList<>(poi.allowedNPCNames);
+    }
+
+    /**
+     * Prüft ob ein NPC-Name an einem POI erlaubt ist.
+     */
+    public synchronized boolean isNPCAllowedAtPOI(String poiName, String npcName) {
+        if (poiName == null || npcName == null) return false;
+        String key = poiName.toLowerCase();
+        POIEntry poi = pointsOfInterest.get(key);
+        if (poi == null) return false;
+        return poi.allowedNPCNames.contains(npcName);
+    }
+
+    /**
+     * Gibt alle POIs zurück, an denen ein NPC erlaubt ist.
+     */
+    public synchronized List<String> getPOIsForNPC(String npcName) {
+        List<String> result = new ArrayList<>();
+        if (npcName == null) return result;
+        for (POIEntry poi : pointsOfInterest.values()) {
+            if (poi.allowedNPCNames.contains(npcName)) {
+                result.add(poi.name);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Teleportiert einen NPC zu einem POI (mit Pärchen-Logik).
+     * Gibt true zurück wenn erfolgreich.
+     */
+    public synchronized boolean teleportNPCToPOI(NPC npc, String poiName) {
+        if (npc == null || poiName == null) return false;
+        String key = poiName.toLowerCase();
+        POIEntry poi = pointsOfInterest.get(key);
+        if (poi == null) return false;
+        
+        String npcName = getNPCDisplayName(npc);
+        if (npcName == null) return false;
+        
+        // Prüfe ob NPC an diesem POI erlaubt ist
+        if (!poi.allowedNPCNames.contains(npcName)) return false;
+        
+        Entity entity = npc.getEntity();
+        if (entity == null || !npc.isSpawned()) return false;
+        
+        // Teleportiere den NPC
+        Location targetLoc = poi.location.clone();
+        entity.teleport(targetLoc);
+        npcCurrentLocation.put(npcName, key);
+        
+        // Pärchen-Logik: Partner auch teleportieren wenn möglich
+        NamePairInfo pairInfo = getNamePairFor(npcName);
+        if (pairInfo != null) {
+            String partnerName = pairInfo.partnerName;
+            // Prüfe ob Partner auch an diesem POI erlaubt ist
+            if (poi.allowedNPCNames.contains(partnerName)) {
+                NPC partner = findNPCByName(partnerName);
+                if (partner != null && partner.isSpawned()) {
+                    Entity partnerEntity = partner.getEntity();
+                    if (partnerEntity != null) {
+                        // Partner neben den NPC teleportieren
+                        Location partnerLoc = getSpawnLocationNearPartner(targetLoc);
+                        partnerEntity.teleport(partnerLoc);
+                        npcCurrentLocation.put(partnerName, key);
+                        
+                        // Herzpartikel beim Wiedersehen
+                        spawnLoveParticles(npc);
+                        spawnLoveParticles(partner);
+                    }
+                }
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Teleportiert einen NPC zurück zur Lobby.
+     */
+    public synchronized boolean teleportNPCToLobby(NPC npc) {
+        if (npc == null) return false;
+        
+        String npcName = getNPCDisplayName(npc);
+        if (npcName == null) return false;
+        
+        Entity entity = npc.getEntity();
+        if (entity == null || !npc.isSpawned()) return false;
+        
+        Location lobbyLoc = getLobbyLocation();
+        if (lobbyLoc == null) return false;
+        
+        // Finde einen zufälligen Spawn in der Lobby
+        Location targetLoc = getRandomSpawnNearLobby(lobbyLoc);
+        entity.teleport(targetLoc);
+        npcCurrentLocation.put(npcName, "lobby");
+        
+        // Pärchen-Logik
+        NamePairInfo pairInfo = getNamePairFor(npcName);
+        if (pairInfo != null) {
+            NPC partner = findNPCByName(pairInfo.partnerName);
+            if (partner != null && partner.isSpawned()) {
+                Entity partnerEntity = partner.getEntity();
+                if (partnerEntity != null) {
+                    Location partnerLoc = getSpawnLocationNearPartner(targetLoc);
+                    partnerEntity.teleport(partnerLoc);
+                    npcCurrentLocation.put(pairInfo.partnerName, "lobby");
+                    
+                    spawnLoveParticles(npc);
+                    spawnLoveParticles(partner);
+                }
+            }
+        }
+        
+        return true;
+    }
+
+    /**
+     * Gibt die aktuelle Location eines NPCs zurück ("lobby" oder POI-Name).
+     */
+    public synchronized String getNPCCurrentLocation(String npcName) {
+        if (npcName == null) return "lobby";
+        return npcCurrentLocation.getOrDefault(npcName, "lobby");
+    }
+
+    /**
+     * Findet einen NPC anhand des Namens.
+     */
+    public NPC findNPCByName(String name) {
+        if (name == null) return null;
+        for (NPC npc : lobbyNPCs) {
+            if (npc == null) continue;
+            String npcName = getNPCDisplayName(npc);
+            if (name.equalsIgnoreCase(npcName)) {
+                return npc;
+            }
+        }
+        return null;
+    }
+
+    private Location getRandomSpawnNearLobby(Location center) {
+        double offsetX = (random.nextDouble() - 0.5) * 10;
+        double offsetZ = (random.nextDouble() - 0.5) * 10;
+        Location loc = center.clone().add(offsetX, 0, offsetZ);
+        loc.setY(center.getWorld().getHighestBlockYAt(loc) + 1);
+        return loc;
+    }
+    
     
     /**
      * Prüft ob Citizens2 verfügbar ist
@@ -381,20 +1443,146 @@ public class NPCManager {
                                                    lobbySpawn.getZ()));
             }
             
-            // Spawne 5-6 zufällige NPCs
+            // Spawne 5-6 zufällige NPCs mit Paar-Logik
             int npcCount = 5 + random.nextInt(2);
+            Set<String> spawnedNames = new LinkedHashSet<>();
             
             for (int i = 0; i < npcCount; i++) {
-                spawnNPCWithReflection(lobbySpawn, i);
+                String spawnedName = spawnNPCWithPairLogic(lobbySpawn, spawnedNames);
+                if (spawnedName != null) {
+                    spawnedNames.add(spawnedName);
+                }
             }
             
-            plugin.getLogger().info("§aEs wurden " + npcCount + " NPCs in der Lobby gespawnt!");
+            plugin.getLogger().info("§aEs wurden " + spawnedNames.size() + " NPCs in der Lobby gespawnt!");
             restartConversationScheduler();
             
         } catch (Exception e) {
             plugin.getLogger().severe("Fehler beim Spawnen der NPCs: " + e.getMessage());
             plugin.getLogger().severe("Stack trace: " + java.util.Arrays.toString(e.getStackTrace()));
         }
+    }
+
+    /**
+     * Spawnt einen NPC mit Paar-Logik.
+     * Wenn der zufällig gewählte NPC einen Partner hat, wird dieser mit 85% Wahrscheinlichkeit auch gespawnt.
+     * @return Der Name des gespawnten NPCs, oder null bei Fehler
+     */
+    private String spawnNPCWithPairLogic(Location lobbySpawn, Set<String> alreadySpawned) {
+        if (npcNames.isEmpty()) return null;
+        
+        // Prüfe zuerst ob ein Partner gespawnt werden sollte
+        for (String spawnedName : alreadySpawned) {
+            NamePairInfo pairInfo = getNamePairFor(spawnedName);
+            if (pairInfo != null && !alreadySpawned.contains(pairInfo.partnerName)) {
+                // Partner noch nicht gespawnt - mit 85% Wahrscheinlichkeit spawnen
+                if (random.nextDouble() < 0.85) {
+                    String partnerName = pairInfo.partnerName;
+                    if (npcNames.contains(partnerName)) {
+                        // Finde die Location des bereits gespawnten Partners und spawne daneben
+                        Location partnerLoc = getSpawnLocationNearPartner(spawnedName);
+                        if (partnerLoc == null) {
+                            partnerLoc = getSpawnLocationNear(lobbySpawn, alreadySpawned.size());
+                        }
+                        if (spawnSingleNPC(partnerLoc, partnerName)) {
+                            plugin.getLogger().info("§d[Paar] Partner '" + partnerName + "' von '" + spawnedName + "' wurde auch gespawnt!");
+                            return partnerName;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Wähle einen zufälligen Namen, der noch nicht gespawnt wurde
+        List<String> available = new ArrayList<>();
+        for (String name : npcNames) {
+            if (!alreadySpawned.contains(name)) {
+                available.add(name);
+            }
+        }
+        
+        if (available.isEmpty()) {
+            // Alle Namen schon verwendet - keine Duplikate erlaubt
+            plugin.getLogger().info("§7Alle verfügbaren NPC-Namen sind bereits gespawnt.");
+            return null;
+        }
+        
+        String chosenName = available.get(random.nextInt(available.size()));
+        Location spawnLoc = getSpawnLocationNear(lobbySpawn, alreadySpawned.size());
+        
+        if (spawnSingleNPC(spawnLoc, chosenName)) {
+            return chosenName;
+        }
+        return null;
+    }
+
+    /**
+     * Berechnet eine zufällige Spawn-Position in der Nähe der Lobby
+     */
+    private Location getSpawnLocationNear(Location lobbySpawn, int index) {
+        double offsetX = (random.nextDouble() - 0.5) * 20;
+        double offsetZ = (random.nextDouble() - 0.5) * 20;
+        
+        Location spawnLocation = lobbySpawn.clone().add(offsetX, 0, offsetZ);
+        spawnLocation.setY(lobbySpawn.getY());
+        
+        // Stelle sicher, dass die Position auf festem Boden ist
+        return spawnLocation.getWorld().getHighestBlockAt(spawnLocation).getLocation().add(0, 1, 0);
+    }
+
+    /**
+     * Findet die Position eines bereits gespawnten NPCs und gibt eine nahe Position zurück
+     */
+    private Location getSpawnLocationNearPartner(String partnerName) {
+        for (NPC npc : lobbyNPCs) {
+            if (npc == null || !npc.isSpawned()) continue;
+            String name = getNPCDisplayName(npc);
+            if (name.equalsIgnoreCase(partnerName)) {
+                Entity entity = npc.getEntity();
+                if (entity != null) {
+                    Location partnerLoc = entity.getLocation();
+                    // Spawne 1-2 Blöcke daneben
+                    double angle = random.nextDouble() * 2 * Math.PI;
+                    double distance = 1.0 + random.nextDouble(); // 1-2 Blöcke
+                    double offsetX = Math.cos(angle) * distance;
+                    double offsetZ = Math.sin(angle) * distance;
+                    Location nearLoc = partnerLoc.clone().add(offsetX, 0, offsetZ);
+                    return nearLoc.getWorld().getHighestBlockAt(nearLoc).getLocation().add(0, 1, 0);
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Spawnt einen einzelnen NPC mit gegebenem Namen
+     */
+    private boolean spawnSingleNPC(Location spawnLocation, String npcName) {
+        try {
+            NPCRegistry registry = CitizensAPI.getNPCRegistry();
+            NPC npc = registry.createNPC(org.bukkit.entity.EntityType.PLAYER, npcName);
+            
+            boolean spawned = npc.spawn(spawnLocation);
+            
+            if (spawned) {
+                configureNPC(npc, npcName);
+                lobbyNPCs.add(npc);
+                registerNPCEntity(npc);
+                addPersistentNpcEntry(npc);
+                
+                plugin.getLogger().info("NPC '" + npcName + "' wurde gespawnt bei: " + 
+                                       String.format("%.1f, %.1f, %.1f", 
+                                                   spawnLocation.getX(), 
+                                                   spawnLocation.getY(), 
+                                                   spawnLocation.getZ()));
+                return true;
+            } else {
+                plugin.getLogger().warning("NPC '" + npcName + "' konnte nicht gespawnt werden!");
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Fehler beim Spawnen von NPC '" + npcName + "': " + e.getMessage());
+        }
+        return false;
     }
     
     /**
@@ -415,7 +1603,8 @@ public class NPCManager {
             // Erstelle NPC mit Citizens API (direkt, ohne Reflection)
             NPCRegistry registry = CitizensAPI.getNPCRegistry();
             
-            String npcName = npcNames.isEmpty() ? "NPC" : npcNames.get(index % npcNames.size());
+            // Wähle einen zufälligen Namen aus der Liste
+            String npcName = npcNames.isEmpty() ? "NPC" : npcNames.get(random.nextInt(npcNames.size()));
             
             NPC npc = registry.createNPC(org.bukkit.entity.EntityType.PLAYER, npcName);
             
@@ -473,6 +1662,7 @@ public class NPCManager {
             schedulePlayerTracking(npc);
             scheduleAmbientChat(npc);
             assignPersonalities(npc);
+            schedulePairFollower(npc);
             
         } catch (Exception e) {
             plugin.getLogger().info("NPC-Konfiguration teilweise fehlgeschlagen: " + e.getMessage());
@@ -674,6 +1864,86 @@ public class NPCManager {
             task.cancel();
         }
     }
+
+    private void cancelPairFollower(NPC npc) {
+        BukkitTask task = pairFollowTasks.remove(npc);
+        if (task != null) task.cancel();
+    }
+
+    private void schedulePairFollower(NPC npc) {
+        cancelPairFollower(npc);
+        if (npc == null) return;
+        BukkitTask task = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            try {
+                if (!npc.isSpawned()) return;
+                
+                // Finde Partner - zuerst namensbasiert, dann ID-basiert
+                NPC partner = findPairedPartner(npc);
+                if (partner == null || !partner.isSpawned()) return;
+                
+                Entity meEnt = npc.getEntity();
+                Entity partnerEnt = partner.getEntity();
+                if (meEnt == null || partnerEnt == null) return;
+                if (!meEnt.getWorld().equals(partnerEnt.getWorld())) return;
+                
+                Location partnerLoc = partnerEnt.getLocation();
+                Location myLoc = meEnt.getLocation();
+                double dist = myLoc.distanceSquared(partnerLoc);
+                Navigator nav = npc.getNavigator();
+                if (nav == null) return;
+                
+                if (dist > 4.0) {
+                    // Partner ist weiter weg - folgen
+                    double ox = (random.nextDouble() - 0.5) * 1.2;
+                    double oz = (random.nextDouble() - 0.5) * 1.2;
+                    Location target = partnerLoc.clone().add(ox, 0, oz);
+                    target = target.getWorld().getHighestBlockAt(target).getLocation().add(0, 1, 0);
+                    nav.setTarget(target);
+                } else {
+                    // Nahe am Partner - gelegentlich kleine Bewegungen
+                    if (!nav.isNavigating() && random.nextInt(10) == 0) {
+                        double ox = (random.nextDouble() - 0.5) * 2.0;
+                        double oz = (random.nextDouble() - 0.5) * 2.0;
+                        Location target = partnerLoc.clone().add(ox, 0, oz);
+                        target = target.getWorld().getHighestBlockAt(target).getLocation().add(0, 1, 0);
+                        nav.setTarget(target);
+                    }
+                }
+            } catch (Exception ignored) { }
+        }, 20L, 20L);
+        pairFollowTasks.put(npc, task);
+    }
+
+    /**
+     * Findet den Partner eines NPCs (namensbasiert oder ID-basiert)
+     */
+    private NPC findPairedPartner(NPC npc) {
+        if (npc == null) return null;
+        
+        // Zuerst namensbasiertes System prüfen
+        String myName = getNPCDisplayName(npc);
+        NamePairInfo namePair = getNamePairFor(myName);
+        if (namePair != null) {
+            // Suche Partner mit diesem Namen in den gespawnten NPCs
+            for (NPC other : lobbyNPCs) {
+                if (other == null || other == npc || !other.isSpawned()) continue;
+                String otherName = getNPCDisplayName(other);
+                if (namePair.partnerName.equalsIgnoreCase(otherName)) {
+                    return other;
+                }
+            }
+        }
+        
+        // Fallback: ID-basiertes System
+        Integer myId = npc.getId();
+        PairEntry pe = pairs.get(myId);
+        if (pe != null && isCitizensAvailable()) {
+            NPCRegistry registry = CitizensAPI.getNPCRegistry();
+            return registry.getById(pe.partnerId);
+        }
+        
+        return null;
+    }
     
     private void registerNPCEntity(NPC npc) {
         try {
@@ -702,6 +1972,11 @@ public class NPCManager {
         cancelConversationLoop();
         cancelConversationTasks();
         destroyAllNpcBubbles();
+        // Stop pair proximity checker
+        if (pairProximityTask != null) {
+            pairProximityTask.cancel();
+            pairProximityTask = null;
+        }
         try {
             for (NPC npc : lobbyNPCs) {
                 if (npc != null) {
@@ -973,18 +2248,32 @@ public class NPCManager {
         if (context == null || line == null || text == null) {
             return;
         }
+        // Prefix hologram text with @OtherNpcName (colored) so it's clear who is being spoken to
+        String firstName = context.getFirstName();
+        String secondName = context.getSecondName();
         switch (line.getSpeaker()) {
-            case BOTH:
-                showNpcChatBubble(context.getFirstNpc(), text);
-                showNpcChatBubble(context.getSecondNpc(), text);
+            case BOTH: {
+                String displayA = resolveAffectionateReference(context.getFirstNpc(), context.getSecondNpc(), secondName);
+                String displayB = resolveAffectionateReference(context.getSecondNpc(), context.getFirstNpc(), firstName);
+                String prefixA = ChatColor.GOLD + "@" + ChatColor.LIGHT_PURPLE + displayA + ChatColor.RESET + " ";
+                String prefixB = ChatColor.GOLD + "@" + ChatColor.LIGHT_PURPLE + displayB + ChatColor.RESET + " ";
+                showNpcChatBubble(context.getFirstNpc(), prefixA + text);
+                showNpcChatBubble(context.getSecondNpc(), prefixB + text);
                 break;
-            case SECOND:
-                showNpcChatBubble(context.getSecondNpc(), text);
+            }
+            case SECOND: {
+                String display = resolveAffectionateReference(context.getSecondNpc(), context.getFirstNpc(), firstName);
+                String prefix = ChatColor.GOLD + "@" + ChatColor.LIGHT_PURPLE + display + ChatColor.RESET + " ";
+                showNpcChatBubble(context.getSecondNpc(), prefix + text);
                 break;
+            }
             case FIRST:
-            default:
-                showNpcChatBubble(context.getFirstNpc(), text);
+            default: {
+                String display = resolveAffectionateReference(context.getFirstNpc(), context.getSecondNpc(), secondName);
+                String prefix = ChatColor.GOLD + "@" + ChatColor.LIGHT_PURPLE + display + ChatColor.RESET + " ";
+                showNpcChatBubble(context.getFirstNpc(), prefix + text);
                 break;
+            }
         }
     }
 
@@ -1011,7 +2300,7 @@ public class NPCManager {
         conversationMinIntervalSeconds = Math.max(30, section.getInt("minIntervalSeconds", 180));
         conversationMaxIntervalSeconds = Math.max(conversationMinIntervalSeconds, section.getInt("maxIntervalSeconds", 300));
         conversationGatherDelayTicks = Math.max(0, section.getInt("gatherDelayTicks", 60));
-        conversationLineDelayTicks = Math.max(10, section.getInt("lineDelayTicks", 50));
+        conversationLineDelayTicks = Math.max(20, section.getInt("lineDelayTicks", 100));
         double radius = Math.max(5D, section.getDouble("audienceRadius", 60D));
         conversationAudienceRadiusSquared = radius * radius;
         String configuredPrefix = section.getString("privatePrefix", "&5[NPC-Privat]");
@@ -1255,6 +2544,39 @@ public class NPCManager {
         if (ready.size() < 2) {
             return null;
         }
+        
+        // BEVORZUGE PAARE: Suche zuerst nach gepaarten NPCs
+        NPC pairedFirst = null;
+        NPC pairedSecond = null;
+        for (NPC npc : ready) {
+            String name = getNPCDisplayName(npc);
+            NamePairInfo pairInfo = getNamePairFor(name);
+            if (pairInfo != null) {
+                // Suche Partner in den ready NPCs
+                for (NPC other : ready) {
+                    if (other == npc) continue;
+                    String otherName = getNPCDisplayName(other);
+                    if (pairInfo.partnerName.equalsIgnoreCase(otherName)) {
+                        // Paar gefunden!
+                        pairedFirst = npc;
+                        pairedSecond = other;
+                        break;
+                    }
+                }
+                if (pairedFirst != null) break;
+            }
+        }
+        
+        // Wenn Paar gefunden und mit 70% Wahrscheinlichkeit verwenden
+        if (pairedFirst != null && pairedSecond != null && random.nextDouble() < 0.70) {
+            String firstName = getNPCDisplayName(pairedFirst);
+            String secondName = getNPCDisplayName(pairedSecond);
+            Location meetingPoint = resolveMeetingPoint(pairedFirst, pairedSecond);
+            plugin.getLogger().info("§d[Gespräch] Paar ausgewählt: " + firstName + " & " + secondName);
+            return new ConversationContext(script, pairedFirst, pairedSecond, firstName, secondName, meetingPoint);
+        }
+        
+        // Fallback: Normale Auswahl basierend auf Persönlichkeiten
         List<NPC> firstCandidates = new ArrayList<>();
         List<NPC> secondCandidates = new ArrayList<>();
         for (NPC npc : ready) {
@@ -1301,7 +2623,7 @@ public class NPCManager {
             BukkitTask task = Bukkit.getScheduler().runTaskLater(plugin, () -> deliverConversationLine(context, line), runDelay);
             conversationTasks.add(task);
             int pause = line.getPauseTicks() > -1 ? line.getPauseTicks() : conversationLineDelayTicks;
-            delay += Math.max(10, pause);
+            delay += Math.max(conversationLineDelayTicks, pause);
         }
         BukkitTask followUp = Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (activeConversation == context) {
@@ -1588,10 +2910,15 @@ public class NPCManager {
             return null;
         }
         String selfName = getNPCDisplayName(npc);
-        return applySharedPlaceholderReplacements(template, selfName, listeners);
+        return applySharedPlaceholderReplacements(template, selfName, npc, listeners);
     }
 
+    // Überladung ohne speakerNpc - für Conversations wo Partner-Logik über context läuft
     private String applySharedPlaceholderReplacements(String template, String selfName, List<Player> listeners) {
+        return applySharedPlaceholderReplacements(template, selfName, null, listeners);
+    }
+
+    private String applySharedPlaceholderReplacements(String template, String selfName, NPC speakerNpc, List<Player> listeners) {
         if (template == null || template.isEmpty()) {
             return null;
         }
@@ -1611,10 +2938,55 @@ public class NPCManager {
             result = result.replace("{SELF}", selfName);
         }
 
-        if (result.contains("{NPC}") || result.contains("{NPC2}")) {
+        if (result.contains("{NPC}") || result.contains("{NPC2}") || result.contains("{PARTNER}")) {
             String primary = null;
+            
+            // NEU: {PARTNER} Platzhalter - spricht Partner mit Kosename an
+            if (result.contains("{PARTNER}") && speakerNpc != null) {
+                NamePairInfo pairInfo = getNamePairFor(selfName);
+                if (pairInfo != null) {
+                    // Partner mit Kosename
+                    String prefix = pairInfo.prefix;
+                    if (prefix == null || prefix.isBlank()) {
+                        prefix = defaultAffectionatePrefixes[random.nextInt(defaultAffectionatePrefixes.length)];
+                    }
+                    String partnerDisplay = prefix + pairInfo.partnerName;
+                    result = result.replace("{PARTNER}", partnerDisplay);
+                    // Herzpartikel spawnen
+                    spawnLoveParticles(speakerNpc);
+                    // Finde Partner-NPC und spawne auch dort Partikel
+                    NPC partnerNpc = findPairedPartner(speakerNpc);
+                    if (partnerNpc != null) {
+                        spawnLoveParticles(partnerNpc);
+                    }
+                } else {
+                    // Kein Partner - ersetze mit zufälligem NPC
+                    String fallback = getRandomOtherNPCName(selfName, null);
+                    result = result.replace("{PARTNER}", fallback != null ? fallback : "jemand");
+                }
+            }
+            
             if (result.contains("{NPC}")) {
-                primary = getRandomOtherNPCName(selfName, null);
+                // Prüfe ob Sprecher einen Partner hat - mit 50% Chance Partner verwenden
+                NamePairInfo pairInfo = getNamePairFor(selfName);
+                if (pairInfo != null && random.nextDouble() < 0.5) {
+                    // Partner mit Kosename verwenden
+                    String prefix = pairInfo.prefix;
+                    if (prefix == null || prefix.isBlank()) {
+                        prefix = defaultAffectionatePrefixes[random.nextInt(defaultAffectionatePrefixes.length)];
+                    }
+                    primary = prefix + pairInfo.partnerName;
+                    // Herzpartikel spawnen
+                    if (speakerNpc != null) {
+                        spawnLoveParticles(speakerNpc);
+                        NPC partnerNpc = findPairedPartner(speakerNpc);
+                        if (partnerNpc != null) {
+                            spawnLoveParticles(partnerNpc);
+                        }
+                    }
+                } else {
+                    primary = getRandomOtherNPCName(selfName, null);
+                }
                 if (primary == null || primary.isEmpty()) {
                     primary = "NPC";
                 }
@@ -1622,11 +2994,59 @@ public class NPCManager {
             }
 
             if (result.contains("{NPC2}")) {
-                String secondary = getRandomOtherNPCName(selfName, primary);
+                String secondary;
+                // Auch bei NPC2: Wenn Sprecher einen Partner hat und Partner noch nicht verwendet wurde, 30% Chance
+                NamePairInfo pairInfo2 = getNamePairFor(selfName);
+                if (pairInfo2 != null && primary != null && !primary.contains(pairInfo2.partnerName) && random.nextDouble() < 0.3) {
+                    // Partner mit Kosename verwenden
+                    String prefix = pairInfo2.prefix;
+                    if (prefix == null || prefix.isBlank()) {
+                        prefix = defaultAffectionatePrefixes[random.nextInt(defaultAffectionatePrefixes.length)];
+                    }
+                    secondary = prefix + pairInfo2.partnerName;
+                    // Herzpartikel spawnen
+                    if (speakerNpc != null) {
+                        spawnLoveParticles(speakerNpc);
+                        NPC partnerNpc = findPairedPartner(speakerNpc);
+                        if (partnerNpc != null) {
+                            spawnLoveParticles(partnerNpc);
+                        }
+                    }
+                } else {
+                    secondary = getRandomOtherNPCName(selfName, primary);
+                }
                 if (secondary == null || secondary.isEmpty()) {
                     secondary = "NPC";
                 }
                 result = result.replace("{NPC2}", secondary);
+            }
+            
+            if (result.contains("{NPC3}")) {
+                String tertiary;
+                // Auch bei NPC3: Wenn Sprecher einen Partner hat, 20% Chance
+                NamePairInfo pairInfo3 = getNamePairFor(selfName);
+                if (pairInfo3 != null && primary != null && !primary.contains(pairInfo3.partnerName) && random.nextDouble() < 0.2) {
+                    // Partner mit Kosename verwenden
+                    String prefix = pairInfo3.prefix;
+                    if (prefix == null || prefix.isBlank()) {
+                        prefix = defaultAffectionatePrefixes[random.nextInt(defaultAffectionatePrefixes.length)];
+                    }
+                    tertiary = prefix + pairInfo3.partnerName;
+                    // Herzpartikel spawnen
+                    if (speakerNpc != null) {
+                        spawnLoveParticles(speakerNpc);
+                        NPC partnerNpc = findPairedPartner(speakerNpc);
+                        if (partnerNpc != null) {
+                            spawnLoveParticles(partnerNpc);
+                        }
+                    }
+                } else {
+                    tertiary = getRandomOtherNPCName(selfName, primary);
+                }
+                if (tertiary == null || tertiary.isEmpty()) {
+                    tertiary = "NPC";
+                }
+                result = result.replace("{NPC3}", tertiary);
             }
         }
 
@@ -1854,7 +3274,15 @@ public class NPCManager {
             "Moin {SPIELERNAME}! Schicke Rüstung übrigens.",
             "{SPIELERNAME}, komm doch mal mit zum Spawn-Festival!",
             "{NPC} meinte, dass {NPC2} eine geheime Basis gefunden hat.",
-            "Ganz ehrlich, ohne {SPIELERNAME} wäre es hier viel langweiliger."
+            "Ganz ehrlich, ohne {SPIELERNAME} wäre es hier viel langweiliger.",
+            // Partner-Nachrichten für Paare
+            "Ach {PARTNER}, du bist einfach der Beste!",
+            "Ich vermisse {PARTNER} schon wenn wir nur kurz getrennt sind...",
+            "Hat jemand {PARTNER} gesehen? Ich muss was Wichtiges sagen!",
+            "{PARTNER} und ich haben heute noch was Besonderes vor!",
+            "Weißt du was, {PARTNER}? Du machst mich so glücklich!",
+            "Ich hab {PARTNER} versprochen heute Abend was Schönes zu machen.",
+            "*schaut verträumt zu {PARTNER} rüber*"
         );
     }
     

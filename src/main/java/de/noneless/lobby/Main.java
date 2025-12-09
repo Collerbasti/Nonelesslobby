@@ -20,6 +20,7 @@ public class Main extends JavaPlugin {
     
     private static Main instance;
     private NPCManager npcManager;
+    private de.noneless.lobby.news.NewsManager newsManager;
     private Location lobbyLocation;
     private WorldMoverService worldMoverService;
     
@@ -40,6 +41,7 @@ public class Main extends JavaPlugin {
         
         // Initialisiere NPC Manager
         npcManager = new NPCManager(this);
+        newsManager = new de.noneless.lobby.news.NewsManager(this);
         worldMoverService = new WorldMoverService(this);
         worldMoverService.resumePendingJob();
         GamemodeEnforcer.start(this);
@@ -49,11 +51,15 @@ public class Main extends JavaPlugin {
         
         // Registriere Event Listener
         registerEventListeners();
+        // register news join listener
+        getServer().getPluginManager().registerEvents(new de.noneless.lobby.news.PlayerJoinNewsListener(this, newsManager), this);
         
         // Spawne NPCs
         if (npcManager.isCitizensAvailable()) {
             npcManager.spawnLobbyNPCs();
         }
+
+        // expose NewsManager to other classes (already set)
 
         Bukkit.getScheduler().runTaskLater(this, LobbyScoreboard::updateAll, 1L);
         
@@ -93,23 +99,25 @@ public class Main extends JavaPlugin {
     
     private void registerCommands() {
         // Registriere alle Commands mit Executors
-        getCommand("lobby").setExecutor(new de.noneless.lobby.commands.CMDLobby());
-        getCommand("setlobby").setExecutor(new de.noneless.lobby.commands.CMDSetLobby());
-        getCommand("profile").setExecutor(new de.noneless.lobby.commands.CMDProfile());
-        getCommand("punkte").setExecutor(new de.noneless.lobby.commands.CMDPunkteleaderboard());
-        getCommand("warps").setExecutor(new de.noneless.lobby.commands.CMDWarps());
-        getCommand("punkteadmin").setExecutor(new de.noneless.lobby.commands.CMDPunkteAdmin());
-        getCommand("punktegeben").setExecutor(new de.noneless.lobby.commands.CMDPunkteGeben());
-        getCommand("friend").setExecutor(new de.noneless.lobby.commands.CMDFriend());
-        getCommand("annehmen").setExecutor(new de.noneless.lobby.commands.CMDAcceptFriend());
-        getCommand("ablehnen").setExecutor(new de.noneless.lobby.commands.CMDDenyFriend());
-        getCommand("testfriendrequest").setExecutor(new de.noneless.lobby.commands.CMDTestFriendRequest());
-        getCommand("serverinfo").setExecutor(new de.noneless.lobby.commands.CMDServerInfo());
-        getCommand("lobbynpc").setExecutor(new de.noneless.lobby.commands.CMDNPCManager());
-        getCommand("settings").setExecutor(new de.noneless.lobby.commands.CMDSettings());
+        safeRegisterCommand("lobby", new de.noneless.lobby.commands.CMDLobby());
+        safeRegisterCommand("setlobby", new de.noneless.lobby.commands.CMDSetLobby());
+        safeRegisterCommand("profile", new de.noneless.lobby.commands.CMDProfile());
+        safeRegisterCommand("punkte", new de.noneless.lobby.commands.CMDPunkteleaderboard());
+        safeRegisterCommand("warps", new de.noneless.lobby.commands.CMDWarps());
+        safeRegisterCommand("punkteadmin", new de.noneless.lobby.commands.CMDPunkteAdmin());
+        safeRegisterCommand("punktegeben", new de.noneless.lobby.commands.CMDPunkteGeben());
+        safeRegisterCommand("friend", new de.noneless.lobby.commands.CMDFriend());
+        safeRegisterCommand("annehmen", new de.noneless.lobby.commands.CMDAcceptFriend());
+        safeRegisterCommand("ablehnen", new de.noneless.lobby.commands.CMDDenyFriend());
+        safeRegisterCommand("testfriendrequest", new de.noneless.lobby.commands.CMDTestFriendRequest());
+        safeRegisterCommand("serverinfo", new de.noneless.lobby.commands.CMDServerInfo());
+        safeRegisterCommand("lobbynpc", new de.noneless.lobby.commands.CMDNPCManager());
+        safeRegisterCommand("addnews", new de.noneless.lobby.commands.CMDAddNews());
+        safeRegisterCommand("news", new de.noneless.lobby.commands.CMDNews());
+        safeRegisterCommand("settings", new de.noneless.lobby.commands.CMDSettings());
         de.noneless.lobby.commands.CMDWorldMover worldMoverCommandExecutor = new de.noneless.lobby.commands.CMDWorldMover(worldMoverService);
-        getCommand("worldmover").setExecutor(worldMoverCommandExecutor);
-        getCommand("worldmover").setTabCompleter(worldMoverCommandExecutor);
+        safeRegisterCommand("worldmover", worldMoverCommandExecutor);
+        safeSetTabCompleter("worldmover", worldMoverCommandExecutor);
         
         // Registriere TabCompleter
         de.noneless.lobby.tabcompleters.LobbyTabCompleter lobbyTabCompleter = new de.noneless.lobby.tabcompleters.LobbyTabCompleter();
@@ -118,17 +126,17 @@ public class Main extends JavaPlugin {
         de.noneless.lobby.tabcompleters.AdminTabCompleter adminTabCompleter = new de.noneless.lobby.tabcompleters.AdminTabCompleter();
         
         // Setze TabCompleter für Commands
-        getCommand("lobby").setTabCompleter(lobbyTabCompleter);
-        getCommand("setlobby").setTabCompleter(lobbyTabCompleter);
-        getCommand("profile").setTabCompleter(lobbyTabCompleter);
-        getCommand("punkte").setTabCompleter(lobbyTabCompleter);
-        getCommand("warps").setTabCompleter(lobbyTabCompleter);
-        getCommand("punkteadmin").setTabCompleter(adminTabCompleter);
-        getCommand("punktegeben").setTabCompleter(adminTabCompleter);
-        getCommand("friend").setTabCompleter(friendTabCompleter);
-        getCommand("serverinfo").setTabCompleter(lobbyTabCompleter);
-        getCommand("lobbynpc").setTabCompleter(npcTabCompleter);
-        getCommand("settings").setTabCompleter(lobbyTabCompleter);
+        safeSetTabCompleter("lobby", lobbyTabCompleter);
+        safeSetTabCompleter("setlobby", lobbyTabCompleter);
+        safeSetTabCompleter("profile", lobbyTabCompleter);
+        safeSetTabCompleter("punkte", lobbyTabCompleter);
+        safeSetTabCompleter("warps", lobbyTabCompleter);
+        safeSetTabCompleter("punkteadmin", adminTabCompleter);
+        safeSetTabCompleter("punktegeben", adminTabCompleter);
+        safeSetTabCompleter("friend", friendTabCompleter);
+        safeSetTabCompleter("serverinfo", lobbyTabCompleter);
+        safeSetTabCompleter("lobbynpc", npcTabCompleter);
+        safeSetTabCompleter("settings", lobbyTabCompleter);
         
         getLogger().info("§aAlle Commands und TabCompleter erfolgreich registriert!");
     }
@@ -150,6 +158,32 @@ public class Main extends JavaPlugin {
         // TODO: Speichere Spielerdaten
         getLogger().info("§7Daten werden gespeichert...");
     }
+
+    private void safeRegisterCommand(String name, org.bukkit.command.CommandExecutor executor) {
+        try {
+            org.bukkit.command.PluginCommand cmd = getCommand(name);
+            if (cmd == null) {
+                getLogger().warning("Command '" + name + "' ist nicht in plugin.yml deklariert; Registrierung übersprungen.");
+                return;
+            }
+            cmd.setExecutor(executor);
+        } catch (Exception e) {
+            getLogger().warning("Fehler beim Registrieren des Commands '" + name + "': " + e.getMessage());
+        }
+    }
+
+    private void safeSetTabCompleter(String name, org.bukkit.command.TabCompleter completer) {
+        try {
+            org.bukkit.command.PluginCommand cmd = getCommand(name);
+            if (cmd == null) {
+                getLogger().warning("TabCompleter: Command '" + name + "' ist nicht in plugin.yml deklariert; setzen übersprungen.");
+                return;
+            }
+            cmd.setTabCompleter(completer);
+        } catch (Exception e) {
+            getLogger().warning("Fehler beim Setzen des TabCompleters für '" + name + "': " + e.getMessage());
+        }
+    }
     
     // Getter und Setter
     public static Main getInstance() {
@@ -162,6 +196,10 @@ public class Main extends JavaPlugin {
     
     public NPCManager getNPCManager() {
         return npcManager;
+    }
+
+    public de.noneless.lobby.news.NewsManager getNewsManager() {
+        return newsManager;
     }
     
     // Settings-Konfigurationen

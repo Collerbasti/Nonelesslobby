@@ -53,6 +53,17 @@ permissions:
   nonelesslobby.worldmover:
     description: Darf den WorldMover starten und verwalten
     default: op
+  nonelesslobby.news.view:
+    description: Darf News ansehen
+    default: true
+
+  nonelesslobby.news.add:
+    description: Darf News hinzufügen
+    default: op
+
+  nonelesslobby.news.delete:
+    description: Darf News löschen
+    default: op
 
 commands:
   # === LOBBY COMMANDS ===
@@ -165,6 +176,15 @@ commands:
     description: Verschiebt die komplette Welt vertikal im Hintergrund
     usage: /worldmover <up|down> <blöcke> [welt]
     permission: nonelesslobby.worldmover
+
+  addnews:
+    description: Fügt eine News für Spieler hinzu
+    usage: /addnews <text>
+    permission: nonelesslobby.news.add
+  news:
+    description: Verwalte und zeige News (list, del)
+    usage: /news <list|del> [id]
+    permission: nonelesslobby.news.view
     
   # === SETTINGS ===
   settings:

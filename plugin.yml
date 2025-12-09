@@ -1,0 +1,194 @@
+main: de.noneless.lobby.Main
+version: 4.0
+api-version: 1.21
+name: NonelessLobby
+description: Modernes Lobby-Plugin mit erweiterten Features
+author: Noneless
+website: https://noneless.de
+prefix: NonelessLobby
+
+depend: []
+softdepend: [Vault, PlaceholderAPI, Citizens, Multiverse-Core, DecentHolograms]
+
+permissions:
+  nonelesslobby.*:
+    description: Alle NonelessLobby Permissions
+    children:
+      nonelesslobby.admin: true
+      nonelesslobby.moderator: true
+      nonelesslobby.vip: true
+      nonelesslobby.user: true
+  nonelesslobby.admin:
+    description: Admin Permissions
+    default: op
+    children:
+      nonelesslobby.moderator: true
+      nonelesslobby.admin.setspawn: true
+      nonelesslobby.admin.reload: true
+      nonelesslobby.admin.setrank: true
+      nonelesslobby.worldmover: true
+  nonelesslobby.moderator:
+    description: Moderator Permissions  
+    default: false
+    children:
+      nonelesslobby.vip: true
+      nonelesslobby.mod.report: true
+      nonelesslobby.mod.teleport: true
+  nonelesslobby.vip:
+    description: VIP Permissions
+    default: false
+    children:
+      nonelesslobby.user: true
+      nonelesslobby.vip.fly: true
+      nonelesslobby.vip.gamemode: true
+  nonelesslobby.user:
+    description: Standard User Permissions
+    default: true
+    children:
+      nonelesslobby.spawn: true
+      nonelesslobby.lobby: true
+      nonelesslobby.friends: true
+      nonelesslobby.profile: true
+      nonelesslobby.leaderboard: true
+  nonelesslobby.worldmover:
+    description: Darf den WorldMover starten und verwalten
+    default: op
+
+  nonelesslobby.news.view:
+    description: Darf News ansehen
+    default: true
+
+  nonelesslobby.news.add:
+    description: Darf News hinzufügen
+    default: op
+
+  nonelesslobby.news.delete:
+    description: Darf News löschen
+    default: op
+
+commands:
+  # === LOBBY COMMANDS ===
+  lobby:
+    description: Teleportiert dich zur Lobby
+    usage: /lobby
+    aliases: [spawn, hub]
+    permission: nonelesslobby.spawn
+  
+  setlobby:
+    description: Setzt den Lobby-Spawn Punkt
+    usage: /setlobby
+    permission: nonelesslobby.admin.setspawn
+  
+  # === PLAYER COMMANDS ===  
+  profile:
+    description: Zeigt dein Spielerprofil oder das eines anderen Spielers
+    usage: /profile [spieler]
+    aliases: [stats, info]
+    permission: nonelesslobby.profile
+    
+  punkte:
+    description: Zeigt das Punkte-Leaderboard aller Spieler
+    usage: /punkte
+    aliases: [points, leaderboard, ranking]
+    permission: nonelesslobby.leaderboard
+    
+  warps:
+    description: Zeigt verfügbare Warps
+    usage: /warps
+    aliases: [warp]
+    permission: nonelesslobby.user
+    
+  punkteadmin:
+    description: Admin Commands für das Punkte-System
+    usage: /punkteadmin
+    permission: nonelesslobby.admin
+    
+  punktegeben:
+    description: Gibt einem Spieler Punkte
+    usage: /punktegeben <spieler> <punkte>
+    permission: nonelesslobby.admin
+    
+  # === FRIENDS SYSTEM ===
+  friend:
+    description: Freunde-System Hauptcommand
+    usage: /friend <add|remove|list|accept|deny|tp> [spieler]
+    aliases: [friends, f]
+    permission: nonelesslobby.friends
+  
+  annehmen:
+    description: Akzeptiert eine Freundschaftsanfrage
+    usage: /annehmen
+    permission: nonelesslobby.friends
+  
+  ablehnen:
+    description: Lehnt eine Freundschaftsanfrage ab
+    usage: /ablehnen
+    permission: nonelesslobby.friends
+  
+  testfriendrequest:
+    description: Admin-Command zum Testen von Freundschaftsanfragen
+    usage: /testfriendrequest <spielername>
+    aliases: [testfriend, tfr]
+    permission: nonelesslobby.admin
+    
+  # === ADMIN COMMANDS ===
+  lobbyreload:
+    description: Lädt das Plugin neu
+    usage: /lobbyreload
+    permission: nonelesslobby.admin.reload
+    
+  setrank:
+    description: Setzt den Rang eines Spielers
+    usage: /setrank <spieler> <rang>
+    permission: nonelesslobby.admin.setrank
+    
+  # === INFO COMMANDS ===
+  serverinfo:
+    description: Zeigt Server-Informationen
+    usage: /serverinfo
+    aliases: [info, status]
+    permission: nonelesslobby.user
+    
+  help:
+    description: Zeigt alle verfügbaren Commands
+    usage: /help [seite]
+    aliases: [hilfe, commands]
+    permission: nonelesslobby.user
+    
+  # === UTILITY COMMANDS ===
+  report:
+    description: Meldet einen Spieler an die Admins
+    usage: /report <spieler> <grund>
+    permission: nonelesslobby.user
+    
+  vote:
+    description: Zeigt Vote-Links für den Server
+    usage: /vote
+    permission: nonelesslobby.user
+    
+  # === NPC MANAGEMENT ===
+  lobbynpc:
+    description: Verwaltet die Lobby NPCs
+    usage: /lobbynpc <spawn|remove|reload|count|setlobby|info>
+    aliases: [npc, npcs]
+    permission: nonelesslobby.admin
+    
+  worldmover:
+    description: Verschiebt die komplette Welt vertikal im Hintergrund
+    usage: /worldmover <up|down> <blöcke> [welt]
+    permission: nonelesslobby.worldmover
+    
+  # === SETTINGS ===
+  settings:
+    description: Öffnet die persönlichen Einstellungen
+    usage: /settings
+    aliases: [einstellungen, config]
+    permission: nonelesslobby.user
+  addnews:
+    description: Fügt eine News für Spieler hinzu
+    usage: /addnews <text>
+    permission: nonelesslobby.news.add
+  news:
+    description: Verwalte und zeige News (list, del)
+    usage: /news <list|del> [id]
+    permission: nonelesslobby.news.view

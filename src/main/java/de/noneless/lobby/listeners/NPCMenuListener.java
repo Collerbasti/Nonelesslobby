@@ -106,6 +106,8 @@ public class NPCMenuListener implements Listener {
                 menu.openChatEditor(player);
             } else if (type == Material.PLAYER_HEAD) {
                 menu.openPersonalityOverview(player);
+            } else if (type == Material.HEART_OF_THE_SEA) {
+                menu.openNamePairsMenu(player);
             } else if (type == Material.LECTERN) {
                 menu.openConversationList(player);
             } else if (type == Material.WRITABLE_BOOK) {
@@ -404,6 +406,81 @@ public class NPCMenuListener implements Listener {
                         "Neuer Gespräch-Präfix eingeben (z.B. &5[NPC-Privat]):");
             } else if (type == Material.ARROW) {
                 menu.openMain(player);
+            }
+        } else if (title.equals(NPCAdminMenu.PAIRS_TITLE)) {
+            event.setCancelled(true);
+            if (clicked == null || !clicked.hasItemMeta()) return;
+            Material type = clicked.getType();
+            if (type == Material.PAPER) {
+                // display name like "#<id> <name>"
+                String display = ChatColor.stripColor(clicked.getItemMeta().getDisplayName());
+                if (!display.startsWith("#")) return;
+                String[] parts = display.substring(1).split(" ", 2);
+                try {
+                    int id = Integer.parseInt(parts[0]);
+                    // cycle partner to next available (including none)
+                    Map<Integer, String> active = manager.getActiveNpcIdNameMap();
+                    List<Integer> keys = new ArrayList<>(active.keySet());
+                    if (keys.isEmpty()) return;
+                    // build candidate list excluding self
+                    List<Integer> candidates = new ArrayList<>();
+                    candidates.add(null); // represent clearing partner
+                    for (int k : keys) {
+                        if (k == id) continue;
+                        candidates.add(k);
+                    }
+                    // find current partner index
+                    NPCManager.PairInfo pe = manager.getPairFor(id);
+                    Integer current = pe == null ? null : pe.partnerId;
+                    int idx = candidates.indexOf(current);
+                    int next = (idx + 1) % candidates.size();
+                    Integer newPartner = candidates.get(next);
+                    manager.setPair(id, newPartner, null);
+                    player.sendMessage(ChatColor.GREEN + "Partner für NPC #" + id + " gesetzt: " + (newPartner == null ? "(kein Partner)" : "#" + newPartner));
+                    menu.openPairsMenu(player);
+                } catch (Exception ignored) { }
+            } else if (type == Material.ARROW) {
+                menu.openMain(player);
+            }
+        } else if (title.equals(NPCAdminMenu.NAME_PAIRS_TITLE)) {
+            // Namenspaare Übersicht
+            event.setCancelled(true);
+            if (clicked == null || !clicked.hasItemMeta()) return;
+            Material type = clicked.getType();
+            if (type == Material.PLAYER_HEAD) {
+                String name = ChatColor.stripColor(clicked.getItemMeta().getDisplayName());
+                if (event.isLeftClick()) {
+                    // Partner-Auswahl öffnen
+                    menu.openNamePairSelect(player, name);
+                } else if (event.isRightClick()) {
+                    // Paarung entfernen
+                    boolean removed = manager.removeNamePair(name);
+                    player.sendMessage(removed ? ChatColor.GREEN + "Paarung für '" + name + "' entfernt." :
+                            ChatColor.RED + "Keine Paarung vorhanden.");
+                    menu.openNamePairsMenu(player);
+                }
+            } else if (type == Material.ARROW) {
+                menu.openMain(player);
+            }
+        } else if (title.startsWith(NPCAdminMenu.NAME_PAIR_SELECT_PREFIX)) {
+            // Partner-Auswahl Menü
+            event.setCancelled(true);
+            if (clicked == null || !clicked.hasItemMeta()) return;
+            String selectedName = title.substring(NPCAdminMenu.NAME_PAIR_SELECT_PREFIX.length());
+            Material type = clicked.getType();
+            if (type == Material.BARRIER) {
+                // Paarung entfernen
+                manager.removeNamePair(selectedName);
+                player.sendMessage(ChatColor.GREEN + "Paarung für '" + selectedName + "' entfernt.");
+                menu.openNamePairsMenu(player);
+            } else if (type == Material.PAPER || type == Material.EMERALD) {
+                // Partner auswählen
+                String partnerName = ChatColor.stripColor(clicked.getItemMeta().getDisplayName());
+                manager.setNamePair(selectedName, partnerName, null);
+                player.sendMessage(ChatColor.GREEN + "'" + selectedName + "' wurde mit '" + partnerName + "' gepaart!");
+                menu.openNamePairsMenu(player);
+            } else if (type == Material.ARROW) {
+                menu.openNamePairsMenu(player);
             }
         }
     }

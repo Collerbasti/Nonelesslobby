@@ -19,6 +19,9 @@ public class NPCAdminMenu {
     public static final String MAIN_TITLE = ChatColor.DARK_AQUA + "NPC Verwaltung";
     public static final String NAME_TITLE = ChatColor.DARK_GREEN + "NPC Namen";
     public static final String CHAT_TITLE = ChatColor.DARK_PURPLE + "NPC Chats";
+    public static final String PAIRS_TITLE = ChatColor.LIGHT_PURPLE + "NPC Paarverwaltung";
+    public static final String NAME_PAIRS_TITLE = ChatColor.LIGHT_PURPLE + "Namenspaare";
+    public static final String NAME_PAIR_SELECT_PREFIX = ChatColor.LIGHT_PURPLE + "Partner für: ";
     public static final String PERSONALITY_OVERVIEW_TITLE = ChatColor.BLUE + "NPC Persönlichkeiten";
     public static final String PERSONALITY_DETAIL_PREFIX = ChatColor.BLUE + "Persönlichkeiten: ";
     public static final String PERSONALITY_LIST_TITLE = ChatColor.GOLD + "Persönlichkeiten";
@@ -47,6 +50,7 @@ public class NPCAdminMenu {
         inv.setItem(26, createItem(Material.BOOKSHELF, ChatColor.DARK_RED + "Gespräch-Fokus", ChatColor.GRAY + "Filter pro Gespräch setzen"));
         inv.setItem(11, createItem(Material.REDSTONE, ChatColor.GOLD + "Manager Einstellungen", ChatColor.GRAY + "Hologramme, Gespräche etc."));
         inv.setItem(22, createItem(Material.BARRIER, ChatColor.RED + "Zurück", ChatColor.GRAY + "Zurück zu den Settings"));
+        inv.setItem(21, createItem(Material.HEART_OF_THE_SEA, ChatColor.LIGHT_PURPLE + "Namenspaare", ChatColor.GRAY + "Paarungen über Namen verwalten"));
         fill(inv);
         player.openInventory(inv);
     }
@@ -188,6 +192,84 @@ public class NPCAdminMenu {
                     ChatColor.GRAY + "Rechtsklick: bearbeiten"));
         }
         inv.setItem(48, createItem(Material.EMERALD, ChatColor.GREEN + "Nachricht hinzufügen", ChatColor.GRAY + "Text eingeben"));
+        inv.setItem(53, createItem(Material.ARROW, ChatColor.RED + "Zurück", ChatColor.GRAY + "Zurück zur Übersicht"));
+        fill(inv);
+        player.openInventory(inv);
+    }
+
+    public void openPairsMenu(Player player) {
+        Inventory inv = Bukkit.createInventory(null, 54, PAIRS_TITLE);
+        Map<Integer, String> active = manager.getActiveNpcIdNameMap();
+        int slot = 0;
+        for (Map.Entry<Integer, String> e : active.entrySet()) {
+            if (slot >= 45) break;
+            int id = e.getKey();
+            String name = e.getValue();
+            NPCManager.PairInfo pe = manager.getPairFor(id);
+            String partnerInfo = pe == null ? ChatColor.DARK_GRAY + "(kein Partner)" : ChatColor.YELLOW + "Partner: " + ChatColor.AQUA + pe.partnerId;
+            inv.setItem(slot++, createItem(Material.PAPER, ChatColor.GOLD + "#" + id + " " + ChatColor.WHITE + name,
+                    ChatColor.GRAY + "Linksklick: Cycle Partner", ChatColor.GRAY + partnerInfo));
+        }
+        inv.setItem(53, createItem(Material.ARROW, ChatColor.RED + "Zurück", ChatColor.GRAY + "Zurück zur NPC Verwaltung"));
+        fill(inv);
+        player.openInventory(inv);
+    }
+
+    /**
+     * Öffnet das Menü für namensbasierte Paarungen.
+     * Zeigt alle NPC-Namen mit ihrem aktuellen Partner.
+     */
+    public void openNamePairsMenu(Player player) {
+        Inventory inv = Bukkit.createInventory(null, 54, NAME_PAIRS_TITLE);
+        List<String> names = manager.getNpcNamesSnapshot();
+        int slot = 0;
+        for (String name : names) {
+            if (slot >= 45) break;
+            NPCManager.NamePairInfo pe = manager.getNamePairFor(name);
+            String partnerInfo = pe == null ? ChatColor.DARK_GRAY + "(kein Partner)" : 
+                    ChatColor.GREEN + "Partner: " + ChatColor.YELLOW + pe.partnerName;
+            String prefixInfo = pe != null && pe.prefix != null && !pe.prefix.isBlank() ? 
+                    ChatColor.GRAY + "Präfix: " + ChatColor.LIGHT_PURPLE + pe.prefix : "";
+            if (prefixInfo.isEmpty()) {
+                inv.setItem(slot++, createItem(Material.PLAYER_HEAD, ChatColor.GOLD + name,
+                        partnerInfo,
+                        ChatColor.GRAY + "Linksklick: Partner wählen",
+                        ChatColor.GRAY + "Rechtsklick: Paarung entfernen"));
+            } else {
+                inv.setItem(slot++, createItem(Material.PLAYER_HEAD, ChatColor.GOLD + name,
+                        partnerInfo, prefixInfo,
+                        ChatColor.GRAY + "Linksklick: Partner wählen",
+                        ChatColor.GRAY + "Rechtsklick: Paarung entfernen"));
+            }
+        }
+        inv.setItem(53, createItem(Material.ARROW, ChatColor.RED + "Zurück", ChatColor.GRAY + "Zurück zur NPC Verwaltung"));
+        fill(inv);
+        player.openInventory(inv);
+    }
+
+    /**
+     * Öffnet die Partner-Auswahl für einen bestimmten Namen.
+     */
+    public void openNamePairSelect(Player player, String selectedName) {
+        Inventory inv = Bukkit.createInventory(null, 54, NAME_PAIR_SELECT_PREFIX + selectedName);
+        List<String> names = manager.getNpcNamesSnapshot();
+        NPCManager.NamePairInfo currentPair = manager.getNamePairFor(selectedName);
+        int slot = 0;
+        
+        // "Kein Partner" Option
+        inv.setItem(slot++, createItem(Material.BARRIER, ChatColor.RED + "Kein Partner",
+                ChatColor.GRAY + "Entfernt die aktuelle Paarung"));
+        
+        for (String name : names) {
+            if (slot >= 45) break;
+            if (name.equalsIgnoreCase(selectedName)) continue; // Nicht sich selbst anzeigen
+            
+            boolean isCurrentPartner = currentPair != null && currentPair.partnerName.equalsIgnoreCase(name);
+            Material mat = isCurrentPartner ? Material.EMERALD : Material.PAPER;
+            String status = isCurrentPartner ? ChatColor.GREEN + "✓ Aktueller Partner" : ChatColor.GRAY + "Klicke zum Auswählen";
+            
+            inv.setItem(slot++, createItem(mat, ChatColor.YELLOW + name, status));
+        }
         inv.setItem(53, createItem(Material.ARROW, ChatColor.RED + "Zurück", ChatColor.GRAY + "Zurück zur Übersicht"));
         fill(inv);
         player.openInventory(inv);

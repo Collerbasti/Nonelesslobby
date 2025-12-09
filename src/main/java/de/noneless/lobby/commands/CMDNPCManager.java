@@ -47,6 +47,22 @@ public class CMDNPCManager implements CommandExecutor {
             case "spawn":
                 handleSpawnCommand(sender, npcManager);
                 break;
+            case "addspawn":
+                handleAddSpawnCommand(sender, npcManager, args);
+                break;
+
+            case "removespawn":
+                handleRemoveSpawnCommand(sender, npcManager, args);
+                break;
+
+            case "listspawns":
+                handleListSpawnsCommand(sender, npcManager);
+                break;
+
+            case "spawnat":
+            case "spawnnow":
+                handleSpawnAtCommand(sender, npcManager, args);
+                break;
                 
             case "remove":
                 handleRemoveCommand(sender, npcManager);
@@ -76,6 +92,23 @@ public class CMDNPCManager implements CommandExecutor {
             case "talk":
             case "conversation":
                 handleConversationCommand(sender, npcManager, args);
+                break;
+
+            case "setpoi":
+                handleSetPOICommand(sender, npcManager, args);
+                break;
+                
+            case "removepoi":
+                handleRemovePOICommand(sender, npcManager, args);
+                break;
+                
+            case "listpois":
+            case "pois":
+                handleListPOIsCommand(sender, npcManager);
+                break;
+                
+            case "poiinfo":
+                handlePOIInfoCommand(sender, npcManager, args);
                 break;
                 
             default:
@@ -135,6 +168,60 @@ public class CMDNPCManager implements CommandExecutor {
                           playerLocation.getX(), 
                           playerLocation.getY(), 
                           playerLocation.getZ()));
+    }
+
+    private void handleAddSpawnCommand(CommandSender sender, NPCManager npcManager, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "Dieser Command kann nur von Spielern ausgeführt werden!");
+            return;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(ChatColor.YELLOW + "Verwendung: /lobbynpc addspawn <name>");
+            return;
+        }
+        String name = args[1].trim();
+        Player player = (Player) sender;
+        Location loc = player.getLocation();
+        if (npcManager.addSpawnPoint(name, loc)) {
+            sender.sendMessage(ChatColor.GREEN + "Spawn-Punkt '" + name + "' wurde hinzugefügt und NPC gespawnt.");
+        } else {
+            sender.sendMessage(ChatColor.RED + "Spawn-Punkt konnte nicht hinzugefügt werden (Name existiert?).");
+        }
+    }
+
+    private void handleRemoveSpawnCommand(CommandSender sender, NPCManager npcManager, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(ChatColor.YELLOW + "Verwendung: /lobbynpc removespawn <name>");
+            return;
+        }
+        String name = args[1].trim();
+        if (npcManager.removeSpawnPoint(name)) {
+            sender.sendMessage(ChatColor.GREEN + "Spawn-Punkt '" + name + "' wurde entfernt und zugehöriger NPC gelöscht.");
+        } else {
+            sender.sendMessage(ChatColor.RED + "Spawn-Punkt '" + name + "' nicht gefunden.");
+        }
+    }
+
+    private void handleListSpawnsCommand(CommandSender sender, NPCManager npcManager) {
+        List<String> spawns = npcManager.listSpawnPoints();
+        if (spawns.isEmpty()) {
+            sender.sendMessage(ChatColor.GRAY + "Keine gespeicherten Spawn-Punkte vorhanden.");
+            return;
+        }
+        sender.sendMessage(ChatColor.GOLD + "Gespeicherte Spawn-Punkte: " + ChatColor.WHITE + String.join(", ", spawns));
+    }
+
+    private void handleSpawnAtCommand(CommandSender sender, NPCManager npcManager, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(ChatColor.YELLOW + "Verwendung: /lobbynpc spawnat <name>");
+            return;
+        }
+        String name = args[1].trim();
+        if (npcManager.spawnAt(name)) {
+            sender.sendMessage(ChatColor.GREEN + "NPC an Spawn-Punkt '" + name + "' gespawnt/teleportiert.");
+        } else {
+            sender.sendMessage(ChatColor.RED + "Spawn-Punkt '" + name + "' nicht gefunden oder Citizens fehlt.");
+        }
     }
     
     private void handleInfoCommand(CommandSender sender, NPCManager npcManager) {
@@ -213,6 +300,107 @@ public class CMDNPCManager implements CommandExecutor {
             }
         }
     }
+
+    private void handleSetPOICommand(CommandSender sender, NPCManager npcManager, String[] args) {
+        if (!(sender instanceof Player)) {
+            sender.sendMessage(ChatColor.RED + "Dieser Command kann nur von Spielern ausgeführt werden!");
+            return;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(ChatColor.YELLOW + "Verwendung: /lobbynpc setpoi <name>");
+            return;
+        }
+        String poiName = args[1].trim();
+        Player player = (Player) sender;
+        Location loc = player.getLocation();
+        
+        // Prüfe ob POI bereits existiert
+        NPCManager.POIInfo existing = npcManager.getPOI(poiName);
+        if (existing != null) {
+            // POI existiert -> Location aktualisieren
+            if (npcManager.updatePOILocation(poiName, loc)) {
+                sender.sendMessage(ChatColor.GREEN + "POI '" + poiName + "' Location wurde aktualisiert:");
+                sender.sendMessage(ChatColor.GRAY + "  Welt: " + ChatColor.WHITE + loc.getWorld().getName());
+                sender.sendMessage(ChatColor.GRAY + "  Position: " + ChatColor.WHITE + 
+                    String.format("%.1f, %.1f, %.1f", loc.getX(), loc.getY(), loc.getZ()));
+            } else {
+                sender.sendMessage(ChatColor.RED + "Fehler beim Aktualisieren des POI!");
+            }
+        } else {
+            // Neuen POI erstellen
+            if (npcManager.createPOI(poiName, loc)) {
+                sender.sendMessage(ChatColor.GREEN + "POI '" + poiName + "' wurde erstellt!");
+                sender.sendMessage(ChatColor.GRAY + "  Welt: " + ChatColor.WHITE + loc.getWorld().getName());
+                sender.sendMessage(ChatColor.GRAY + "  Position: " + ChatColor.WHITE + 
+                    String.format("%.1f, %.1f, %.1f", loc.getX(), loc.getY(), loc.getZ()));
+                sender.sendMessage(ChatColor.YELLOW + "Verwende die NPC-Verwaltung um NPCs zuzuweisen.");
+            } else {
+                sender.sendMessage(ChatColor.RED + "Fehler beim Erstellen des POI!");
+            }
+        }
+    }
+
+    private void handleRemovePOICommand(CommandSender sender, NPCManager npcManager, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(ChatColor.YELLOW + "Verwendung: /lobbynpc removepoi <name>");
+            return;
+        }
+        String poiName = args[1].trim();
+        if (npcManager.removePOI(poiName)) {
+            sender.sendMessage(ChatColor.GREEN + "POI '" + poiName + "' wurde entfernt!");
+            sender.sendMessage(ChatColor.GRAY + "NPCs wurden zur Lobby zurückgeschickt.");
+        } else {
+            sender.sendMessage(ChatColor.RED + "POI '" + poiName + "' nicht gefunden!");
+        }
+    }
+
+    private void handleListPOIsCommand(CommandSender sender, NPCManager npcManager) {
+        List<NPCManager.POIInfo> pois = npcManager.getAllPOIs();
+        if (pois.isEmpty()) {
+            sender.sendMessage(ChatColor.GRAY + "Keine Points of Interest vorhanden.");
+            sender.sendMessage(ChatColor.YELLOW + "Erstelle einen mit: /lobbynpc setpoi <name>");
+            return;
+        }
+        sender.sendMessage(ChatColor.GOLD + "=== Points of Interest ===");
+        for (NPCManager.POIInfo poi : pois) {
+            String worldName = poi.location.getWorld() != null ? poi.location.getWorld().getName() : "?";
+            sender.sendMessage(ChatColor.AQUA + poi.name + ChatColor.GRAY + " @ " + 
+                ChatColor.WHITE + worldName + " " + 
+                String.format("(%.0f, %.0f, %.0f)", poi.location.getX(), poi.location.getY(), poi.location.getZ()));
+            if (!poi.allowedNPCNames.isEmpty()) {
+                sender.sendMessage(ChatColor.GRAY + "  NPCs: " + ChatColor.YELLOW + String.join(", ", poi.allowedNPCNames));
+            } else {
+                sender.sendMessage(ChatColor.GRAY + "  NPCs: " + ChatColor.DARK_GRAY + "(keine zugewiesen)");
+            }
+        }
+        sender.sendMessage(ChatColor.GOLD + "==========================");
+    }
+
+    private void handlePOIInfoCommand(CommandSender sender, NPCManager npcManager, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(ChatColor.YELLOW + "Verwendung: /lobbynpc poiinfo <name>");
+            return;
+        }
+        String poiName = args[1].trim();
+        NPCManager.POIInfo poi = npcManager.getPOI(poiName);
+        if (poi == null) {
+            sender.sendMessage(ChatColor.RED + "POI '" + poiName + "' nicht gefunden!");
+            return;
+        }
+        sender.sendMessage(ChatColor.GOLD + "=== POI: " + poi.name + " ===");
+        String worldName = poi.location.getWorld() != null ? poi.location.getWorld().getName() : "?";
+        sender.sendMessage(ChatColor.AQUA + "Welt: " + ChatColor.WHITE + worldName);
+        sender.sendMessage(ChatColor.AQUA + "Position: " + ChatColor.WHITE + 
+            String.format("%.2f, %.2f, %.2f", poi.location.getX(), poi.location.getY(), poi.location.getZ()));
+        sender.sendMessage(ChatColor.AQUA + "Yaw/Pitch: " + ChatColor.WHITE + 
+            String.format("%.1f / %.1f", poi.location.getYaw(), poi.location.getPitch()));
+        if (!poi.allowedNPCNames.isEmpty()) {
+            sender.sendMessage(ChatColor.AQUA + "Erlaubte NPCs: " + ChatColor.YELLOW + String.join(", ", poi.allowedNPCNames));
+        } else {
+            sender.sendMessage(ChatColor.AQUA + "Erlaubte NPCs: " + ChatColor.DARK_GRAY + "(keine zugewiesen)");
+        }
+        sender.sendMessage(ChatColor.GOLD + "==========================");
+    }
     
     private void sendHelpMessage(CommandSender sender) {
         sender.sendMessage(ChatColor.GOLD + "=== NPC Manager Commands ===");
@@ -221,9 +409,18 @@ public class CMDNPCManager implements CommandExecutor {
         sender.sendMessage(ChatColor.YELLOW + "/lobbynpc reload" + ChatColor.WHITE + " - Lädt NPCs neu");
         sender.sendMessage(ChatColor.YELLOW + "/lobbynpc count" + ChatColor.WHITE + " - Zeigt Anzahl aktiver NPCs");
         sender.sendMessage(ChatColor.YELLOW + "/lobbynpc setlobby" + ChatColor.WHITE + " - Setzt neue Lobby-Position");
+        sender.sendMessage(ChatColor.YELLOW + "/lobbynpc addspawn <name>" + ChatColor.WHITE + " - Speichert Spawn-Punkt und erstellt NPC hier");
+        sender.sendMessage(ChatColor.YELLOW + "/lobbynpc removespawn <name>" + ChatColor.WHITE + " - Entfernt gespeicherten Spawn und NPC");
+        sender.sendMessage(ChatColor.YELLOW + "/lobbynpc listspawns" + ChatColor.WHITE + " - Zeigt gespeicherte Spawn-Punkte");
+        sender.sendMessage(ChatColor.YELLOW + "/lobbynpc spawnat <name>" + ChatColor.WHITE + " - Spawnt/teleportiert NPC an gespeicherten Spawn");
         sender.sendMessage(ChatColor.YELLOW + "/lobbynpc info" + ChatColor.WHITE + " - Zeigt NPC Manager Informationen");
         sender.sendMessage(ChatColor.YELLOW + "/lobbynpc debug" + ChatColor.WHITE + " - Zeigt Debug-Informationen");
         sender.sendMessage(ChatColor.YELLOW + "/lobbynpc conversation [id]" + ChatColor.WHITE + " - Startet eine bestimmte/zufällige Konversation");
+        sender.sendMessage(ChatColor.GOLD + "--- Points of Interest ---");
+        sender.sendMessage(ChatColor.YELLOW + "/lobbynpc setpoi <name>" + ChatColor.WHITE + " - Erstellt/aktualisiert einen POI hier");
+        sender.sendMessage(ChatColor.YELLOW + "/lobbynpc removepoi <name>" + ChatColor.WHITE + " - Entfernt einen POI");
+        sender.sendMessage(ChatColor.YELLOW + "/lobbynpc pois" + ChatColor.WHITE + " - Listet alle POIs auf");
+        sender.sendMessage(ChatColor.YELLOW + "/lobbynpc poiinfo <name>" + ChatColor.WHITE + " - Zeigt POI Details");
         sender.sendMessage(ChatColor.GOLD + "===============================");
     }
 }

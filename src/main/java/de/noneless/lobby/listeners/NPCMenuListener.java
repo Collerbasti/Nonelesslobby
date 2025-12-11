@@ -108,6 +108,10 @@ public class NPCMenuListener implements Listener {
                 menu.openPersonalityOverview(player);
             } else if (type == Material.HEART_OF_THE_SEA) {
                 menu.openNamePairsMenu(player);
+            } else if (type == Material.COMPASS) {
+                menu.openPOIListMenu(player);
+            } else if (type == Material.NETHER_STAR) {
+                menu.openMandatoryNPCMenu(player);
             } else if (type == Material.LECTERN) {
                 menu.openConversationList(player);
             } else if (type == Material.WRITABLE_BOOK) {
@@ -400,6 +404,23 @@ public class NPCMenuListener implements Listener {
                 manager.setConversationAudienceRadius(newValue);
                 player.sendMessage(ChatColor.GREEN + "Publikums Reichweite: " + String.format("%.1f", newValue) + " Blöcke");
                 menu.openSettings(player);
+            } else if (type == Material.PLAYER_HEAD) {
+                // Min/Max NPCs in Lobby - Unterscheide via Slot
+                if (event.getSlot() == 21) {
+                    // Min NPCs: +1 / -1
+                    int current = manager.getMinLobbyNPCs();
+                    int newValue = event.isLeftClick() ? current + 1 : current - 1;
+                    manager.setMinLobbyNPCs(Math.max(0, newValue));
+                    player.sendMessage(ChatColor.GREEN + "Min. Lobby-NPCs: " + manager.getMinLobbyNPCs());
+                    menu.openSettings(player);
+                } else if (event.getSlot() == 22) {
+                    // Max NPCs: +1 / -1
+                    int current = manager.getMaxLobbyNPCs();
+                    int newValue = event.isLeftClick() ? current + 1 : current - 1;
+                    manager.setMaxLobbyNPCs(Math.max(1, newValue));
+                    player.sendMessage(ChatColor.GREEN + "Max. Lobby-NPCs: " + manager.getMaxLobbyNPCs());
+                    menu.openSettings(player);
+                }
             } else if (type == Material.BOOK) {
                 // Gespräch Präfix - nur mit Chat editierbar
                 beginEdit(player, EditType.SETTINGS_CONVERSATION_PREFIX, null, null,
@@ -481,6 +502,88 @@ public class NPCMenuListener implements Listener {
                 menu.openNamePairsMenu(player);
             } else if (type == Material.ARROW) {
                 menu.openNamePairsMenu(player);
+            }
+        } else if (title.equals(NPCAdminMenu.POI_LIST_TITLE)) {
+            // POI-Liste Menü
+            event.setCancelled(true);
+            if (clicked == null || !clicked.hasItemMeta()) return;
+            Material type = clicked.getType();
+            if (type == Material.COMPASS) {
+                String poiName = ChatColor.stripColor(clicked.getItemMeta().getDisplayName());
+                if (event.isLeftClick()) {
+                    // NPCs für diesen POI verwalten
+                    menu.openPOINPCSelectMenu(player, poiName);
+                } else if (event.isRightClick()) {
+                    // POI löschen
+                    boolean removed = manager.removePOI(poiName);
+                    player.sendMessage(removed ? ChatColor.GREEN + "POI '" + poiName + "' wurde entfernt." :
+                            ChatColor.RED + "POI konnte nicht entfernt werden.");
+                    menu.openPOIListMenu(player);
+                }
+            } else if (type == Material.ARROW) {
+                menu.openMain(player);
+            }
+        } else if (title.startsWith(NPCAdminMenu.POI_NPC_SELECT_PREFIX)) {
+            // POI NPC-Auswahl Menü
+            event.setCancelled(true);
+            if (clicked == null || !clicked.hasItemMeta()) return;
+            String poiName = title.substring(NPCAdminMenu.POI_NPC_SELECT_PREFIX.length());
+            Material type = clicked.getType();
+            if (type == Material.LIME_DYE || type == Material.GRAY_DYE) {
+                // Toggle NPC für diesen POI
+                String npcName = ChatColor.stripColor(clicked.getItemMeta().getDisplayName());
+                boolean isCurrentlyAllowed = (type == Material.LIME_DYE);
+                
+                if (isCurrentlyAllowed) {
+                    // Entfernen
+                    manager.removeNPCFromPOI(poiName, npcName);
+                    player.sendMessage(ChatColor.YELLOW + npcName + " wurde von POI '" + poiName + "' entfernt.");
+                } else {
+                    // Hinzufügen - auch Partner hinzufügen wenn vorhanden
+                    manager.addNPCToPOI(poiName, npcName);
+                    player.sendMessage(ChatColor.GREEN + npcName + " wurde zu POI '" + poiName + "' hinzugefügt.");
+                    
+                    // Pärchen-Logik: Partner auch hinzufügen
+                    NPCManager.NamePairInfo pairInfo = manager.getNamePairFor(npcName);
+                    if (pairInfo != null) {
+                        if (!manager.isNPCAllowedAtPOI(poiName, pairInfo.partnerName)) {
+                            manager.addNPCToPOI(poiName, pairInfo.partnerName);
+                            player.sendMessage(ChatColor.LIGHT_PURPLE + "♥ Partner " + pairInfo.partnerName + " wurde auch hinzugefügt!");
+                        }
+                    }
+                }
+                menu.openPOINPCSelectMenu(player, poiName);
+            } else if (type == Material.ARROW) {
+                menu.openPOIListMenu(player);
+            }
+        } else if (title.equals(NPCAdminMenu.MANDATORY_NPC_TITLE)) {
+            // Pflicht-NPCs Menü
+            event.setCancelled(true);
+            if (clicked == null || !clicked.hasItemMeta()) return;
+            Material type = clicked.getType();
+            if (type == Material.NETHER_STAR || type == Material.GRAY_DYE) {
+                // Toggle Pflicht-NPC Status
+                String npcName = ChatColor.stripColor(clicked.getItemMeta().getDisplayName());
+                boolean isCurrentlyMandatory = (type == Material.NETHER_STAR);
+                
+                // Toggle
+                manager.setMandatoryNPC(npcName, !isCurrentlyMandatory);
+                
+                if (!isCurrentlyMandatory) {
+                    player.sendMessage(ChatColor.GOLD + "★ " + npcName + " ist jetzt ein Pflicht-NPC!");
+                    
+                    // Optional: Partner auch als Pflicht-NPC setzen
+                    NPCManager.NamePairInfo pairInfo = manager.getNamePairFor(npcName);
+                    if (pairInfo != null && !manager.isMandatoryNPC(pairInfo.partnerName)) {
+                        player.sendMessage(ChatColor.YELLOW + "Tipp: Partner " + pairInfo.partnerName + " ist noch kein Pflicht-NPC.");
+                    }
+                } else {
+                    player.sendMessage(ChatColor.GRAY + npcName + " ist kein Pflicht-NPC mehr.");
+                }
+                
+                menu.openMandatoryNPCMenu(player);
+            } else if (type == Material.ARROW) {
+                menu.openMain(player);
             }
         }
     }

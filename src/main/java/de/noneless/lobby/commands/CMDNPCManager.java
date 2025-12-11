@@ -5,14 +5,142 @@ import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import de.noneless.lobby.Main;
 import npc.NPCManager;
 
-public class CMDNPCManager implements CommandExecutor {
+public class CMDNPCManager implements CommandExecutor, TabCompleter {
+
+    private static final List<String> SUBCOMMANDS = Arrays.asList(
+        "spawn", "remove", "reload", "count", "setlobby", "info", "debug",
+        "addspawn", "removespawn", "listspawns", "spawnat",
+        "conversation", "chat", "talk",
+        "setpoi", "removepoi", "pois", "listpois", "poiinfo",
+        "topoi", "sendtopoi", "tolobby", "sendtolobby", "wherenpc", "findnpc"
+    );
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (!sender.hasPermission("nonelesslobby.admin")) {
+            return new ArrayList<>();
+        }
+        
+        NPCManager npcManager = Main.getInstance().getNPCManager();
+        if (npcManager == null) {
+            return new ArrayList<>();
+        }
+        
+        if (args.length == 1) {
+            // Erste Argument: Subcommand
+            return filterStartsWith(SUBCOMMANDS, args[0]);
+        }
+        
+        String subCommand = args[0].toLowerCase();
+        
+        if (args.length == 2) {
+            switch (subCommand) {
+                case "addspawn":
+                    // Keine Vorschläge - neuer Name
+                    return new ArrayList<>();
+                    
+                case "removespawn":
+                case "spawnat":
+                    // Vorhandene Spawn-Punkte
+                    return filterStartsWith(npcManager.listSpawnPoints(), args[1]);
+                    
+                case "conversation":
+                case "chat":
+                case "talk":
+                    // Konversations-IDs
+                    return filterStartsWith(npcManager.getConversationScriptIds(), args[1]);
+                    
+                case "setpoi":
+                    // Vorhandene POIs oder neuer Name
+                    return filterStartsWith(npcManager.getAllPOINames(), args[1]);
+                    
+                case "removepoi":
+                case "poiinfo":
+                    // Nur vorhandene POIs
+                    return filterStartsWith(npcManager.getAllPOINames(), args[1]);
+                    
+                case "topoi":
+                case "sendtopoi":
+                    // NPC-Namen oder "all"
+                    List<String> npcSuggestions = new ArrayList<>();
+                    npcSuggestions.add("all");
+                    npcSuggestions.addAll(getSpawnedNPCNames(npcManager));
+                    return filterStartsWith(npcSuggestions, args[1]);
+                    
+                case "tolobby":
+                case "sendtolobby":
+                    // NPC-Namen oder "all"
+                    List<String> lobbySuggestions = new ArrayList<>();
+                    lobbySuggestions.add("all");
+                    lobbySuggestions.addAll(getSpawnedNPCNames(npcManager));
+                    return filterStartsWith(lobbySuggestions, args[1]);
+                    
+                case "wherenpc":
+                case "findnpc":
+                    // NPC-Namen oder "all"
+                    List<String> whereSuggestions = new ArrayList<>();
+                    whereSuggestions.add("all");
+                    whereSuggestions.addAll(getSpawnedNPCNames(npcManager));
+                    return filterStartsWith(whereSuggestions, args[1]);
+                    
+                default:
+                    return new ArrayList<>();
+            }
+        }
+        
+        if (args.length == 3) {
+            switch (subCommand) {
+                case "topoi":
+                case "sendtopoi":
+                    // POI-Namen - nur die, an denen der NPC erlaubt ist (oder alle wenn "all")
+                    String npcName = args[1];
+                    if (npcName.equalsIgnoreCase("all")) {
+                        return filterStartsWith(npcManager.getAllPOINames(), args[2]);
+                    } else {
+                        // Nur POIs an denen dieser NPC erlaubt ist
+                        List<String> allowedPOIs = npcManager.getPOIsForNPC(npcName);
+                        if (allowedPOIs.isEmpty()) {
+                            // Falls keine erlaubt, zeige alle (mit Warnung im Command)
+                            return filterStartsWith(npcManager.getAllPOINames(), args[2]);
+                        }
+                        return filterStartsWith(allowedPOIs, args[2]);
+                    }
+                    
+                default:
+                    return new ArrayList<>();
+            }
+        }
+        
+        return new ArrayList<>();
+    }
+    
+    private List<String> filterStartsWith(List<String> options, String prefix) {
+        String lowerPrefix = prefix.toLowerCase();
+        return options.stream()
+                .filter(s -> s.toLowerCase().startsWith(lowerPrefix))
+                .collect(Collectors.toList());
+    }
+    
+    private List<String> getSpawnedNPCNames(NPCManager npcManager) {
+        List<String> names = new ArrayList<>();
+        for (String name : npcManager.getNpcNamesSnapshot()) {
+            if (npcManager.findNPCByName(name) != null) {
+                names.add(name);
+            }
+        }
+        return names;
+    }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -109,6 +237,27 @@ public class CMDNPCManager implements CommandExecutor {
                 
             case "poiinfo":
                 handlePOIInfoCommand(sender, npcManager, args);
+                break;
+
+            case "topoi":
+            case "sendtopoi":
+                handleSendToPOICommand(sender, npcManager, args);
+                break;
+
+            case "tolobby":
+            case "sendtolobby":
+                handleSendToLobbyCommand(sender, npcManager, args);
+                break;
+
+            case "wherenpc":
+            case "findnpc":
+                handleWhereNPCCommand(sender, npcManager, args);
+                break;
+            
+            case "cleanup":
+            case "clean":
+            case "purge":
+                handleCleanupCommand(sender, npcManager);
                 break;
                 
             default:
@@ -401,6 +550,174 @@ public class CMDNPCManager implements CommandExecutor {
         }
         sender.sendMessage(ChatColor.GOLD + "==========================");
     }
+
+    private void handleSendToPOICommand(CommandSender sender, NPCManager npcManager, String[] args) {
+        if (args.length < 3) {
+            sender.sendMessage(ChatColor.YELLOW + "Verwendung: /lobbynpc topoi <npc-name> <poi-name>");
+            sender.sendMessage(ChatColor.GRAY + "Oder: /lobbynpc topoi all <poi-name> - Teleportiert alle erlaubten NPCs");
+            return;
+        }
+        String npcName = args[1].trim();
+        String poiName = args[2].trim();
+        
+        // Prüfe ob POI existiert
+        NPCManager.POIInfo poi = npcManager.getPOI(poiName);
+        if (poi == null) {
+            sender.sendMessage(ChatColor.RED + "POI '" + poiName + "' nicht gefunden!");
+            sender.sendMessage(ChatColor.GRAY + "Verfügbare POIs: " + ChatColor.YELLOW + String.join(", ", npcManager.getAllPOINames()));
+            return;
+        }
+        
+        if (npcName.equalsIgnoreCase("all")) {
+            // Alle erlaubten NPCs zum POI teleportieren
+            int count = 0;
+            for (String allowedName : poi.allowedNPCNames) {
+                net.citizensnpcs.api.npc.NPC npc = npcManager.findNPCByName(allowedName);
+                if (npc != null && npc.isSpawned()) {
+                    if (npcManager.teleportNPCToPOI(npc, poiName)) {
+                        count++;
+                    }
+                }
+            }
+            sender.sendMessage(ChatColor.GREEN + "" + count + " NPCs wurden zu POI '" + poiName + "' teleportiert!");
+        } else {
+            // Einzelnen NPC teleportieren
+            net.citizensnpcs.api.npc.NPC npc = npcManager.findNPCByName(npcName);
+            if (npc == null) {
+                sender.sendMessage(ChatColor.RED + "NPC '" + npcName + "' nicht gefunden oder nicht gespawnt!");
+                return;
+            }
+            
+            // Prüfe ob NPC an diesem POI erlaubt ist
+            if (!npcManager.isNPCAllowedAtPOI(poiName, npcName)) {
+                sender.sendMessage(ChatColor.RED + "NPC '" + npcName + "' ist an POI '" + poiName + "' nicht erlaubt!");
+                sender.sendMessage(ChatColor.GRAY + "Erlaubte NPCs: " + ChatColor.YELLOW + String.join(", ", poi.allowedNPCNames));
+                return;
+            }
+            
+            if (npcManager.teleportNPCToPOI(npc, poiName)) {
+                sender.sendMessage(ChatColor.GREEN + "NPC '" + npcName + "' wurde zu POI '" + poiName + "' teleportiert!");
+                
+                // Info über Partner
+                NPCManager.NamePairInfo pairInfo = npcManager.getNamePairFor(npcName);
+                if (pairInfo != null && npcManager.isNPCAllowedAtPOI(poiName, pairInfo.partnerName)) {
+                    sender.sendMessage(ChatColor.LIGHT_PURPLE + "♥ Partner '" + pairInfo.partnerName + "' wurde auch teleportiert!");
+                }
+            } else {
+                sender.sendMessage(ChatColor.RED + "Fehler beim Teleportieren!");
+            }
+        }
+    }
+
+    private void handleSendToLobbyCommand(CommandSender sender, NPCManager npcManager, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(ChatColor.YELLOW + "Verwendung: /lobbynpc tolobby <npc-name>");
+            sender.sendMessage(ChatColor.GRAY + "Oder: /lobbynpc tolobby all - Teleportiert alle NPCs zur Lobby");
+            return;
+        }
+        String npcName = args[1].trim();
+        
+        if (npcName.equalsIgnoreCase("all")) {
+            // Alle NPCs zur Lobby teleportieren
+            int count = 0;
+            for (String name : npcManager.getNpcNamesSnapshot()) {
+                net.citizensnpcs.api.npc.NPC npc = npcManager.findNPCByName(name);
+                if (npc != null && npc.isSpawned()) {
+                    if (npcManager.teleportNPCToLobby(npc)) {
+                        count++;
+                    }
+                }
+            }
+            sender.sendMessage(ChatColor.GREEN + "" + count + " NPCs wurden zur Lobby teleportiert!");
+        } else {
+            // Einzelnen NPC zur Lobby teleportieren
+            net.citizensnpcs.api.npc.NPC npc = npcManager.findNPCByName(npcName);
+            if (npc == null) {
+                sender.sendMessage(ChatColor.RED + "NPC '" + npcName + "' nicht gefunden oder nicht gespawnt!");
+                return;
+            }
+            
+            if (npcManager.teleportNPCToLobby(npc)) {
+                sender.sendMessage(ChatColor.GREEN + "NPC '" + npcName + "' wurde zur Lobby teleportiert!");
+                
+                // Info über Partner
+                NPCManager.NamePairInfo pairInfo = npcManager.getNamePairFor(npcName);
+                if (pairInfo != null) {
+                    sender.sendMessage(ChatColor.LIGHT_PURPLE + "♥ Partner '" + pairInfo.partnerName + "' wurde auch teleportiert!");
+                }
+            } else {
+                sender.sendMessage(ChatColor.RED + "Fehler beim Teleportieren!");
+            }
+        }
+    }
+
+    private void handleWhereNPCCommand(CommandSender sender, NPCManager npcManager, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage(ChatColor.YELLOW + "Verwendung: /lobbynpc wherenpc <npc-name>");
+            sender.sendMessage(ChatColor.GRAY + "Oder: /lobbynpc wherenpc all - Zeigt alle NPC-Standorte");
+            return;
+        }
+        String npcName = args[1].trim();
+        
+        if (npcName.equalsIgnoreCase("all")) {
+            sender.sendMessage(ChatColor.GOLD + "=== NPC Standorte ===");
+            boolean found = false;
+            for (String name : npcManager.getNpcNamesSnapshot()) {
+                net.citizensnpcs.api.npc.NPC npc = npcManager.findNPCByName(name);
+                if (npc != null && npc.isSpawned()) {
+                    String location = npcManager.getNPCCurrentLocation(name);
+                    String locDisplay = "lobby".equals(location) ? ChatColor.GREEN + "Lobby" : ChatColor.AQUA + "POI: " + location;
+                    sender.sendMessage(ChatColor.YELLOW + name + ChatColor.GRAY + " → " + locDisplay);
+                    found = true;
+                }
+            }
+            if (!found) {
+                sender.sendMessage(ChatColor.GRAY + "Keine NPCs gespawnt.");
+            }
+            sender.sendMessage(ChatColor.GOLD + "=====================");
+        } else {
+            net.citizensnpcs.api.npc.NPC npc = npcManager.findNPCByName(npcName);
+            if (npc == null || !npc.isSpawned()) {
+                sender.sendMessage(ChatColor.RED + "NPC '" + npcName + "' nicht gefunden oder nicht gespawnt!");
+                return;
+            }
+            
+            String location = npcManager.getNPCCurrentLocation(npcName);
+            if ("lobby".equals(location)) {
+                sender.sendMessage(ChatColor.AQUA + npcName + ChatColor.GRAY + " ist in der " + ChatColor.GREEN + "Lobby");
+            } else {
+                sender.sendMessage(ChatColor.AQUA + npcName + ChatColor.GRAY + " ist am POI: " + ChatColor.YELLOW + location);
+            }
+            
+            // Zeige auch Partner-Info
+            NPCManager.NamePairInfo pairInfo = npcManager.getNamePairFor(npcName);
+            if (pairInfo != null) {
+                String partnerLoc = npcManager.getNPCCurrentLocation(pairInfo.partnerName);
+                String partnerLocDisplay = "lobby".equals(partnerLoc) ? "Lobby" : "POI: " + partnerLoc;
+                sender.sendMessage(ChatColor.LIGHT_PURPLE + "♥ Partner " + pairInfo.partnerName + ChatColor.GRAY + " ist: " + partnerLocDisplay);
+            }
+        }
+    }
+    
+    private void handleCleanupCommand(CommandSender sender, NPCManager npcManager) {
+        sender.sendMessage(ChatColor.YELLOW + "Bereinige alle 'toten' NPCs...");
+        
+        try {
+            int cleaned = npcManager.forceCleanupAllDeadNPCs();
+            if (cleaned > 0) {
+                sender.sendMessage(ChatColor.GREEN + "✓ " + cleaned + " 'tote' NPCs wurden entfernt!");
+            } else {
+                sender.sendMessage(ChatColor.GRAY + "Keine 'toten' NPCs gefunden.");
+            }
+            
+            // Zeige aktuelle Statistiken
+            int activeCount = npcManager.getActiveLobbyNPCCount();
+            sender.sendMessage(ChatColor.AQUA + "Aktive Lobby-NPCs: " + ChatColor.WHITE + activeCount);
+            
+        } catch (Exception e) {
+            sender.sendMessage(ChatColor.RED + "Fehler beim Cleanup: " + e.getMessage());
+        }
+    }
     
     private void sendHelpMessage(CommandSender sender) {
         sender.sendMessage(ChatColor.GOLD + "=== NPC Manager Commands ===");
@@ -416,11 +733,15 @@ public class CMDNPCManager implements CommandExecutor {
         sender.sendMessage(ChatColor.YELLOW + "/lobbynpc info" + ChatColor.WHITE + " - Zeigt NPC Manager Informationen");
         sender.sendMessage(ChatColor.YELLOW + "/lobbynpc debug" + ChatColor.WHITE + " - Zeigt Debug-Informationen");
         sender.sendMessage(ChatColor.YELLOW + "/lobbynpc conversation [id]" + ChatColor.WHITE + " - Startet eine bestimmte/zufällige Konversation");
+        sender.sendMessage(ChatColor.YELLOW + "/lobbynpc cleanup" + ChatColor.WHITE + " - Entfernt 'tote' NPCs nach Server-Neustart");
         sender.sendMessage(ChatColor.GOLD + "--- Points of Interest ---");
         sender.sendMessage(ChatColor.YELLOW + "/lobbynpc setpoi <name>" + ChatColor.WHITE + " - Erstellt/aktualisiert einen POI hier");
         sender.sendMessage(ChatColor.YELLOW + "/lobbynpc removepoi <name>" + ChatColor.WHITE + " - Entfernt einen POI");
         sender.sendMessage(ChatColor.YELLOW + "/lobbynpc pois" + ChatColor.WHITE + " - Listet alle POIs auf");
         sender.sendMessage(ChatColor.YELLOW + "/lobbynpc poiinfo <name>" + ChatColor.WHITE + " - Zeigt POI Details");
+        sender.sendMessage(ChatColor.YELLOW + "/lobbynpc topoi <npc|all> <poi>" + ChatColor.WHITE + " - Teleportiert NPC(s) zu POI");
+        sender.sendMessage(ChatColor.YELLOW + "/lobbynpc tolobby <npc|all>" + ChatColor.WHITE + " - Teleportiert NPC(s) zur Lobby");
+        sender.sendMessage(ChatColor.YELLOW + "/lobbynpc wherenpc <npc|all>" + ChatColor.WHITE + " - Zeigt NPC-Standort(e)");
         sender.sendMessage(ChatColor.GOLD + "===============================");
     }
 }

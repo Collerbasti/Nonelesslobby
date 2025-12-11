@@ -31,6 +31,10 @@ public class NPCAdminMenu {
     public static final String CONVERSATION_DETAIL_PREFIX = ChatColor.DARK_PURPLE + "Gespräch: ";
     public static final String CONVERSATION_LINES_PREFIX = ChatColor.DARK_PURPLE + "Dialog: ";
     public static final String SETTINGS_TITLE = ChatColor.GOLD + "NPC Manager Einstellungen";
+    public static final String POI_LIST_TITLE = ChatColor.DARK_GREEN + "Points of Interest";
+    public static final String POI_DETAIL_PREFIX = ChatColor.DARK_GREEN + "POI: ";
+    public static final String POI_NPC_SELECT_PREFIX = ChatColor.DARK_GREEN + "NPCs für: ";
+    public static final String MANDATORY_NPC_TITLE = ChatColor.GOLD + "Pflicht-NPCs";
 
     private final NPCManager manager;
 
@@ -51,6 +55,8 @@ public class NPCAdminMenu {
         inv.setItem(11, createItem(Material.REDSTONE, ChatColor.GOLD + "Manager Einstellungen", ChatColor.GRAY + "Hologramme, Gespräche etc."));
         inv.setItem(22, createItem(Material.BARRIER, ChatColor.RED + "Zurück", ChatColor.GRAY + "Zurück zu den Settings"));
         inv.setItem(21, createItem(Material.HEART_OF_THE_SEA, ChatColor.LIGHT_PURPLE + "Namenspaare", ChatColor.GRAY + "Paarungen über Namen verwalten"));
+        inv.setItem(13, createItem(Material.COMPASS, ChatColor.DARK_GREEN + "Points of Interest", ChatColor.GRAY + "POIs verwalten (andere Welten)"));
+        inv.setItem(15, createItem(Material.NETHER_STAR, ChatColor.GOLD + "Pflicht-NPCs", ChatColor.GRAY + "NPCs die immer spawnen müssen"));
         fill(inv);
         player.openInventory(inv);
     }
@@ -103,6 +109,16 @@ public class NPCAdminMenu {
         inv.setItem(20, createItem(Material.SPYGLASS, ChatColor.DARK_AQUA + "Publikums Reichweite",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + String.format("%.1f", manager.getConversationAudienceRadius()) + " Blöcke",
                 ChatColor.GRAY + "Linksklick: +5 | Rechtsklick: -5"));
+        
+        // Min NPCs in Lobby
+        inv.setItem(21, createItem(Material.PLAYER_HEAD, ChatColor.GREEN + "Min. NPCs in Lobby",
+                ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getMinLobbyNPCs(),
+                ChatColor.GRAY + "Linksklick: +1 | Rechtsklick: -1"));
+        
+        // Max NPCs in Lobby
+        inv.setItem(22, createItem(Material.PLAYER_HEAD, ChatColor.GREEN + "Max. NPCs in Lobby",
+                ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getMaxLobbyNPCs(),
+                ChatColor.GRAY + "Linksklick: +1 | Rechtsklick: -1"));
         
         // Conversation Prefix
         inv.setItem(24, createItem(Material.BOOK, ChatColor.LIGHT_PURPLE + "Gespräch Präfix",
@@ -426,5 +442,153 @@ public class NPCAdminMenu {
     private String cut(String input, int max) {
         if (input.length() <= max) return input;
         return input.substring(0, Math.max(0, max - 3)) + "...";
+    }
+
+    // ===== POI (Points of Interest) Menüs =====
+
+    /**
+     * Öffnet die POI-Übersicht mit allen Points of Interest.
+     */
+    public void openPOIListMenu(Player player) {
+        Inventory inv = Bukkit.createInventory(null, 54, POI_LIST_TITLE);
+        List<NPCManager.POIInfo> pois = manager.getAllPOIs();
+        int slot = 0;
+        for (NPCManager.POIInfo poi : pois) {
+            if (slot >= 45) break;
+            String worldName = poi.location.getWorld() != null ? poi.location.getWorld().getName() : "?";
+            String posStr = String.format("%.0f, %.0f, %.0f", poi.location.getX(), poi.location.getY(), poi.location.getZ());
+            int npcCount = poi.allowedNPCNames.size();
+            String npcInfo = npcCount == 0 ? ChatColor.DARK_GRAY + "Keine NPCs" : 
+                    ChatColor.GREEN + String.valueOf(npcCount) + " NPC(s)";
+            
+            inv.setItem(slot++, createItem(Material.COMPASS, ChatColor.GOLD + poi.name,
+                    ChatColor.GRAY + "Welt: " + ChatColor.WHITE + worldName,
+                    ChatColor.GRAY + "Position: " + ChatColor.WHITE + posStr,
+                    npcInfo,
+                    ChatColor.YELLOW + "Linksklick: NPCs verwalten",
+                    ChatColor.RED + "Rechtsklick: POI löschen"));
+        }
+        
+        if (pois.isEmpty()) {
+            inv.setItem(22, createItem(Material.BARRIER, ChatColor.GRAY + "Keine POIs",
+                    ChatColor.DARK_GRAY + "Erstelle POIs mit:",
+                    ChatColor.YELLOW + "/lobbynpc setpoi <name>"));
+        }
+        
+        inv.setItem(53, createItem(Material.ARROW, ChatColor.RED + "Zurück", ChatColor.GRAY + "Zurück zur NPC Verwaltung"));
+        fill(inv);
+        player.openInventory(inv);
+    }
+
+    /**
+     * Öffnet das Menü um NPCs einem POI zuzuweisen.
+     */
+    public void openPOINPCSelectMenu(Player player, String poiName) {
+        NPCManager.POIInfo poi = manager.getPOI(poiName);
+        if (poi == null) {
+            player.sendMessage(ChatColor.RED + "POI nicht gefunden!");
+            openPOIListMenu(player);
+            return;
+        }
+        
+        Inventory inv = Bukkit.createInventory(null, 54, POI_NPC_SELECT_PREFIX + poi.name);
+        List<String> npcNames = manager.getNpcNamesSnapshot();
+        List<String> allowedNPCs = poi.allowedNPCNames;
+        
+        int slot = 0;
+        for (String npcName : npcNames) {
+            if (slot >= 45) break;
+            boolean isAllowed = allowedNPCs.contains(npcName);
+            Material mat = isAllowed ? Material.LIME_DYE : Material.GRAY_DYE;
+            String status = isAllowed ? ChatColor.GREEN + "✓ Erlaubt" : ChatColor.GRAY + "Nicht erlaubt";
+            
+            // Prüfe ob Partner auch erlaubt ist
+            NPCManager.NamePairInfo pairInfo = manager.getNamePairFor(npcName);
+            String pairStatus = "";
+            if (pairInfo != null) {
+                boolean partnerAllowed = allowedNPCs.contains(pairInfo.partnerName);
+                if (isAllowed && !partnerAllowed) {
+                    pairStatus = ChatColor.YELLOW + "⚠ Partner (" + pairInfo.partnerName + ") nicht erlaubt!";
+                } else if (isAllowed && partnerAllowed) {
+                    pairStatus = ChatColor.LIGHT_PURPLE + "♥ Partner: " + pairInfo.partnerName;
+                }
+            }
+            
+            if (pairStatus.isEmpty()) {
+                inv.setItem(slot++, createItem(mat, ChatColor.AQUA + npcName,
+                        status,
+                        ChatColor.GRAY + "Klick: Toggle"));
+            } else {
+                inv.setItem(slot++, createItem(mat, ChatColor.AQUA + npcName,
+                        status,
+                        pairStatus,
+                        ChatColor.GRAY + "Klick: Toggle"));
+            }
+        }
+        
+        // Info-Item
+        inv.setItem(49, createItem(Material.PAPER, ChatColor.WHITE + "POI Info",
+                ChatColor.GRAY + "Welt: " + ChatColor.WHITE + (poi.location.getWorld() != null ? poi.location.getWorld().getName() : "?"),
+                ChatColor.GRAY + "Position: " + ChatColor.WHITE + String.format("%.0f, %.0f, %.0f", 
+                        poi.location.getX(), poi.location.getY(), poi.location.getZ()),
+                ChatColor.DARK_GRAY + "Pärchen werden zusammen teleportiert!"));
+        
+        inv.setItem(53, createItem(Material.ARROW, ChatColor.RED + "Zurück", ChatColor.GRAY + "Zurück zur POI-Liste"));
+        fill(inv);
+        player.openInventory(inv);
+    }
+    
+    /**
+     * Öffnet das Menü für Pflicht-NPCs.
+     * Hier kann man festlegen, welche NPCs immer gespawnt werden müssen.
+     */
+    public void openMandatoryNPCMenu(Player player) {
+        Inventory inv = Bukkit.createInventory(null, 54, MANDATORY_NPC_TITLE);
+        List<String> allNames = manager.getNpcNamesSnapshot();
+        java.util.Set<String> mandatorySet = manager.getMandatoryNPCs();
+        
+        int slot = 0;
+        for (String npcName : allNames) {
+            if (slot >= 45) break;
+            boolean isMandatory = mandatorySet.contains(npcName);
+            Material mat = isMandatory ? Material.NETHER_STAR : Material.GRAY_DYE;
+            String status = isMandatory ? ChatColor.GOLD + "★ Pflicht-NPC" : ChatColor.GRAY + "Normal";
+            
+            // Prüfe ob NPC einen Partner hat
+            NPCManager.NamePairInfo pairInfo = manager.getNamePairFor(npcName);
+            String pairStatus = "";
+            if (pairInfo != null) {
+                boolean partnerMandatory = mandatorySet.contains(pairInfo.partnerName);
+                if (isMandatory && !partnerMandatory) {
+                    pairStatus = ChatColor.YELLOW + "⚠ Partner (" + pairInfo.partnerName + ") ist kein Pflicht-NPC";
+                } else if (isMandatory && partnerMandatory) {
+                    pairStatus = ChatColor.LIGHT_PURPLE + "♥ Partner auch Pflicht: " + pairInfo.partnerName;
+                } else if (!isMandatory && partnerMandatory) {
+                    pairStatus = ChatColor.AQUA + "Partner ist Pflicht-NPC";
+                }
+            }
+            
+            if (pairStatus.isEmpty()) {
+                inv.setItem(slot++, createItem(mat, ChatColor.AQUA + npcName,
+                        status,
+                        ChatColor.GRAY + "Klick: Toggle"));
+            } else {
+                inv.setItem(slot++, createItem(mat, ChatColor.AQUA + npcName,
+                        status,
+                        pairStatus,
+                        ChatColor.GRAY + "Klick: Toggle"));
+            }
+        }
+        
+        // Info-Item
+        int mandatoryCount = mandatorySet.size();
+        inv.setItem(49, createItem(Material.PAPER, ChatColor.WHITE + "Info",
+                ChatColor.GRAY + "Pflicht-NPCs: " + ChatColor.GOLD + mandatoryCount,
+                ChatColor.GRAY + "Diese NPCs werden " + ChatColor.GREEN + "immer" + ChatColor.GRAY + " gespawnt,",
+                ChatColor.GRAY + "unabhängig von Min/Max Einstellungen."));
+        
+        inv.setItem(53, createItem(Material.ARROW, ChatColor.RED + "Zurück", ChatColor.GRAY + "Zurück zur NPC Verwaltung"));
+        fill(inv);
+        player.openInventory(inv);
     }
 }

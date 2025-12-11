@@ -12,14 +12,14 @@ import java.util.UUID;
 
 public final class GamemodeEnforcer {
 
-    // Track last enforced gamemode to avoid redundant checks
+    // Track last enforced gamemode to avoid redundant messages
     private static final Map<UUID, GameMode> lastEnforcedMode = new HashMap<>();
 
     private GamemodeEnforcer() {
     }
 
     public static void start(JavaPlugin plugin) {
-        // Increased interval from 40 ticks (2s) to 100 ticks (5s) for better performance
+        // Periodic check every 5 seconds
         Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             for (Player player : Bukkit.getOnlinePlayers()) {
                 enforce(player);
@@ -32,10 +32,7 @@ public final class GamemodeEnforcer {
             return;
         }
         
-        // Skip if player has bypass permission
-        if (player.hasPermission("NonelessLobby.bypassGamemode")) {
-            return;
-        }
+        // Gamemode wird für ALLE Spieler erzwungen - kein Bypass möglich
         
         GameMode target = GamemodeSettingsConfig.resolveGamemodeForPlayer(
                 player.getUniqueId(),
@@ -46,25 +43,40 @@ public final class GamemodeEnforcer {
             return;
         }
         
-        // Only update if different from current mode AND different from last enforced
         GameMode currentMode = player.getGameMode();
-        GameMode lastMode = lastEnforcedMode.get(player.getUniqueId());
         
-        if (currentMode != target && lastMode != target) {
+        // FIX: Always enforce if current mode doesn't match target
+        if (currentMode != target) {
             player.setGameMode(target);
             lastEnforcedMode.put(player.getUniqueId(), target);
         }
     }
     
     /**
-     * Call this when a player changes world to immediately enforce gamemode
+     * Call this when a player changes world or teleports to immediately enforce gamemode.
+     * Uses a slight delay to ensure the player is fully in the new location.
      */
     public static void enforceImmediate(Player player) {
-        if (player != null && player.isOnline()) {
-            // Clear cached mode to force re-check
-            lastEnforcedMode.remove(player.getUniqueId());
-            enforce(player);
+        if (player == null || !player.isOnline()) {
+            return;
         }
+        
+        // Clear cached mode to force re-check
+        lastEnforcedMode.remove(player.getUniqueId());
+        
+        // Enforce immediately
+        enforce(player);
+        
+        // Also schedule a delayed check in case of timing issues
+        Bukkit.getScheduler().runTaskLater(
+            Bukkit.getPluginManager().getPlugin("NonelessLobby"),
+            () -> {
+                if (player.isOnline()) {
+                    enforce(player);
+                }
+            },
+            5L // 0.25 seconds delay
+        );
     }
     
     /**
@@ -74,5 +86,20 @@ public final class GamemodeEnforcer {
         if (player != null) {
             lastEnforcedMode.remove(player.getUniqueId());
         }
+    }
+    
+    /**
+     * Gets the target gamemode for a player (for external checks)
+     */
+    public static GameMode getTargetGamemode(Player player) {
+        if (player == null) {
+            return GameMode.ADVENTURE;
+        }
+        // Gamemode wird für ALLE erzwungen
+        GameMode target = GamemodeSettingsConfig.resolveGamemodeForPlayer(
+                player.getUniqueId(),
+                player.getWorld() != null ? player.getWorld().getName() : null
+        );
+        return target != null ? target : GameMode.ADVENTURE;
     }
 }

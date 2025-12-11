@@ -76,6 +76,8 @@ public class NPCManager {
     private final Map<String, POIEntry> pointsOfInterest = new LinkedHashMap<>();
     // Tracking welcher NPC wo ist: npcName -> "lobby" oder poi-Name
     private final Map<String, String> npcCurrentLocation = new LinkedHashMap<>();
+    // Pflicht-NPCs die immer gespawnt werden müssen
+    private final Set<String> mandatoryNPCs = new LinkedHashSet<>();
 
     private static final class POIEntry {
         final String name;
@@ -151,6 +153,10 @@ public class NPCManager {
     private double conversationAudienceRadiusSquared;
     private String conversationPrefix;
     private boolean hologramsAvailable;
+    
+    // NPC Anzahl in der Lobby
+    private int minLobbyNPCs = 3;
+    private int maxLobbyNPCs = 8;
     
     // ===== GETTER/SETTER FÜR GUI-SETTINGS =====
     private double chatHologramVerticalOffset = 3.0D;
@@ -273,6 +279,99 @@ public class NPCManager {
             cancelConversationLoop();
         }
     }
+
+    // ===== NPC ANZAHL GETTER/SETTER =====
+    
+    public int getMinLobbyNPCs() {
+        return minLobbyNPCs;
+    }
+    
+    public void setMinLobbyNPCs(int min) {
+        this.minLobbyNPCs = Math.max(0, Math.min(min, maxLobbyNPCs));
+        if (npcConfig != null) {
+            npcConfig.set("npcSettings.minLobbyNPCs", minLobbyNPCs);
+            saveNpcConfig();
+        }
+    }
+    
+    public int getMaxLobbyNPCs() {
+        return maxLobbyNPCs;
+    }
+    
+    public void setMaxLobbyNPCs(int max) {
+        this.maxLobbyNPCs = Math.max(minLobbyNPCs, Math.max(1, max));
+        if (npcConfig != null) {
+            npcConfig.set("npcSettings.maxLobbyNPCs", maxLobbyNPCs);
+            saveNpcConfig();
+        }
+    }
+    
+    // ===== PFLICHT-NPCs (Mandatory NPCs) =====
+    
+    /**
+     * Prüft ob ein NPC-Name als Pflicht-NPC markiert ist.
+     */
+    public boolean isMandatoryNPC(String npcName) {
+        return mandatoryNPCs.contains(npcName);
+    }
+    
+    /**
+     * Markiert einen NPC als Pflicht-NPC (wird immer gespawnt).
+     */
+    public void setMandatoryNPC(String npcName, boolean mandatory) {
+        if (mandatory) {
+            mandatoryNPCs.add(npcName);
+        } else {
+            mandatoryNPCs.remove(npcName);
+        }
+        saveMandatoryNPCs();
+    }
+    
+    /**
+     * Gibt eine Kopie der Pflicht-NPC-Namen zurück.
+     */
+    public Set<String> getMandatoryNPCs() {
+        return new LinkedHashSet<>(mandatoryNPCs);
+    }
+    
+    /**
+     * Speichert die Pflicht-NPCs in die Config.
+     */
+    private void saveMandatoryNPCs() {
+        if (npcConfig != null) {
+            npcConfig.set("npcSettings.mandatoryNPCs", new ArrayList<>(mandatoryNPCs));
+            saveNpcConfig();
+        }
+    }
+    
+    /**
+     * Lädt die Pflicht-NPCs aus der Config.
+     */
+    private void loadMandatoryNPCs() {
+        mandatoryNPCs.clear();
+        if (npcConfig != null) {
+            List<String> saved = npcConfig.getStringList("npcSettings.mandatoryNPCs");
+            mandatoryNPCs.addAll(saved);
+            plugin.getLogger().info("§7Geladene Pflicht-NPCs: " + mandatoryNPCs.size());
+        }
+    }
+    
+    /**
+     * Gibt eine Liste aller aktuell aktiven NPC-Namen zurück.
+     * Wird für TabCompletion verwendet.
+     */
+    public List<String> getAllActiveNPCNames() {
+        List<String> names = new ArrayList<>();
+        for (NPC npc : lobbyNPCs) {
+            if (npc != null && npc.isSpawned()) {
+                String name = npc.getName();
+                if (name != null && !name.isEmpty()) {
+                    names.add(name);
+                }
+            }
+        }
+        return names;
+    }
     
     // ===== END GETTER/SETTER =====
     
@@ -327,9 +426,11 @@ public class NPCManager {
         }
         scheduleInitialLobbyReset();
         startPairProximityChecker();
+        startPOIRotationTask();
     }
 
     private BukkitTask pairProximityTask;
+    private BukkitTask poiRotationTask;
 
     /**
      * Startet einen periodischen Task der prüft ob Paare nahe beieinander stehen
@@ -504,6 +605,75 @@ public class NPCManager {
             0.0     // Speed
         );
     }
+
+    /**
+     * Startet den POI-Rotations-Task.
+     * NPCs können periodisch zu einem POI wechseln oder zurück zur Lobby.
+     * NPC kann nur an einer Stelle sein: Lobby ODER POI.
+     */
+    private void startPOIRotationTask() {
+        if (poiRotationTask != null) {
+            poiRotationTask.cancel();
+        }
+        
+        // Alle 2-4 Minuten prüfen ob ein NPC den Ort wechseln soll
+        long intervalTicks = 20L * 60 * 2; // 2 Minuten
+        
+        poiRotationTask = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (!citizensAvailable || lobbyNPCs.isEmpty() || pointsOfInterest.isEmpty()) return;
+            
+            // 20% Chance pro Check dass ein NPC den Ort wechselt
+            if (random.nextDouble() > 0.20) return;
+            
+            // Wähle einen zufälligen NPC
+            List<NPC> eligibleNPCs = new ArrayList<>();
+            for (NPC npc : lobbyNPCs) {
+                if (npc != null && npc.isSpawned()) {
+                    String name = getNPCDisplayName(npc);
+                    // Prüfe ob dieser NPC überhaupt POIs haben kann
+                    List<String> availablePOIs = getPOIsForNPC(name);
+                    if (!availablePOIs.isEmpty() || !"lobby".equals(getNPCCurrentLocation(name))) {
+                        eligibleNPCs.add(npc);
+                    }
+                }
+            }
+            
+            if (eligibleNPCs.isEmpty()) return;
+            
+            NPC selectedNPC = eligibleNPCs.get(random.nextInt(eligibleNPCs.size()));
+            String npcName = getNPCDisplayName(selectedNPC);
+            String currentLocation = getNPCCurrentLocation(npcName);
+            
+            if ("lobby".equals(currentLocation)) {
+                // NPC ist in der Lobby -> zu POI teleportieren
+                List<String> availablePOIs = getPOIsForNPC(npcName);
+                if (!availablePOIs.isEmpty()) {
+                    String targetPOI = availablePOIs.get(random.nextInt(availablePOIs.size()));
+                    teleportNPCToPOI(selectedNPC, targetPOI);
+                    plugin.getLogger().info("NPC " + npcName + " wechselt zur POI: " + targetPOI);
+                }
+            } else {
+                // NPC ist an einem POI -> zurück zur Lobby (oder anderer POI)
+                if (random.nextDouble() < 0.7) {
+                    // 70% zurück zur Lobby
+                    teleportNPCToLobby(selectedNPC);
+                    plugin.getLogger().info("NPC " + npcName + " kehrt zur Lobby zurück.");
+                } else {
+                    // 30% zu anderem POI
+                    List<String> availablePOIs = getPOIsForNPC(npcName);
+                    availablePOIs.remove(currentLocation); // Nicht gleicher POI
+                    if (!availablePOIs.isEmpty()) {
+                        String targetPOI = availablePOIs.get(random.nextInt(availablePOIs.size()));
+                        teleportNPCToPOI(selectedNPC, targetPOI);
+                        plugin.getLogger().info("NPC " + npcName + " wechselt von " + currentLocation + " zu POI: " + targetPOI);
+                    } else {
+                        teleportNPCToLobby(selectedNPC);
+                        plugin.getLogger().info("NPC " + npcName + " kehrt zur Lobby zurück (keine anderen POIs).");
+                    }
+                }
+            }
+        }, intervalTicks, intervalTicks + random.nextInt(20 * 60)); // Etwas Variation
+    }
     
     public void reloadNpcConfig() {
         loadNpcConfig();
@@ -545,6 +715,7 @@ public class NPCManager {
         loadPersonalityMaps();
         refreshAllNpcPersonalities();
         loadConversationSettings();
+        loadMandatoryNPCs();
         restartConversationScheduler();
     }
     
@@ -1393,6 +1564,32 @@ public class NPCManager {
         loc.setY(center.getWorld().getHighestBlockYAt(loc) + 1);
         return loc;
     }
+
+    /**
+     * Gibt die Lobby-Location zurück (aus ConfigManager oder Main)
+     */
+    private Location getLobbyLocation() {
+        try {
+            // Versuche über ConfigManager
+            Class<?> configManagerClass = Class.forName("Config.ConfigManager");
+            Object lobbyLocation = configManagerClass.getMethod("getLobbyLocation").invoke(null);
+            if (lobbyLocation != null) {
+                return (Location) lobbyLocation;
+            }
+        } catch (Exception ignored) { }
+        
+        // Fallback über Main
+        try {
+            return plugin.getLobbyLocation();
+        } catch (Exception ignored) { }
+        
+        // Letzter Fallback - Default-Spawn
+        World world = Bukkit.getWorld("world");
+        if (world == null) {
+            world = Bukkit.getWorlds().get(0);
+        }
+        return new Location(world, 0.5, 65, 0.5);
+    }
     
     
     /**
@@ -1408,7 +1605,7 @@ public class NPCManager {
     }
     
     /**
-     * Spawnt 5-6 zufällige NPCs in der Nähe der Lobby
+     * Spawnt NPCs in der Nähe der Lobby (Anzahl basierend auf min/max Einstellungen)
      */
     public void spawnLobbyNPCs() {
         if (!isCitizensAvailable()) {
@@ -1443,18 +1640,61 @@ public class NPCManager {
                                                    lobbySpawn.getZ()));
             }
             
-            // Spawne 5-6 zufällige NPCs mit Paar-Logik
-            int npcCount = 5 + random.nextInt(2);
-            Set<String> spawnedNames = new LinkedHashSet<>();
+            // Spawne NPCs basierend auf min/max Einstellungen
+            int range = Math.max(0, maxLobbyNPCs - minLobbyNPCs);
+            int npcCount = minLobbyNPCs + (range > 0 ? random.nextInt(range + 1) : 0);
             
-            for (int i = 0; i < npcCount; i++) {
+            // Sammle bereits existierende NPC-Namen um Duplikate zu vermeiden
+            Set<String> spawnedNames = new LinkedHashSet<>();
+            for (NPC existingNpc : lobbyNPCs) {
+                if (existingNpc != null && existingNpc.isSpawned()) {
+                    String existingName = getNPCDisplayName(existingNpc);
+                    if (existingName != null) {
+                        spawnedNames.add(existingName);
+                    }
+                }
+            }
+            
+            int existingCount = spawnedNames.size();
+            
+            // PFLICHT-NPCs ZUERST SPAWNEN
+            for (String mandatoryName : mandatoryNPCs) {
+                if (!spawnedNames.contains(mandatoryName) && npcNames.contains(mandatoryName)) {
+                    Location spawnLoc = getSpawnLocationNear(lobbySpawn, spawnedNames.size());
+                    if (spawnSingleNPC(spawnLoc, mandatoryName)) {
+                        spawnedNames.add(mandatoryName);
+                        plugin.getLogger().info("§6[Pflicht] NPC '" + mandatoryName + "' wurde gespawnt!");
+                        
+                        // Prüfe ob Partner auch Pflicht ist oder mit 85% gespawnt werden soll
+                        NamePairInfo pairInfo = getNamePairFor(mandatoryName);
+                        if (pairInfo != null && !spawnedNames.contains(pairInfo.partnerName)) {
+                            if (mandatoryNPCs.contains(pairInfo.partnerName) || random.nextDouble() < 0.85) {
+                                Location partnerLoc = getSpawnLocationNearPartner(mandatoryName);
+                                if (partnerLoc == null) {
+                                    partnerLoc = getSpawnLocationNear(lobbySpawn, spawnedNames.size());
+                                }
+                                if (spawnSingleNPC(partnerLoc, pairInfo.partnerName)) {
+                                    spawnedNames.add(pairInfo.partnerName);
+                                    plugin.getLogger().info("§d[Paar] Partner '" + pairInfo.partnerName + "' von Pflicht-NPC '" + mandatoryName + "' wurde gespawnt!");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Restliche NPCs spawnen bis npcCount erreicht
+            int toSpawn = Math.max(0, npcCount - spawnedNames.size());
+            
+            for (int i = 0; i < toSpawn; i++) {
                 String spawnedName = spawnNPCWithPairLogic(lobbySpawn, spawnedNames);
                 if (spawnedName != null) {
                     spawnedNames.add(spawnedName);
                 }
             }
             
-            plugin.getLogger().info("§aEs wurden " + spawnedNames.size() + " NPCs in der Lobby gespawnt!");
+            int newlySpawned = spawnedNames.size() - existingCount;
+            plugin.getLogger().info("§aEs wurden " + newlySpawned + " neue NPCs gespawnt! (Gesamt: " + spawnedNames.size() + ", Min: " + minLobbyNPCs + ", Max: " + maxLobbyNPCs + ")");
             restartConversationScheduler();
             
         } catch (Exception e) {
@@ -1531,6 +1771,56 @@ public class NPCManager {
     }
 
     /**
+     * Gibt eine Position 1-2 Blöcke neben der gegebenen Location zurück.
+     * Behält die Y-Koordinate bei (für Innenräume/POIs) und prüft nur ob der Boden fest ist.
+     */
+    private Location getSpawnLocationNearPartner(Location partnerLoc) {
+        if (partnerLoc == null || partnerLoc.getWorld() == null) return null;
+        
+        // Versuche mehrere Positionen um einen gültigen Spawn zu finden
+        for (int attempt = 0; attempt < 8; attempt++) {
+            double angle = random.nextDouble() * 2 * Math.PI;
+            double distance = 1.5 + random.nextDouble() * 1.5; // 1.5-3 Blöcke
+            double offsetX = Math.cos(angle) * distance;
+            double offsetZ = Math.sin(angle) * distance;
+            
+            Location nearLoc = partnerLoc.clone().add(offsetX, 0, offsetZ);
+            
+            // Prüfe ob der Boden unter der Position fest ist
+            Location groundCheck = nearLoc.clone();
+            groundCheck.setY(Math.floor(groundCheck.getY()) - 1);
+            
+            if (groundCheck.getBlock().getType().isSolid()) {
+                // Boden ist fest, prüfe ob Platz für NPC ist
+                Location feetPos = nearLoc.clone();
+                feetPos.setY(Math.floor(nearLoc.getY()));
+                Location headPos = feetPos.clone().add(0, 1, 0);
+                
+                if (!feetPos.getBlock().getType().isSolid() && !headPos.getBlock().getType().isSolid()) {
+                    // Gültige Position gefunden
+                    return feetPos.add(0.5, 0, 0.5); // Zentrieren im Block
+                }
+            }
+            
+            // Falls Boden nicht fest, suche nach unten
+            for (int y = 0; y < 5; y++) {
+                Location checkDown = nearLoc.clone().add(0, -y, 0);
+                Location groundBelow = checkDown.clone().add(0, -1, 0);
+                
+                if (groundBelow.getBlock().getType().isSolid() && !checkDown.getBlock().getType().isSolid()) {
+                    Location headCheck = checkDown.clone().add(0, 1, 0);
+                    if (!headCheck.getBlock().getType().isSolid()) {
+                        return checkDown.add(0.5, 0, 0.5);
+                    }
+                }
+            }
+        }
+        
+        // Fallback: Gleiche Position wie Partner, leicht versetzt
+        return partnerLoc.clone().add(1, 0, 1);
+    }
+
+    /**
      * Findet die Position eines bereits gespawnten NPCs und gibt eine nahe Position zurück
      */
     private Location getSpawnLocationNearPartner(String partnerName) {
@@ -1541,13 +1831,7 @@ public class NPCManager {
                 Entity entity = npc.getEntity();
                 if (entity != null) {
                     Location partnerLoc = entity.getLocation();
-                    // Spawne 1-2 Blöcke daneben
-                    double angle = random.nextDouble() * 2 * Math.PI;
-                    double distance = 1.0 + random.nextDouble(); // 1-2 Blöcke
-                    double offsetX = Math.cos(angle) * distance;
-                    double offsetZ = Math.sin(angle) * distance;
-                    Location nearLoc = partnerLoc.clone().add(offsetX, 0, offsetZ);
-                    return nearLoc.getWorld().getHighestBlockAt(nearLoc).getLocation().add(0, 1, 0);
+                    return getSpawnLocationNearPartner(partnerLoc);
                 }
             }
         }
@@ -1888,29 +2172,68 @@ public class NPCManager {
                 
                 Location partnerLoc = partnerEnt.getLocation();
                 Location myLoc = meEnt.getLocation();
-                double dist = myLoc.distanceSquared(partnerLoc);
+                double distSquared = myLoc.distanceSquared(partnerLoc);
                 Navigator nav = npc.getNavigator();
                 if (nav == null) return;
                 
-                if (dist > 4.0) {
-                    // Partner ist weiter weg - folgen
-                    double ox = (random.nextDouble() - 0.5) * 1.2;
-                    double oz = (random.nextDouble() - 0.5) * 1.2;
+                // Ideale Distanz: 2-4 Blöcke (distanceSquared: 4-16)
+                double minDistSq = 4.0;   // 2 Blöcke - nicht zu nah
+                double maxDistSq = 25.0;  // 5 Blöcke - nicht zu weit
+                double idealDistSq = 9.0; // 3 Blöcke - ideal
+                
+                if (distSquared > maxDistSq) {
+                    // Partner ist zu weit weg - folgen, aber mit Abstand
+                    double targetDist = 2.0 + random.nextDouble() * 2.0; // 2-4 Blöcke Abstand halten
+                    
+                    // Richtung zum Partner berechnen
+                    double dx = partnerLoc.getX() - myLoc.getX();
+                    double dz = partnerLoc.getZ() - myLoc.getZ();
+                    double currentDist = Math.sqrt(distSquared);
+                    
+                    // Normalisieren und Zielposition berechnen (nicht direkt zum Partner)
+                    double nx = dx / currentDist;
+                    double nz = dz / currentDist;
+                    
+                    // Ziel ist targetDist Blöcke vom Partner entfernt (auf der gegenüberliegenden Seite von mir)
+                    double ox = -nx * targetDist + (random.nextDouble() - 0.5) * 2.0;
+                    double oz = -nz * targetDist + (random.nextDouble() - 0.5) * 2.0;
+                    
                     Location target = partnerLoc.clone().add(ox, 0, oz);
                     target = target.getWorld().getHighestBlockAt(target).getLocation().add(0, 1, 0);
                     nav.setTarget(target);
+                    
+                } else if (distSquared < minDistSq) {
+                    // Zu nah am Partner - etwas weggehen
+                    double ox = (random.nextDouble() - 0.5) * 4.0;
+                    double oz = (random.nextDouble() - 0.5) * 4.0;
+                    
+                    // Sicherstellen dass wir uns vom Partner wegbewegen
+                    double dx = myLoc.getX() - partnerLoc.getX();
+                    double dz = myLoc.getZ() - partnerLoc.getZ();
+                    ox += Math.signum(dx) * 1.5;
+                    oz += Math.signum(dz) * 1.5;
+                    
+                    Location target = myLoc.clone().add(ox, 0, oz);
+                    target = target.getWorld().getHighestBlockAt(target).getLocation().add(0, 1, 0);
+                    nav.setTarget(target);
+                    
                 } else {
-                    // Nahe am Partner - gelegentlich kleine Bewegungen
-                    if (!nav.isNavigating() && random.nextInt(10) == 0) {
-                        double ox = (random.nextDouble() - 0.5) * 2.0;
-                        double oz = (random.nextDouble() - 0.5) * 2.0;
+                    // Gute Distanz (2-5 Blöcke) - gelegentlich Bewegungen
+                    if (!nav.isNavigating() && random.nextInt(15) == 0) {
+                        // Zufällige Bewegung in der Nähe des Partners, aber mit Abstand
+                        double angle = random.nextDouble() * Math.PI * 2;
+                        double dist = 2.0 + random.nextDouble() * 3.0; // 2-5 Blöcke vom Partner
+                        
+                        double ox = Math.cos(angle) * dist;
+                        double oz = Math.sin(angle) * dist;
+                        
                         Location target = partnerLoc.clone().add(ox, 0, oz);
                         target = target.getWorld().getHighestBlockAt(target).getLocation().add(0, 1, 0);
                         nav.setTarget(target);
                     }
                 }
             } catch (Exception ignored) { }
-        }, 20L, 20L);
+        }, 20L + random.nextInt(20), 30L + random.nextInt(20)); // Variation im Timing
         pairFollowTasks.put(npc, task);
     }
 
@@ -2284,6 +2607,20 @@ public class NPCManager {
             return;
         }
 
+        // Lade NPC-Anzahl Einstellungen
+        ConfigurationSection npcSettings = npcConfig.getConfigurationSection("npcSettings");
+        if (npcSettings == null) {
+            npcSettings = npcConfig.createSection("npcSettings");
+            npcSettings.set("minLobbyNPCs", 3);
+            npcSettings.set("maxLobbyNPCs", 8);
+            saveNpcConfig();
+        }
+        this.minLobbyNPCs = Math.max(0, npcSettings.getInt("minLobbyNPCs", 3));
+        this.maxLobbyNPCs = Math.max(1, npcSettings.getInt("maxLobbyNPCs", 8));
+        if (this.maxLobbyNPCs < this.minLobbyNPCs) {
+            this.maxLobbyNPCs = this.minLobbyNPCs;
+        }
+
         ConfigurationSection section = npcConfig.getConfigurationSection("npcConversations");
         if (section == null) {
             section = npcConfig.createSection("npcConversations", getDefaultConversationSettings());
@@ -2545,63 +2882,101 @@ public class NPCManager {
             return null;
         }
         
-        // BEVORZUGE PAARE: Suche zuerst nach gepaarten NPCs
-        NPC pairedFirst = null;
-        NPC pairedSecond = null;
+        // Gruppiere NPCs nach ihrem aktuellen Standort (lobby oder POI-name)
+        Map<String, List<NPC>> npcsByLocation = new LinkedHashMap<>();
         for (NPC npc : ready) {
             String name = getNPCDisplayName(npc);
-            NamePairInfo pairInfo = getNamePairFor(name);
-            if (pairInfo != null) {
-                // Suche Partner in den ready NPCs
-                for (NPC other : ready) {
-                    if (other == npc) continue;
-                    String otherName = getNPCDisplayName(other);
-                    if (pairInfo.partnerName.equalsIgnoreCase(otherName)) {
-                        // Paar gefunden!
-                        pairedFirst = npc;
-                        pairedSecond = other;
-                        break;
-                    }
-                }
-                if (pairedFirst != null) break;
-            }
+            String location = getNPCCurrentLocation(name);
+            npcsByLocation.computeIfAbsent(location, k -> new ArrayList<>()).add(npc);
         }
         
-        // Wenn Paar gefunden und mit 70% Wahrscheinlichkeit verwenden
+        // Entferne Standorte mit weniger als 2 NPCs (keine Konversation möglich)
+        npcsByLocation.entrySet().removeIf(entry -> entry.getValue().size() < 2);
+        
+        if (npcsByLocation.isEmpty()) {
+            // Keine Standorte mit mindestens 2 NPCs
+            plugin.getLogger().info("§7[Gespräch] Keine NPCs am selben Ort für Konversation.");
+            return null;
+        }
+        
+        // BEVORZUGE PAARE: Suche zuerst nach gepaarten NPCs AM SELBEN ORT
+        NPC pairedFirst = null;
+        NPC pairedSecond = null;
+        String pairLocation = null;
+        
+        for (Map.Entry<String, List<NPC>> entry : npcsByLocation.entrySet()) {
+            String location = entry.getKey();
+            List<NPC> npcsAtLocation = entry.getValue();
+            
+            for (NPC npc : npcsAtLocation) {
+                String name = getNPCDisplayName(npc);
+                NamePairInfo pairInfo = getNamePairFor(name);
+                if (pairInfo != null) {
+                    // Suche Partner NUR am selben Standort
+                    for (NPC other : npcsAtLocation) {
+                        if (other == npc) continue;
+                        String otherName = getNPCDisplayName(other);
+                        if (pairInfo.partnerName.equalsIgnoreCase(otherName)) {
+                            // Paar am selben Ort gefunden!
+                            pairedFirst = npc;
+                            pairedSecond = other;
+                            pairLocation = location;
+                            break;
+                        }
+                    }
+                    if (pairedFirst != null) break;
+                }
+            }
+            if (pairedFirst != null) break;
+        }
+        
+        // Wenn Paar am selben Ort gefunden und mit 70% Wahrscheinlichkeit verwenden
         if (pairedFirst != null && pairedSecond != null && random.nextDouble() < 0.70) {
             String firstName = getNPCDisplayName(pairedFirst);
             String secondName = getNPCDisplayName(pairedSecond);
             Location meetingPoint = resolveMeetingPoint(pairedFirst, pairedSecond);
-            plugin.getLogger().info("§d[Gespräch] Paar ausgewählt: " + firstName + " & " + secondName);
+            String locationInfo = "lobby".equals(pairLocation) ? "Lobby" : "POI '" + pairLocation + "'";
+            plugin.getLogger().info("§d[Gespräch] Paar ausgewählt: " + firstName + " & " + secondName + " (" + locationInfo + ")");
             return new ConversationContext(script, pairedFirst, pairedSecond, firstName, secondName, meetingPoint);
         }
         
-        // Fallback: Normale Auswahl basierend auf Persönlichkeiten
-        List<NPC> firstCandidates = new ArrayList<>();
-        List<NPC> secondCandidates = new ArrayList<>();
-        for (NPC npc : ready) {
-            if (matchesPersonalityRequirements(npc, script.getFirstPersonalities())) {
-                firstCandidates.add(npc);
+        // Fallback: Normale Auswahl basierend auf Persönlichkeiten - NUR AM SELBEN ORT
+        // Wähle zufällig einen Standort mit genug NPCs
+        List<String> availableLocations = new ArrayList<>(npcsByLocation.keySet());
+        Collections.shuffle(availableLocations, random);
+        
+        for (String location : availableLocations) {
+            List<NPC> npcsAtLocation = npcsByLocation.get(location);
+            
+            List<NPC> firstCandidates = new ArrayList<>();
+            List<NPC> secondCandidates = new ArrayList<>();
+            for (NPC npc : npcsAtLocation) {
+                if (matchesPersonalityRequirements(npc, script.getFirstPersonalities())) {
+                    firstCandidates.add(npc);
+                }
+                if (matchesPersonalityRequirements(npc, script.getSecondPersonalities())) {
+                    secondCandidates.add(npc);
+                }
             }
-            if (matchesPersonalityRequirements(npc, script.getSecondPersonalities())) {
-                secondCandidates.add(npc);
+            if (firstCandidates.isEmpty()) {
+                firstCandidates.addAll(npcsAtLocation);
             }
-        }
-        if (firstCandidates.isEmpty()) {
-            firstCandidates.addAll(ready);
-        }
-        if (secondCandidates.isEmpty()) {
-            secondCandidates.addAll(ready);
-        }
-        Collections.shuffle(firstCandidates, random);
-        Collections.shuffle(secondCandidates, random);
-        for (NPC firstNpc : firstCandidates) {
-            for (NPC secondNpc : secondCandidates) {
-                if (firstNpc == secondNpc) continue;
-                String firstName = getNPCDisplayName(firstNpc);
-                String secondName = getNPCDisplayName(secondNpc);
-                Location meetingPoint = resolveMeetingPoint(firstNpc, secondNpc);
-                return new ConversationContext(script, firstNpc, secondNpc, firstName, secondName, meetingPoint);
+            if (secondCandidates.isEmpty()) {
+                secondCandidates.addAll(npcsAtLocation);
+            }
+            Collections.shuffle(firstCandidates, random);
+            Collections.shuffle(secondCandidates, random);
+            
+            for (NPC firstNpc : firstCandidates) {
+                for (NPC secondNpc : secondCandidates) {
+                    if (firstNpc == secondNpc) continue;
+                    String firstName = getNPCDisplayName(firstNpc);
+                    String secondName = getNPCDisplayName(secondNpc);
+                    Location meetingPoint = resolveMeetingPoint(firstNpc, secondNpc);
+                    String locationInfo = "lobby".equals(location) ? "Lobby" : "POI '" + location + "'";
+                    plugin.getLogger().info("§7[Gespräch] " + firstName + " & " + secondName + " (" + locationInfo + ")");
+                    return new ConversationContext(script, firstNpc, secondNpc, firstName, secondName, meetingPoint);
+                }
             }
         }
         return null;
@@ -3972,27 +4347,173 @@ public class NPCManager {
             NPCRegistry registry = CitizensAPI.getNPCRegistry();
             Iterator<NPC> iterator = registry.iterator();
             int removed = 0;
+            
+            // Sammle alle bekannten NPC-Namen für Vergleich
+            Set<String> knownNames = new LinkedHashSet<>(npcNames);
+            
+            // Hole Lobby-Welt für zusätzliche Prüfung
+            Location lobby = plugin.getLobbyLocation();
+            World lobbyWorld = lobby != null ? lobby.getWorld() : Bukkit.getWorld("world");
+            
+            List<NPC> toRemove = new ArrayList<>();
+            
             while (iterator.hasNext()) {
                 NPC npc = iterator.next();
                 if (npc == null) continue;
-                Object shouldRemoveObj = npc.data().get("lobby-npc");
+                
                 boolean shouldRemove = false;
-                if (shouldRemoveObj instanceof Boolean) {
-                    shouldRemove = (Boolean) shouldRemoveObj;
-                } else if (shouldRemoveObj instanceof String) {
-                    shouldRemove = Boolean.parseBoolean((String) shouldRemoveObj);
+                String reason = "";
+                
+                // Prüfung 1: Hat das lobby-npc Flag
+                Object shouldRemoveObj = npc.data().get("lobby-npc");
+                if (shouldRemoveObj instanceof Boolean && (Boolean) shouldRemoveObj) {
+                    shouldRemove = true;
+                    reason = "lobby-npc flag";
+                } else if (shouldRemoveObj instanceof String && Boolean.parseBoolean((String) shouldRemoveObj)) {
+                    shouldRemove = true;
+                    reason = "lobby-npc flag (string)";
                 }
+                
+                // Prüfung 2: NPC ist in der Lobby-Welt UND hat einen bekannten Namen
+                if (!shouldRemove && lobbyWorld != null) {
+                    Entity entity = npc.getEntity();
+                    if (entity != null && entity.getWorld() != null && entity.getWorld().equals(lobbyWorld)) {
+                        String npcName = npc.getName();
+                        if (npcName != null && knownNames.contains(npcName)) {
+                            shouldRemove = true;
+                            reason = "known name in lobby world: " + npcName;
+                        }
+                    }
+                    // Auch NPCs ohne Entity in der Lobby-Welt prüfen (stored location)
+                    if (!shouldRemove && npc.getStoredLocation() != null) {
+                        Location storedLoc = npc.getStoredLocation();
+                        if (storedLoc.getWorld() != null && storedLoc.getWorld().equals(lobbyWorld)) {
+                            String npcName = npc.getName();
+                            if (npcName != null && knownNames.contains(npcName)) {
+                                shouldRemove = true;
+                                reason = "known name at stored location: " + npcName;
+                            }
+                        }
+                    }
+                }
+                
                 if (shouldRemove) {
-                    npc.destroy();
-                    removed++;
+                    toRemove.add(npc);
+                    plugin.getLogger().info("§7Entferne alten NPC: " + npc.getName() + " (Grund: " + reason + ")");
                 }
             }
+            
+            // Entferne alle markierten NPCs
+            for (NPC npc : toRemove) {
+                try {
+                    npc.destroy();
+                    removed++;
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Konnte NPC nicht entfernen: " + e.getMessage());
+                }
+            }
+            
             if (removed > 0) {
                 plugin.getLogger().info("§e" + removed + " bestehende Lobby-NPCs wurden entfernt.");
             }
         } catch (Exception e) {
             plugin.getLogger().warning("Konnte alte Lobby-NPCs nicht bereinigen: " + e.getMessage());
         }
+    }
+    
+    /**
+     * Entfernt alle "toten" NPCs - NPCs die in Citizens existieren aber nicht von diesem Plugin verwaltet werden.
+     * Kann manuell per /lobbynpc cleanup aufgerufen werden.
+     * @return Anzahl der entfernten NPCs
+     */
+    public int forceCleanupAllDeadNPCs() {
+        if (!isCitizensAvailable()) return 0;
+        
+        int totalRemoved = 0;
+        Set<String> knownNames = new LinkedHashSet<>(npcNames);
+        Set<Integer> activeNpcIds = new LinkedHashSet<>();
+        
+        // Sammle IDs aller aktiv verwalteten NPCs
+        for (NPC npc : lobbyNPCs) {
+            if (npc != null) {
+                activeNpcIds.add(npc.getId());
+            }
+        }
+        
+        Location lobby = plugin.getLobbyLocation();
+        World lobbyWorld = lobby != null ? lobby.getWorld() : Bukkit.getWorld("world");
+        
+        try {
+            NPCRegistry registry = CitizensAPI.getNPCRegistry();
+            List<NPC> toRemove = new ArrayList<>();
+            
+            for (NPC npc : registry) {
+                if (npc == null) continue;
+                
+                // Überspringe NPCs die aktiv von uns verwaltet werden
+                if (activeNpcIds.contains(npc.getId())) {
+                    continue;
+                }
+                
+                boolean shouldRemove = false;
+                String reason = "";
+                
+                // Prüfung 1: Hat das lobby-npc Flag aber ist nicht in unserer Liste
+                Object lobbyNpcFlag = npc.data().get("lobby-npc");
+                if (lobbyNpcFlag instanceof Boolean && (Boolean) lobbyNpcFlag) {
+                    shouldRemove = true;
+                    reason = "orphaned lobby-npc flag";
+                } else if (lobbyNpcFlag instanceof String && Boolean.parseBoolean((String) lobbyNpcFlag)) {
+                    shouldRemove = true;
+                    reason = "orphaned lobby-npc flag (string)";
+                }
+                
+                // Prüfung 2: Bekannter Name in der Lobby-Welt aber nicht verwaltet
+                if (!shouldRemove && lobbyWorld != null) {
+                    String npcName = npc.getName();
+                    World npcWorld = null;
+                    
+                    // Prüfe aktuelle Entity-Position
+                    Entity entity = npc.getEntity();
+                    if (entity != null && entity.getWorld() != null) {
+                        npcWorld = entity.getWorld();
+                    }
+                    // Fallback auf stored location
+                    if (npcWorld == null && npc.getStoredLocation() != null && npc.getStoredLocation().getWorld() != null) {
+                        npcWorld = npc.getStoredLocation().getWorld();
+                    }
+                    
+                    if (npcWorld != null && npcWorld.equals(lobbyWorld)) {
+                        if (npcName != null && knownNames.contains(npcName)) {
+                            shouldRemove = true;
+                            reason = "orphaned NPC with known name: " + npcName;
+                        }
+                    }
+                }
+                
+                if (shouldRemove) {
+                    toRemove.add(npc);
+                    plugin.getLogger().info("§c[Cleanup] Entferne toten NPC: " + npc.getName() + " (ID: " + npc.getId() + ", Grund: " + reason + ")");
+                }
+            }
+            
+            for (NPC npc : toRemove) {
+                try {
+                    npc.destroy();
+                    totalRemoved++;
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Konnte toten NPC nicht entfernen: " + e.getMessage());
+                }
+            }
+            
+        } catch (Exception e) {
+            plugin.getLogger().warning("Fehler beim Force-Cleanup: " + e.getMessage());
+        }
+        
+        // Auch die persistierten IDs bereinigen
+        cleanupPersistedNPCs();
+        
+        return totalRemoved;
     }
     
     private void cleanupCitizensInLobbyWorld() {

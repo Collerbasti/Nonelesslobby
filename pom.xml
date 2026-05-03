@@ -23,10 +23,10 @@
     </properties>
 
     <repositories>
-        <!-- JitPack (DecentHolograms) -->
+        <!-- DecentHolograms API -->
         <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
+            <id>decentholograms</id>
+            <url>https://repo.decentholograms.eu</url>
         </repository>
 
         <!-- PaperMC Repository -->
@@ -81,8 +81,8 @@
 
         <!-- DecentHolograms API -->
         <dependency>
-            <groupId>com.github.DecentSoftware-eu</groupId>
-            <artifactId>DecentHolograms</artifactId>
+            <groupId>eu.decentsoftware.holograms</groupId>
+            <artifactId>DHAPI</artifactId>
             <version>2.9.8</version>
             <scope>provided</scope>
         </dependency>

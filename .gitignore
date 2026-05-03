@@ -1,17 +1,17 @@
-# Build directories
+# Build output
 /bin/
-target/
-# ignore built artifact (specific jar still allowed if needed)
-!target/NonelessLobby-3.1.jar
+/target/
+/backups/
 
 # Compiled class files
 *.class
 
-# Build scripts and outputs
+# Build artifacts & scripts
 *.bat
 *.ps1
 build_output.txt
 dependency-reduced-pom.xml
+META-INF/
 
 # IDE files
 .idea/
@@ -19,8 +19,11 @@ dependency-reduced-pom.xml
 *.iws
 *.ipr
 .vscode/
+.classpath
+.project
+.settings/
 
-# Maven
+# Maven wrapper
 .mvn/
 mvnw
 mvnw.cmd

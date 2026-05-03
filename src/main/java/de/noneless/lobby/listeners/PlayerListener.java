@@ -126,14 +126,17 @@ public class PlayerListener implements Listener {
     @EventHandler(priority = org.bukkit.event.EventPriority.LOWEST, ignoreCancelled = false)
     public void onGameModeChange(PlayerGameModeChangeEvent event) {
         Player player = event.getPlayer();
-        
+
         // Skip if we're the ones setting it
         if (settingGamemode.contains(player.getUniqueId())) {
             return;
         }
-        
-        // Gamemode wird für ALLE erzwungen - kein Bypass
-        
+
+        // Bypass für Spieler mit expliziter Permission (z.B. MiniCardGame-Duelle)
+        if (player.hasPermission("NonelessLobby.bypassGamemode")) {
+            return;
+        }
+
         GameMode desired = getDesiredGamemode(player);
         GameMode newMode = event.getNewGameMode();
         
@@ -280,7 +283,8 @@ public class PlayerListener implements Listener {
      */
     private void forceCorrectGamemode(Player player) {
         if (player == null || !player.isOnline()) return;
-        // Gamemode wird für ALLE erzwungen
+        // Bypass für Spieler mit expliziter Permission (z.B. MiniCardGame-Duelle)
+        if (player.hasPermission("NonelessLobby.bypassGamemode")) return;
         
         GameMode target = getDesiredGamemode(player);
         if (target == null) target = GameMode.ADVENTURE;
@@ -304,7 +308,8 @@ public class PlayerListener implements Listener {
      */
     private void forceGamemodeForWorld(Player player, String worldName) {
         if (player == null || !player.isOnline() || worldName == null) return;
-        // Gamemode wird für ALLE erzwungen
+        // Bypass für Spieler mit expliziter Permission (z.B. MiniCardGame-Duelle)
+        if (player.hasPermission("NonelessLobby.bypassGamemode")) return;
         
         GameMode target = GamemodeSettingsConfig.resolveGamemodeForPlayer(player.getUniqueId(), worldName);
         if (target == null) target = GameMode.ADVENTURE;

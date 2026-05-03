@@ -31,8 +31,11 @@ public final class GamemodeEnforcer {
         if (player == null || !player.isOnline() || player.isDead()) {
             return;
         }
-        
-        // Gamemode wird für ALLE Spieler erzwungen - kein Bypass möglich
+
+        // Spieler mit Bypass-Permission ausschließen (z.B. MiniCardGame-Duelle)
+        if (player.hasPermission("NonelessLobby.bypassGamemode")) {
+            return;
+        }
         
         GameMode target = GamemodeSettingsConfig.resolveGamemodeForPlayer(
                 player.getUniqueId(),

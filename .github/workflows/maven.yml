@@ -21,13 +21,20 @@ jobs:
       run: |
         curl -L -o DecentHolograms.jar \
           "https://github.com/DecentSoftware-eu/DecentHolograms/releases/download/2.9.8/DecentHolograms-2.9.8.jar"
+        # Use a minimal POM with no transitive dependencies (provided scope – we only need this for compilation)
+        cat > dhapi-pom.xml << 'POMEOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <groupId>eu.decentsoftware.holograms</groupId>
+          <artifactId>DHAPI</artifactId>
+          <version>2.9.8</version>
+          <packaging>jar</packaging>
+        </project>
+        POMEOF
         mvn install:install-file \
           -Dfile=DecentHolograms.jar \
-          -DgroupId=eu.decentsoftware.holograms \
-          -DartifactId=DHAPI \
-          -Dversion=2.9.8 \
-          -Dpackaging=jar \
-          -Dscope=provided \
+          -DpomFile=dhapi-pom.xml \
           -q
     - name: Build with Maven
       run: mvn -B package --file pom.xml

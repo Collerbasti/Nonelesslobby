@@ -11,17 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+
     - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
+
     - name: Install DecentHolograms API
       run: |
         curl -L -o DecentHolograms.jar \
           "https://github.com/DecentSoftware-eu/DecentHolograms/releases/download/2.9.8/DecentHolograms-2.9.8.jar"
-        # Use a minimal POM with no transitive dependencies (provided scope – we only need this for compilation)
         cat > dhapi-pom.xml << 'POMEOF'
         <?xml version="1.0" encoding="UTF-8"?>
         <project>
@@ -32,15 +33,18 @@ jobs:
           <packaging>jar</packaging>
         </project>
         POMEOF
-        mvn install:install-file \
-          -Dfile=DecentHolograms.jar \
-          -DpomFile=dhapi-pom.xml \
-          -q
+        mvn install:install-file -Dfile=DecentHolograms.jar -DpomFile=dhapi-pom.xml -q
+
     - name: Build with Maven
-      run: mvn -B package --file pom.xml
+      run: mvn -B package --file pom.xml -Dantrun.skip=true
+
     - name: Upload plugin jar
       if: success()
       uses: actions/upload-artifact@v4
       with:
         name: plugin-jar
         path: target/*.jar
+
+    - name: Deploy to Nitrado (FTP)
+      if: success() && github.event_name == 'push'
+      run: mvn antrun:run@ftp-upload --file pom.xml -Dantrun.skip=false

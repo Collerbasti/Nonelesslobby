@@ -2348,11 +2348,22 @@ public class NPCManager {
     }
     
     /**
+     * Initialisiert NPCs beim Server-Start: räumt ALLE Citizens-NPCs aus der
+     * Lobby-Welt auf (auch Überbleibsel nach Crash/Force-Kill) und spawnt
+     * danach alle konfigurierten NPCs frisch. Verhindert doppelte NPCs.
+     */
+    public void initializeNPCs() {
+        removeAllLobbyNPCs();
+        cleanupCitizensInLobbyWorld();
+        spawnLobbyNPCs();
+    }
+
+    /**
      * Lädt alle NPCs neu
      */
     public void reloadNPCs() {
         removeAllLobbyNPCs();
-        
+
         // Verzögerung vor dem neu spawnen
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             spawnLobbyNPCs();

@@ -54,9 +54,10 @@ public class Main extends JavaPlugin {
         // register news join listener
         getServer().getPluginManager().registerEvents(new de.noneless.lobby.news.PlayerJoinNewsListener(this, newsManager), this);
         
-        // Spawne NPCs
+        // Spawne NPCs – kurze Verzögerung damit Citizens seine gespeicherten Daten
+        // erst vollständig laden kann, dann alles aufräumen und frisch spawnen
         if (npcManager.isCitizensAvailable()) {
-            npcManager.spawnLobbyNPCs();
+            Bukkit.getScheduler().runTaskLater(this, npcManager::initializeNPCs, 40L); // 2 Sekunden
         }
 
         // expose NewsManager to other classes (already set)

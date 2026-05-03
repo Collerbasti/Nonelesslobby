@@ -23,12 +23,6 @@
     </properties>
 
     <repositories>
-        <!-- DecentHolograms API -->
-        <repository>
-            <id>decentholograms</id>
-            <url>https://repo.decentholograms.eu</url>
-        </repository>
-
         <!-- PaperMC Repository -->
         <repository>
             <id>papermc</id>

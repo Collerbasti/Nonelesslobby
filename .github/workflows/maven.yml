@@ -17,6 +17,18 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
         cache: maven
+    - name: Install DecentHolograms API
+      run: |
+        curl -L -o DecentHolograms.jar \
+          "https://github.com/DecentSoftware-eu/DecentHolograms/releases/download/2.9.8/DecentHolograms-2.9.8.jar"
+        mvn install:install-file \
+          -Dfile=DecentHolograms.jar \
+          -DgroupId=eu.decentsoftware.holograms \
+          -DartifactId=DHAPI \
+          -Dversion=2.9.8 \
+          -Dpackaging=jar \
+          -Dscope=provided \
+          -q
     - name: Build with Maven
       run: mvn -B package --file pom.xml
     - name: Upload plugin jar

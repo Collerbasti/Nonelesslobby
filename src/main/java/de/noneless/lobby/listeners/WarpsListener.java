@@ -6,7 +6,6 @@ import de.noneless.lobby.util.GameGuideBook;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -78,13 +77,7 @@ public class WarpsListener implements Listener {
             }
             case Warps.ACTION_GUIDE -> {
                 player.closeInventory();
-                ItemStack guideBook = GameGuideBook.create();
-                if (player.getInventory().firstEmpty() == -1) {
-                    player.sendMessage(ChatColor.RED + "Dein Inventar ist voll! Mach Platz und versuche es erneut.");
-                } else {
-                    player.getInventory().addItem(guideBook);
-                    player.sendMessage(ChatColor.GOLD + "Du hast die Kartenspiel-Anleitung erhalten!");
-                }
+                player.openBook(GameGuideBook.create());
             }
             default -> {
                 // keine Aktion

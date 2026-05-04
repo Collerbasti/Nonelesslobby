@@ -198,12 +198,12 @@ jobs:
           }
 
           echo "Ankündigung: Neustart in 2 Minuten..."
-          send_command "say [Server] Neustart in 2 Minuten wegen Plugin-Update!"
+          send_command "say Neustart in 2 Minuten wegen Plugin-Update!"
 
           sleep 90
 
           echo "Erinnerung: Neustart in 30 Sekunden..."
-          send_command "say [Server] Neustart in 30 Sekunden!"
+          send_command "say Neustart in 30 Sekunden!"
 
           sleep 30
 

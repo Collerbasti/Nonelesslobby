@@ -25,6 +25,7 @@ public class Warps {
     public static final String ACTION_FOOD = "food";
     public static final String ACTION_SKYBLOCK = "skyblock";
     public static final String ACTION_GAMES = "games";
+    public static final String ACTION_GUIDE = "guide";
 
     private static NamespacedKey warpKey;
 
@@ -71,6 +72,19 @@ public class Warps {
                 List.of(Component.text("Spiele Minigames", NamedTextColor.GRAY)),
                 ACTION_GAMES
         ));
+
+        // Guide-Buch nur anzeigen wenn NonelessGame geladen ist
+        if (Bukkit.getPluginManager().isPluginEnabled("NonelessGame")) {
+            menu.setItem(15, createWarpItem(
+                    Material.WRITTEN_BOOK,
+                    Component.text("Kartenspiel-Anleitung", NamedTextColor.GOLD),
+                    List.of(
+                            Component.text("Grundlagen des Kartenspiels", NamedTextColor.GRAY),
+                            Component.text("als Buch erhalten", NamedTextColor.GRAY)
+                    ),
+                    ACTION_GUIDE
+            ));
+        }
 
         fillWithGlass(menu);
         player.openInventory(menu);

@@ -79,6 +79,14 @@ public class WarpsListener implements Listener {
                 player.sendMessage(ChatColor.RED + "Oeffne Games-Menue...");
                 player.sendMessage(ChatColor.GRAY + "Games-Menue wird implementiert!");
             }
+            case Warps.ACTION_NONELESS_GAME_MENU -> {
+                player.closeInventory();
+                if (org.bukkit.Bukkit.getPluginManager().isPluginEnabled("NonelessGame")) {
+                    player.performCommand("nonelessgame:menue");
+                } else {
+                    player.sendMessage(ChatColor.RED + "NonelessGame ist aktuell nicht geladen.");
+                }
+            }
             case Warps.ACTION_GUIDE -> {
                 player.closeInventory();
                 player.openBook(GameGuideBook.create());

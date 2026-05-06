@@ -305,14 +305,29 @@ public class SettingsListener implements Listener {
         long expiresAt = GamemodeSettingsConfig.getCreativeOverrideExpiry(player.getUniqueId());
         if (expiresAt > System.currentTimeMillis()) {
             GamemodeSettingsConfig.clearOverride(player.getUniqueId());
-            GamemodeEnforcer.enforce(player);
+            forceResolvedGamemode(player);
             player.sendMessage(ChatColor.YELLOW + "Creative Override deaktiviert.");
         } else {
             GamemodeSettingsConfig.enableCreativeOverride(player.getUniqueId(), player.getName());
-            player.setGameMode(GameMode.CREATIVE);
+            forceResolvedGamemode(player);
             player.sendMessage(ChatColor.GREEN + "Creative Override für 7 Stunden aktiviert!");
         }
         gamemodeAdminMenu.open(player);
+    }
+
+    private void forceResolvedGamemode(Player player) {
+        if (player == null || !player.isOnline()) {
+            return;
+        }
+        GameMode target = GamemodeSettingsConfig.resolveGamemodeForPlayer(
+                player.getUniqueId(),
+                player.getWorld() != null ? player.getWorld().getName() : null
+        );
+        if (target == null) {
+            target = GameMode.ADVENTURE;
+        }
+        player.setGameMode(target);
+        GamemodeEnforcer.clearPlayer(player);
     }
 
     private void openSettingsMenu(Player player) {

@@ -13,6 +13,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -21,6 +22,10 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -31,6 +36,7 @@ import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +50,7 @@ public class PlayerListener implements Listener {
     
     // Track if we're currently setting gamemode to avoid recursion
     private static final java.util.Set<java.util.UUID> settingGamemode = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<>());
+    private static NamespacedKey lobbyItemKey;
 
     @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST)
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -92,6 +99,7 @@ public class PlayerListener implements Listener {
                     if (player.isOnline()) {
                         forceGamemodeForWorld(player, targetWorld);
                         LobbyAbilities.enforceLobbyOnly(player);
+                        refreshLobbyInventory(player);
                         LobbyScoreboard.update(player);
                     }
                 }, delay);
@@ -115,6 +123,7 @@ public class PlayerListener implements Listener {
         // Immediate enforcement for new world
         forceGamemodeForWorld(player, newWorld);
         LobbyAbilities.enforceLobbyOnly(player);
+        refreshLobbyInventory(player);
         
         // Multiple delayed checks for safety
         for (int delay : new int[]{1, 5, 10, 20}) {
@@ -122,6 +131,7 @@ public class PlayerListener implements Listener {
                 if (player.isOnline()) {
                     forceCorrectGamemode(player);
                     LobbyAbilities.enforceLobbyOnly(player);
+                    refreshLobbyInventory(player);
                     LobbyScoreboard.update(player);
                 }
             }, delay);
@@ -168,6 +178,60 @@ public class PlayerListener implements Listener {
     }
     
     // Cooldown für Lobby-Warnung (verhindert Spam)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onDropLobbyItem(PlayerDropItemEvent event) {
+        Player player = event.getPlayer();
+        if (!isInLobbyWorld(player) || !isFixedLobbyItem(event.getItemDrop().getItemStack())) {
+            return;
+        }
+        event.setCancelled(true);
+        Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> refreshLobbyInventory(player), 1L);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPickupInLobby(EntityPickupItemEvent event) {
+        if (event.getEntity() instanceof Player player && isInLobbyWorld(player)) {
+            event.setCancelled(true);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onLobbyInventoryClick(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player) || !isInLobbyWorld(player)) {
+            return;
+        }
+
+        ItemStack current = event.getCurrentItem();
+        ItemStack cursor = event.getCursor();
+        int slot = event.getSlot();
+        boolean protectedLobbySlot = event.getClickedInventory() != null
+                && event.getClickedInventory().equals(player.getInventory())
+                && (slot == 0 || slot == 8);
+        if (isFixedLobbyItem(current) || isFixedLobbyItem(cursor) || protectedLobbySlot) {
+            event.setCancelled(true);
+            Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> refreshLobbyInventory(player), 1L);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onLobbyInventoryDrag(InventoryDragEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player) || !isInLobbyWorld(player)) {
+            return;
+        }
+
+        int topSize = event.getView().getTopInventory().getSize();
+        for (int rawSlot : event.getRawSlots()) {
+            if (rawSlot >= topSize) {
+                int playerSlot = event.getView().convertSlot(rawSlot);
+                if (playerSlot == 0 || playerSlot == 8) {
+                    event.setCancelled(true);
+                    Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> refreshLobbyInventory(player), 1L);
+                    return;
+                }
+            }
+        }
+    }
+
     private static final Map<UUID, Long> lobbyWarningCooldown = new ConcurrentHashMap<>();
     private static final long WARNING_COOLDOWN_MS = 3000; // 3 Sekunden Cooldown
     
@@ -267,7 +331,7 @@ public class PlayerListener implements Listener {
         }
         // Force correct gamemode
         forceCorrectGamemode(player);
-        giveLobbyItems(player);
+        refreshLobbyInventory(player);
         LobbyScoreboard.update(player);
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), LobbyScoreboard::updateAll, 1L);
     }
@@ -340,17 +404,35 @@ public class PlayerListener implements Listener {
     }
 
     private void giveLobbyItems(Player player) {
+        if (!isInLobbyWorld(player)) {
+            removeFixedLobbyItems(player);
+            return;
+        }
         player.getInventory().clear();
 
         ItemStack compass = createItem(Material.COMPASS, ChatColor.GOLD + "Navigator", ChatColor.GRAY + "Öffne das Warps-Menü");
-        ItemStack chest = createItem(Material.CHEST, ChatColor.AQUA + "Kosmetika", ChatColor.GRAY + "Öffne deine Kosmetiken");
-        ItemStack clock = createItem(Material.CLOCK, ChatColor.GREEN + "Lobby Selector", ChatColor.GRAY + "Wähle eine andere Lobby");
         ItemStack blazePowder = createItem(Material.BLAZE_POWDER, ChatColor.YELLOW + "Freunde", ChatColor.GRAY + "Verwalte deine Freunde");
 
         player.getInventory().setItem(0, compass);
-        player.getInventory().setItem(1, chest);
-        player.getInventory().setItem(4, clock);
         player.getInventory().setItem(8, blazePowder);
+    }
+
+    private void refreshLobbyInventory(Player player) {
+        giveLobbyItems(player);
+        LobbyAbilities.restoreActiveAbilities(player);
+    }
+
+    private void removeFixedLobbyItems(Player player) {
+        ItemStack[] contents = player.getInventory().getStorageContents();
+        for (int i = 0; i < contents.length; i++) {
+            if (isFixedLobbyItem(contents[i])) {
+                contents[i] = null;
+            }
+        }
+        player.getInventory().setStorageContents(contents);
+        if (isFixedLobbyItem(player.getInventory().getItemInOffHand())) {
+            player.getInventory().setItemInOffHand(null);
+        }
     }
 
     private ItemStack createItem(Material material, String displayName, String loreLine) {
@@ -363,9 +445,25 @@ public class PlayerListener implements Listener {
                 lore.add(loreLine);
                 meta.setLore(lore);
             }
+            meta.getPersistentDataContainer().set(getLobbyItemKey(), PersistentDataType.BYTE, (byte) 1);
             item.setItemMeta(meta);
         }
         return item;
+    }
+
+    private boolean isFixedLobbyItem(ItemStack item) {
+        if (item == null || !item.hasItemMeta()) {
+            return false;
+        }
+        ItemMeta meta = item.getItemMeta();
+        return meta != null && meta.getPersistentDataContainer().has(getLobbyItemKey(), PersistentDataType.BYTE);
+    }
+
+    private NamespacedKey getLobbyItemKey() {
+        if (lobbyItemKey == null) {
+            lobbyItemKey = new NamespacedKey(Main.getInstance(), "fixed-lobby-item");
+        }
+        return lobbyItemKey;
     }
 
     private void openWarpsMenu(Player player) {
@@ -382,6 +480,8 @@ public class PlayerListener implements Listener {
      */
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
+        LobbyAbilities.handleLanding(event.getPlayer());
+
         // Nur prüfen wenn sich Y-Position geändert hat (Performance)
         if (event.getFrom().getBlockY() == event.getTo().getBlockY()) {
             return;

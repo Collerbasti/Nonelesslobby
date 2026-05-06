@@ -82,6 +82,7 @@ public final class LobbyAbilities {
     private static final Set<UUID> activeUltraJump = ConcurrentHashMap.newKeySet();
     private static final Set<UUID> activeSlowFalling = ConcurrentHashMap.newKeySet();
     private static final Set<UUID> activeNightVision = ConcurrentHashMap.newKeySet();
+    private static final Set<UUID> airborneFireworkUsers = ConcurrentHashMap.newKeySet();
 
     private static Main plugin;
     private static NamespacedKey itemKey;
@@ -130,7 +131,7 @@ public final class LobbyAbilities {
         if (!granted.remove(ability)) {
             return false;
         }
-        deactivate(playerId, ability);
+        deactivate(playerId, ability, true);
         saveGrantedAbilities(playerId, granted);
         return true;
     }
@@ -168,13 +169,28 @@ public final class LobbyAbilities {
         return abilities;
     }
 
+    public static Set<Ability> getActiveAbilities(UUID playerId) {
+        ensureInitialized();
+        Set<Ability> abilities = EnumSet.noneOf(Ability.class);
+        if (playerId == null || data == null) {
+            return abilities;
+        }
+        for (String id : data.getStringList(activePath(playerId))) {
+            Ability ability = Ability.fromId(id);
+            if (ability != null && isAbilityGranted(playerId, ability)) {
+                abilities.add(ability);
+            }
+        }
+        return abilities;
+    }
+
     public static boolean toggleForPlayer(Player player, Ability ability) {
         if (player == null || ability == null) return false;
         if (!requireLobbyWorld(player) || !requireGranted(player, ability)) {
             return false;
         }
         if (isActive(player.getUniqueId(), ability)) {
-            deactivate(player, ability);
+            deactivate(player, ability, true);
             player.sendMessage(ChatColor.GRAY + ability.getDisplayName() + " deaktiviert.");
             return false;
         }
@@ -184,7 +200,7 @@ public final class LobbyAbilities {
 
     public static boolean isActive(UUID playerId, Ability ability) {
         if (playerId == null || ability == null) return false;
-        return getActiveSet(ability).contains(playerId);
+        return getActiveSet(ability).contains(playerId) || getActiveAbilities(playerId).contains(ability);
     }
 
     public static boolean isInLobbyWorld(Player player) {
@@ -201,7 +217,7 @@ public final class LobbyAbilities {
             return;
         }
         for (Ability ability : Ability.values()) {
-            deactivate(player, ability);
+            deactivate(player, ability, true);
         }
         player.sendMessage(ChatColor.GRAY + "Lobby-Faehigkeiten entfernt.");
     }
@@ -211,7 +227,36 @@ public final class LobbyAbilities {
             return;
         }
         for (Ability ability : Ability.values()) {
-            deactivate(player, ability);
+            deactivateRuntime(player, ability);
+        }
+    }
+
+    public static void restoreActiveAbilities(Player player) {
+        if (player == null || !isInLobbyWorld(player)) {
+            return;
+        }
+        for (Ability ability : getActiveAbilities(player.getUniqueId())) {
+            if (getActiveSet(ability).contains(player.getUniqueId())) {
+                continue;
+            }
+            activateRuntime(player, ability);
+            getActiveSet(ability).add(player.getUniqueId());
+        }
+    }
+
+    public static void handleLanding(Player player) {
+        if (player == null || !isInLobbyWorld(player) || !isActive(player.getUniqueId(), Ability.FIREWORKS)) {
+            return;
+        }
+
+        UUID playerId = player.getUniqueId();
+        if (!player.isOnGround()) {
+            airborneFireworkUsers.add(playerId);
+            return;
+        }
+
+        if (airborneFireworkUsers.remove(playerId)) {
+            setLobbyFireworkAmount(player, 3);
         }
     }
 
@@ -224,6 +269,12 @@ public final class LobbyAbilities {
     }
 
     private static void activate(Player player, Ability ability) {
+        activateRuntime(player, ability);
+        getActiveSet(ability).add(player.getUniqueId());
+        saveActiveAbility(player.getUniqueId(), ability, true);
+    }
+
+    private static void activateRuntime(Player player, Ability ability) {
         switch (ability) {
             case ELYTRA -> equipElytra(player);
             case FIREWORKS -> giveFireworks(player);
@@ -244,24 +295,37 @@ public final class LobbyAbilities {
                 player.sendMessage(ChatColor.YELLOW + "Nachtsicht aktiviert.");
             }
         }
-        getActiveSet(ability).add(player.getUniqueId());
     }
 
-    private static void deactivate(UUID playerId, Ability ability) {
+    private static void deactivate(UUID playerId, Ability ability, boolean saveActiveState) {
         Player player = Bukkit.getPlayer(playerId);
         if (player != null) {
-            deactivate(player, ability);
+            deactivate(player, ability, saveActiveState);
             return;
         }
         getActiveSet(ability).remove(playerId);
+        if (saveActiveState) {
+            saveActiveAbility(playerId, ability, false);
+        }
     }
 
-    private static void deactivate(Player player, Ability ability) {
+    private static void deactivate(Player player, Ability ability, boolean saveActiveState) {
         if (player == null || ability == null) return;
         getActiveSet(ability).remove(player.getUniqueId());
+        if (saveActiveState) {
+            saveActiveAbility(player.getUniqueId(), ability, false);
+        }
+        deactivateRuntime(player, ability);
+    }
+
+    private static void deactivateRuntime(Player player, Ability ability) {
+        if (player == null || ability == null) return;
         switch (ability) {
             case ELYTRA -> removeElytra(player);
-            case FIREWORKS -> removeLobbyAbilityItems(player, Material.FIREWORK_ROCKET);
+            case FIREWORKS -> {
+                airborneFireworkUsers.remove(player.getUniqueId());
+                removeLobbyAbilityItems(player, Material.FIREWORK_ROCKET);
+            }
             case SPEED -> player.removePotionEffect(PotionEffectType.SPEED);
             case ULTRA_JUMP -> player.removePotionEffect(PotionEffectType.JUMP_BOOST);
             case SLOW_FALLING -> player.removePotionEffect(PotionEffectType.SLOW_FALLING);
@@ -288,7 +352,7 @@ public final class LobbyAbilities {
     }
 
     private static void giveFireworks(Player player) {
-        ItemStack fireworks = new ItemStack(Material.FIREWORK_ROCKET, 32);
+        ItemStack fireworks = new ItemStack(Material.FIREWORK_ROCKET, 3);
         FireworkMeta meta = (FireworkMeta) fireworks.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(ChatColor.GOLD + "Lobby-Feuerwerke");
@@ -304,8 +368,9 @@ public final class LobbyAbilities {
             markLobbyAbilityItem(meta);
             fireworks.setItemMeta(meta);
         }
+        removeLobbyAbilityItems(player, Material.FIREWORK_ROCKET);
         player.getInventory().addItem(fireworks);
-        player.sendMessage(ChatColor.GOLD + "Du hast Lobby-Feuerwerke erhalten.");
+        player.sendMessage(ChatColor.GOLD + "Du hast 3 Lobby-Feuerwerke erhalten.");
     }
 
     private static boolean requireLobbyWorld(Player player) {
@@ -350,6 +415,31 @@ public final class LobbyAbilities {
         }
     }
 
+    private static void setLobbyFireworkAmount(Player player, int amount) {
+        removeLobbyAbilityItems(player, Material.FIREWORK_ROCKET);
+        if (amount <= 0) {
+            return;
+        }
+
+        ItemStack fireworks = new ItemStack(Material.FIREWORK_ROCKET, amount);
+        FireworkMeta meta = (FireworkMeta) fireworks.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(ChatColor.GOLD + "Lobby-Feuerwerke");
+            meta.setLore(List.of(ChatColor.GRAY + "Nur in der Lobbywelt nutzbar"));
+            meta.setPower(2);
+            meta.addEffect(FireworkEffect.builder()
+                    .withColor(Color.AQUA, Color.YELLOW)
+                    .withFade(Color.WHITE)
+                    .with(FireworkEffect.Type.BALL)
+                    .trail(false)
+                    .flicker(false)
+                    .build());
+            markLobbyAbilityItem(meta);
+            fireworks.setItemMeta(meta);
+        }
+        player.getInventory().addItem(fireworks);
+    }
+
     private static Set<UUID> getActiveSet(Ability ability) {
         return switch (ability) {
             case ELYTRA -> activeElytra;
@@ -371,6 +461,24 @@ public final class LobbyAbilities {
         saveData();
     }
 
+    private static void saveActiveAbility(UUID playerId, Ability ability, boolean active) {
+        ensureInitialized();
+        if (playerId == null || ability == null) return;
+        Set<Ability> activeAbilities = getActiveAbilities(playerId);
+        if (active) {
+            activeAbilities.add(ability);
+        } else {
+            activeAbilities.remove(ability);
+        }
+
+        Set<String> ids = new LinkedHashSet<>();
+        for (Ability activeAbility : activeAbilities) {
+            ids.add(activeAbility.getId());
+        }
+        data.set(activePath(playerId), ids.stream().toList());
+        saveData();
+    }
+
     private static void saveData() {
         if (data == null || dataFile == null) return;
         try {
@@ -382,6 +490,10 @@ public final class LobbyAbilities {
 
     private static String path(UUID playerId) {
         return "players." + playerId + ".granted";
+    }
+
+    private static String activePath(UUID playerId) {
+        return "players." + playerId + ".active";
     }
 
     private static void markLobbyAbilityItem(ItemMeta meta) {

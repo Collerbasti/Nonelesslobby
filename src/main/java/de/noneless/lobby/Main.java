@@ -10,10 +10,12 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
+import java.util.List;
 import java.util.UUID;
 import Mysql.Punkte;
 import de.noneless.lobby.scoreboard.LobbyScoreboard;
 import de.noneless.lobby.util.GamemodeEnforcer;
+import de.noneless.lobby.util.LobbyAbilities;
 import de.noneless.lobby.world.WorldMoverService;
 
 public class Main extends JavaPlugin {
@@ -35,6 +37,7 @@ public class Main extends JavaPlugin {
         
         // Initialisiere Settings-Konfigurationen
         initializeSettingsConfigs();
+        LobbyAbilities.initialize(this);
         GamemodeSettingsConfig.initialize(this);
         LobbyScoreboard.init(this);
         FriendManager.initialize(this);
@@ -201,6 +204,28 @@ public class Main extends JavaPlugin {
 
     public de.noneless.lobby.news.NewsManager getNewsManager() {
         return newsManager;
+    }
+
+    public boolean grantLobbyAbility(UUID playerId, String abilityId) {
+        return LobbyAbilities.grantAbility(playerId, abilityId);
+    }
+
+    public boolean revokeLobbyAbility(UUID playerId, String abilityId) {
+        return LobbyAbilities.revokeAbility(playerId, abilityId);
+    }
+
+    public boolean setLobbyAbilityGranted(UUID playerId, String abilityId, boolean granted) {
+        LobbyAbilities.Ability ability = LobbyAbilities.Ability.fromId(abilityId);
+        return LobbyAbilities.setAbilityGranted(playerId, ability, granted);
+    }
+
+    public boolean hasLobbyAbility(UUID playerId, String abilityId) {
+        LobbyAbilities.Ability ability = LobbyAbilities.Ability.fromId(abilityId);
+        return LobbyAbilities.isAbilityGranted(playerId, ability);
+    }
+
+    public List<String> getAvailableLobbyAbilities() {
+        return LobbyAbilities.getAvailableAbilityIds();
     }
     
     // Settings-Konfigurationen

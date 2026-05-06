@@ -27,6 +27,7 @@ permissions:
       nonelesslobby.admin.reload: true
       nonelesslobby.admin.setrank: true
       nonelesslobby.worldmover: true
+      nonelesslobby.abilities.admin: true
   nonelesslobby.moderator:
     description: Moderator Permissions  
     default: false
@@ -52,6 +53,9 @@ permissions:
       nonelesslobby.leaderboard: true
   nonelesslobby.worldmover:
     description: Darf den WorldMover starten und verwalten
+    default: op
+  nonelesslobby.abilities.admin:
+    description: Darf Lobby-Faehigkeiten fuer Spieler freischalten
     default: op
   nonelesslobby.news.view:
     description: Darf News ansehen

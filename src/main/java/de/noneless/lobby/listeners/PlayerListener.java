@@ -7,6 +7,7 @@ import de.noneless.lobby.Menues.FriendsMenu;
 import de.noneless.lobby.Menues.Warps;
 import de.noneless.lobby.scoreboard.LobbyScoreboard;
 import de.noneless.lobby.util.GamemodeEnforcer;
+import de.noneless.lobby.util.LobbyAbilities;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -47,6 +48,7 @@ public class PlayerListener implements Listener {
     @EventHandler(priority = org.bukkit.event.EventPriority.HIGHEST)
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        LobbyAbilities.enforceLobbyOnly(player);
         // Enforce gamemode immediately on join
         forceCorrectGamemode(player);
         handleLobbyEntry(player);
@@ -89,6 +91,7 @@ public class PlayerListener implements Listener {
                 Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                     if (player.isOnline()) {
                         forceGamemodeForWorld(player, targetWorld);
+                        LobbyAbilities.enforceLobbyOnly(player);
                         LobbyScoreboard.update(player);
                     }
                 }, delay);
@@ -111,12 +114,14 @@ public class PlayerListener implements Listener {
         
         // Immediate enforcement for new world
         forceGamemodeForWorld(player, newWorld);
+        LobbyAbilities.enforceLobbyOnly(player);
         
         // Multiple delayed checks for safety
         for (int delay : new int[]{1, 5, 10, 20}) {
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 if (player.isOnline()) {
                     forceCorrectGamemode(player);
+                    LobbyAbilities.enforceLobbyOnly(player);
                     LobbyScoreboard.update(player);
                 }
             }, delay);
@@ -156,6 +161,7 @@ public class PlayerListener implements Listener {
     
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
+        LobbyAbilities.enforceLobbyOnly(event.getPlayer());
         GamemodeEnforcer.clearPlayer(event.getPlayer());
         lobbyWarningCooldown.remove(event.getPlayer().getUniqueId());
         Bukkit.getScheduler().runTaskLater(Main.getInstance(), LobbyScoreboard::updateAll, 1L);
@@ -223,12 +229,19 @@ public class PlayerListener implements Listener {
         }
 
         Player player = event.getPlayer();
-        if (!isInLobbyWorld(player)) {
+        ItemStack item = event.getItem();
+        if (item == null) {
             return;
         }
 
-        ItemStack item = event.getItem();
-        if (item == null) {
+        boolean inLobbyWorld = isInLobbyWorld(player);
+        if (!inLobbyWorld && LobbyAbilities.isLobbyAbilityItem(item)) {
+            event.setCancelled(true);
+            LobbyAbilities.enforceLobbyOnly(player);
+            return;
+        }
+
+        if (!inLobbyWorld) {
             return;
         }
 

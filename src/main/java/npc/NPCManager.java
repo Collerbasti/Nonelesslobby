@@ -415,14 +415,6 @@ public class NPCManager {
         if (this.citizensAvailable) {
             cleanupExistingLobbyNPCs();
             cleanupPersistedNPCs();
-            // spawn persistent saved spawn points
-            try {
-                for (SpawnEntry entry : new ArrayList<>(savedSpawns.values())) {
-                    if (entry != null) {
-                        spawnNpcForEntry(entry);
-                    }
-                }
-            } catch (Exception ignored) { }
         }
         scheduleInitialLobbyReset();
         startPairProximityChecker();
@@ -1038,6 +1030,9 @@ public class NPCManager {
                 }
             }
             configureNPC(npc, npc.getName());
+            if (!lobbyNPCs.contains(npc)) {
+                lobbyNPCs.add(npc);
+            }
             registerNPCEntity(npc);
             addPersistentNpcEntry(npc);
             saveSpawnPoints();
@@ -1051,10 +1046,8 @@ public class NPCManager {
     private void scheduleInitialLobbyReset() {
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             try {
-                removeAllLobbyNPCs();
+                cleanupOrphanedCitizensNPCs();
             } catch (Exception ignored) { }
-            cleanupCitizensInLobbyWorld();
-            spawnLobbyNPCs();
         }, 20L * 60L);
     }
     
@@ -1614,6 +1607,8 @@ public class NPCManager {
         }
         
         try {
+            cleanupOrphanedCitizensNPCs();
+
             // Versuche die echte Lobby-Position zu bekommen
             Location lobbySpawn = null;
             try {
@@ -2355,7 +2350,21 @@ public class NPCManager {
     public void initializeNPCs() {
         removeAllLobbyNPCs();
         cleanupCitizensInLobbyWorld();
+        spawnSavedSpawnPoints();
         spawnLobbyNPCs();
+    }
+
+    private void spawnSavedSpawnPoints() {
+        if (!isCitizensAvailable() || savedSpawns.isEmpty()) {
+            return;
+        }
+
+        for (SpawnEntry entry : new ArrayList<>(savedSpawns.values())) {
+            if (entry == null) {
+                continue;
+            }
+            spawnNpcForEntry(entry);
+        }
     }
 
     /**
@@ -4521,26 +4530,47 @@ public class NPCManager {
             plugin.getLogger().warning("Fehler beim Force-Cleanup: " + e.getMessage());
         }
         
-        // Auch die persistierten IDs bereinigen
-        cleanupPersistedNPCs();
+        pruneMissingPersistentNpcIds();
         
         return totalRemoved;
+    }
+
+    private void pruneMissingPersistentNpcIds() {
+        if (npcData == null || !isCitizensAvailable()) return;
+        try {
+            List<Integer> ids = new ArrayList<>(npcData.getIntegerList("npcIds"));
+            if (ids.isEmpty()) return;
+
+            NPCRegistry registry = CitizensAPI.getNPCRegistry();
+            boolean changed = ids.removeIf(id -> id == null || registry.getById(id) == null);
+            if (changed) {
+                npcData.set("npcIds", ids);
+                saveNpcData();
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Fehler beim Bereinigen fehlender NPC-IDs: " + e.getMessage());
+        }
     }
     
     private void cleanupCitizensInLobbyWorld() {
         if (!isCitizensAvailable()) return;
         Location lobby = plugin.getLobbyLocation();
         World lobbyWorld = lobby != null ? lobby.getWorld() : Bukkit.getWorld("world");
-        if (lobbyWorld == null) return;
         try {
             NPCRegistry registry = CitizensAPI.getNPCRegistry();
             Iterator<NPC> iterator = registry.iterator();
             int removed = 0;
+            Set<Integer> knownIds = getKnownPersistentNpcIds();
+            Set<String> knownNames = new LinkedHashSet<>(npcNames);
             while (iterator.hasNext()) {
                 NPC npc = iterator.next();
                 if (npc == null) continue;
-                Entity entity = npc.getEntity();
-                if (entity != null && entity.getWorld() != null && entity.getWorld().equals(lobbyWorld)) {
+
+                World npcWorld = getNpcWorld(npc);
+                boolean inLobbyWorld = lobbyWorld != null && npcWorld != null && npcWorld.equals(lobbyWorld);
+                boolean knownLobbyName = inLobbyWorld && npc.getName() != null && knownNames.contains(npc.getName());
+
+                if (isLobbyNpcMarked(npc) || knownIds.contains(npc.getId()) || knownLobbyName) {
                     npc.destroy();
                     removed++;
                 }
@@ -4551,6 +4581,83 @@ public class NPCManager {
         } catch (Exception e) {
             plugin.getLogger().warning("Fehler beim Entfernen der Lobby-NPCs: " + e.getMessage());
         }
+    }
+
+    private void cleanupOrphanedCitizensNPCs() {
+        if (!isCitizensAvailable()) return;
+
+        Set<Integer> activeNpcIds = new LinkedHashSet<>();
+        for (NPC npc : lobbyNPCs) {
+            if (npc != null) {
+                activeNpcIds.add(npc.getId());
+            }
+        }
+
+        Location lobby = plugin.getLobbyLocation();
+        World lobbyWorld = lobby != null ? lobby.getWorld() : Bukkit.getWorld("world");
+        Set<Integer> knownIds = getKnownPersistentNpcIds();
+        Set<String> knownNames = new LinkedHashSet<>(npcNames);
+
+        try {
+            NPCRegistry registry = CitizensAPI.getNPCRegistry();
+            List<NPC> toRemove = new ArrayList<>();
+
+            for (NPC npc : registry) {
+                if (npc == null || activeNpcIds.contains(npc.getId())) {
+                    continue;
+                }
+
+                World npcWorld = getNpcWorld(npc);
+                boolean inLobbyWorld = lobbyWorld != null && npcWorld != null && npcWorld.equals(lobbyWorld);
+                boolean knownLobbyName = inLobbyWorld && npc.getName() != null && knownNames.contains(npc.getName());
+
+                if (isLobbyNpcMarked(npc) || knownIds.contains(npc.getId()) || knownLobbyName) {
+                    toRemove.add(npc);
+                }
+            }
+
+            for (NPC npc : toRemove) {
+                npc.destroy();
+            }
+
+            if (!toRemove.isEmpty()) {
+                plugin.getLogger().info("\u00A7e" + toRemove.size() + " verwaiste Lobby-NPCs wurden nach Citizens-Ladevorgang entfernt.");
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Fehler beim Entfernen verwaister Lobby-NPCs: " + e.getMessage());
+        }
+    }
+
+    private boolean isLobbyNpcMarked(NPC npc) {
+        if (npc == null) return false;
+        Object lobbyNpcFlag = npc.data().get("lobby-npc");
+        if (lobbyNpcFlag instanceof Boolean) {
+            return (Boolean) lobbyNpcFlag;
+        }
+        return lobbyNpcFlag instanceof String && Boolean.parseBoolean((String) lobbyNpcFlag);
+    }
+
+    private World getNpcWorld(NPC npc) {
+        if (npc == null) return null;
+        Entity entity = npc.getEntity();
+        if (entity != null && entity.getWorld() != null) {
+            return entity.getWorld();
+        }
+        Location storedLocation = npc.getStoredLocation();
+        return storedLocation != null ? storedLocation.getWorld() : null;
+    }
+
+    private Set<Integer> getKnownPersistentNpcIds() {
+        Set<Integer> ids = new LinkedHashSet<>();
+        if (npcData != null) {
+            ids.addAll(npcData.getIntegerList("npcIds"));
+        }
+        for (SpawnEntry entry : savedSpawns.values()) {
+            if (entry != null && entry.npcId != null) {
+                ids.add(entry.npcId);
+            }
+        }
+        return ids;
     }
     
     private void cleanupPersistedNPCs() {

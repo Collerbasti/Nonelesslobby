@@ -1,11 +1,14 @@
 package de.noneless.lobby.Menues;
 
 import de.noneless.lobby.Main;
+import de.noneless.lobby.util.LobbyAbilities;
+import de.noneless.lobby.util.LobbyAbilities.Ability;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -15,7 +18,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class Warps {
 
@@ -26,6 +31,13 @@ public class Warps {
     public static final String ACTION_SKYBLOCK = "skyblock";
     public static final String ACTION_GAMES = "games";
     public static final String ACTION_GUIDE = "guide";
+    public static final String ACTION_ABILITIES = "abilities";
+    public static final String ACTION_BACK = "back";
+    public static final String ACTION_ABILITY_CLEAR = "ability_clear";
+    public static final String ACTION_ADMIN_ABILITIES = "ability_admin";
+    public static final String ACTION_ABILITY_TOGGLE_PREFIX = "ability_toggle:";
+    public static final String ACTION_ADMIN_PLAYER_PREFIX = "ability_admin_player:";
+    public static final String ACTION_ADMIN_TOGGLE_PREFIX = "ability_admin_toggle:";
 
     private static NamespacedKey warpKey;
 
@@ -50,6 +62,13 @@ public class Warps {
                 Component.text("Einstellungen", NamedTextColor.YELLOW),
                 List.of(Component.text("Oeffne die Einstellungen", NamedTextColor.GRAY)),
                 ACTION_SETTINGS
+        ));
+
+        menu.setItem(14, createWarpItem(
+                Material.FEATHER,
+                Component.text("Lobby-Faehigkeiten", NamedTextColor.AQUA),
+                List.of(Component.text("Elytra, Feuerwerke und Effekte", NamedTextColor.GRAY)),
+                ACTION_ABILITIES
         ));
 
         menu.setItem(20, createWarpItem(
@@ -90,6 +109,106 @@ public class Warps {
         player.openInventory(menu);
     }
 
+    public void openAbilities(Player player) {
+        Component title = Component.text("Lobby-Faehigkeiten", NamedTextColor.AQUA);
+        MenuHolder holder = new MenuHolder();
+        Inventory menu = Bukkit.createInventory(holder, 27, title);
+        holder.bind(menu);
+
+        int slot = 10;
+        for (Ability ability : Ability.values()) {
+            menu.setItem(slot++, createAbilityToggleItem(player, ability));
+        }
+
+        menu.setItem(16, createWarpItem(
+                Material.BARRIER,
+                Component.text("Faehigkeiten entfernen", NamedTextColor.RED),
+                List.of(Component.text("Entfernt Lobby-Effekte und Items", NamedTextColor.GRAY)),
+                ACTION_ABILITY_CLEAR
+        ));
+
+        if (player.hasPermission("nonelesslobby.abilities.admin")) {
+            menu.setItem(18, createWarpItem(
+                    Material.NETHER_STAR,
+                    Component.text("Admin-Freischaltungen", NamedTextColor.GOLD),
+                    List.of(Component.text("Spieler-Faehigkeiten verwalten", NamedTextColor.GRAY)),
+                    ACTION_ADMIN_ABILITIES
+            ));
+        }
+
+        menu.setItem(22, createWarpItem(
+                Material.ARROW,
+                Component.text("Zurueck", NamedTextColor.GRAY),
+                List.of(Component.text("Zum Warps-Menue", NamedTextColor.DARK_GRAY)),
+                ACTION_BACK
+        ));
+
+        fillWithGlass(menu);
+        player.openInventory(menu);
+    }
+
+    public void openAbilityAdminPlayers(Player admin) {
+        Component title = Component.text("Faehigkeiten: Spieler", NamedTextColor.GOLD);
+        MenuHolder holder = new MenuHolder();
+        Inventory menu = Bukkit.createInventory(holder, 54, title);
+        holder.bind(menu);
+
+        int slot = 0;
+        for (Player target : Bukkit.getOnlinePlayers()) {
+            if (slot >= 45) break;
+            menu.setItem(slot++, createWarpItem(
+                    Material.PLAYER_HEAD,
+                    Component.text(target.getName(), NamedTextColor.AQUA),
+                    List.of(Component.text("Freischaltungen bearbeiten", NamedTextColor.GRAY)),
+                    ACTION_ADMIN_PLAYER_PREFIX + target.getUniqueId()
+            ));
+        }
+
+        menu.setItem(49, createWarpItem(
+                Material.ARROW,
+                Component.text("Zurueck", NamedTextColor.GRAY),
+                List.of(Component.text("Zu Lobby-Faehigkeiten", NamedTextColor.DARK_GRAY)),
+                ACTION_ABILITIES
+        ));
+
+        fillWithGlass(menu);
+        admin.openInventory(menu);
+    }
+
+    public void openAbilityAdminPlayer(Player admin, UUID targetId) {
+        OfflinePlayer target = Bukkit.getOfflinePlayer(targetId);
+        Component title = Component.text("Freischalten: ", NamedTextColor.GOLD)
+                .append(Component.text(target.getName() != null ? target.getName() : targetId.toString(), NamedTextColor.AQUA));
+        MenuHolder holder = new MenuHolder();
+        Inventory menu = Bukkit.createInventory(holder, 27, title);
+        holder.bind(menu);
+
+        int slot = 10;
+        for (Ability ability : Ability.values()) {
+            boolean granted = LobbyAbilities.isAbilityGranted(targetId, ability);
+            List<Component> lore = new ArrayList<>();
+            lore.add(Component.text("Freigabe: ", NamedTextColor.GRAY)
+                    .append(Component.text(granted ? "AN" : "AUS", granted ? NamedTextColor.GREEN : NamedTextColor.RED)));
+            lore.add(Component.text("Klick: Freigabe umschalten", NamedTextColor.YELLOW));
+            menu.setItem(slot++, createWarpItem(
+                    granted ? ability.getIcon() : Material.GRAY_DYE,
+                    Component.text(ability.getDisplayName(), granted ? NamedTextColor.GREEN : NamedTextColor.RED),
+                    lore,
+                    ACTION_ADMIN_TOGGLE_PREFIX + targetId + ":" + ability.getId()
+            ));
+        }
+
+        menu.setItem(22, createWarpItem(
+                Material.ARROW,
+                Component.text("Zurueck", NamedTextColor.GRAY),
+                List.of(Component.text("Zur Spielerauswahl", NamedTextColor.DARK_GRAY)),
+                ACTION_ADMIN_ABILITIES
+        ));
+
+        fillWithGlass(menu);
+        admin.openInventory(menu);
+    }
+
     public static boolean isWarpsInventory(InventoryView view) {
         if (view == null) {
             return false;
@@ -124,6 +243,27 @@ public class Warps {
         }
         item.setItemMeta(meta);
         return item;
+    }
+
+    private ItemStack createAbilityToggleItem(Player player, Ability ability) {
+        boolean granted = LobbyAbilities.isAbilityGranted(player.getUniqueId(), ability);
+        boolean active = LobbyAbilities.isActive(player.getUniqueId(), ability);
+        List<Component> lore = new ArrayList<>();
+        lore.add(Component.text("Freigabe: ", NamedTextColor.GRAY)
+                .append(Component.text(granted ? "erteilt" : "nicht erteilt", granted ? NamedTextColor.GREEN : NamedTextColor.RED)));
+        if (granted) {
+            lore.add(Component.text("Status: ", NamedTextColor.GRAY)
+                    .append(Component.text(active ? "aktiv" : "inaktiv", active ? NamedTextColor.GREEN : NamedTextColor.RED)));
+            lore.add(Component.text("Klick: ein-/ausschalten", NamedTextColor.YELLOW));
+        } else {
+            lore.add(Component.text("Ein Admin muss diese Faehigkeit freischalten", NamedTextColor.DARK_GRAY));
+        }
+        return createWarpItem(
+                granted ? ability.getIcon() : Material.GRAY_DYE,
+                Component.text(ability.getDisplayName(), granted ? NamedTextColor.AQUA : NamedTextColor.DARK_GRAY),
+                lore,
+                ACTION_ABILITY_TOGGLE_PREFIX + ability.getId()
+        );
     }
 
     private ItemStack createFriendsItem(Player player) {

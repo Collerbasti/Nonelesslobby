@@ -86,21 +86,12 @@ public class Warps {
                 ACTION_SKYBLOCK
         ));
 
-        if (Bukkit.getPluginManager().isPluginEnabled("NonelessGame")) {
-            menu.setItem(24, createWarpItem(
-                    Material.NETHER_STAR,
-                    Component.text("NonelessGame", NamedTextColor.RED),
-                    List.of(Component.text("Oeffne das Spiel-Menue", NamedTextColor.GRAY)),
-                    ACTION_NONELESS_GAME_MENU
-            ));
-        } else {
-            menu.setItem(24, createWarpItem(
-                    Material.BLACK_BANNER,
-                    Component.text("Games", NamedTextColor.RED),
-                    List.of(Component.text("Spiele Minigames", NamedTextColor.GRAY)),
-                    ACTION_GAMES
-            ));
-        }
+        menu.setItem(24, createWarpItem(
+                Material.NETHER_STAR,
+                Component.text("NonelessGame", NamedTextColor.RED),
+                List.of(Component.text("Oeffne das Spiel-Menue", NamedTextColor.GRAY)),
+                ACTION_NONELESS_GAME_MENU
+        ));
 
         // Guide-Buch nur anzeigen wenn NonelessGame geladen ist
         if (Bukkit.getPluginManager().isPluginEnabled("NonelessGame")) {

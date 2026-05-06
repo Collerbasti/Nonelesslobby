@@ -5,6 +5,7 @@ import de.noneless.lobby.Menues.Warps;
 import de.noneless.lobby.util.GameGuideBook;
 import de.noneless.lobby.util.LobbyAbilities;
 import de.noneless.lobby.util.LobbyAbilities.Ability;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -21,7 +22,7 @@ public class WarpsListener implements Listener {
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!Warps.isWarpsInventory(event.getView())) {
+        if (!Warps.isWarpsInventory(event.getView()) && !isLegacyWarpsTitle(event.getView().getTitle())) {
             return;
         }
 
@@ -81,11 +82,7 @@ public class WarpsListener implements Listener {
             }
             case Warps.ACTION_NONELESS_GAME_MENU -> {
                 player.closeInventory();
-                if (org.bukkit.Bukkit.getPluginManager().isPluginEnabled("NonelessGame")) {
-                    player.performCommand("nonelessgame:menue");
-                } else {
-                    player.sendMessage(ChatColor.RED + "NonelessGame ist aktuell nicht geladen.");
-                }
+                Bukkit.dispatchCommand(player, "nonelessgame:menu");
             }
             case Warps.ACTION_GUIDE -> {
                 player.closeInventory();
@@ -166,5 +163,9 @@ public class WarpsListener implements Listener {
         } catch (IllegalArgumentException e) {
             return null;
         }
+    }
+
+    private boolean isLegacyWarpsTitle(String title) {
+        return title != null && ChatColor.stripColor(title).endsWith(" Noneless Lobby");
     }
 }

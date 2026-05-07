@@ -355,17 +355,17 @@ public class NPCMenuListener implements Listener {
                 menu.openSettings(player);
             } else if (type == Material.REPEATER) {
                 // Überprüfe welcher REPEATER geklickt wurde via Slot
-                if (event.getSlot() == 12) {
+                if (event.getSlot() == NPCAdminMenu.SETTINGS_SLOT_HOLOGRAM_FOLLOW) {
                     // Hologram Follow Interval - Read-Only, ignorieren
                     return;
-                } else if (event.getSlot() == 18) {
+                } else if (event.getSlot() == NPCAdminMenu.SETTINGS_SLOT_LINE_DELAY) {
                     // Dialog-Zeilen Verzögerung: +5 / -5 Ticks
                     int current = manager.getConversationLineDelayTicks();
                     int newValue = event.isLeftClick() ? current + 5 : current - 5;
                     manager.setConversationLineDelayTicks(newValue);
                     player.sendMessage(ChatColor.GREEN + "Dialog-Zeilen Verzögerung: " + newValue + " Ticks");
                     menu.openSettings(player);
-                } else if (event.getSlot() == 19) {
+                } else if (event.getSlot() == NPCAdminMenu.SETTINGS_SLOT_GATHER_DELAY) {
                     // Gather Verzögerung: +5 / -5 Ticks
                     int current = manager.getConversationGatherDelayTicks();
                     int newValue = event.isLeftClick() ? current + 5 : current - 5;
@@ -382,14 +382,14 @@ public class NPCMenuListener implements Listener {
                 menu.openSettings(player);
             } else if (type == Material.CLOCK) {
                 // Überprüfe welche CLOCK geklickt wurde via Slot
-                if (event.getSlot() == 15) {
+                if (event.getSlot() == NPCAdminMenu.SETTINGS_SLOT_MIN_INTERVAL) {
                     // Min. Gesprächs-Interval: +10 / -10 Sekunden
                     int current = manager.getConversationMinIntervalSeconds();
                     int newValue = event.isLeftClick() ? current + 10 : current - 10;
                     manager.setConversationMinIntervalSeconds(newValue);
                     player.sendMessage(ChatColor.GREEN + "Min. Gesprächs-Intervall: " + newValue + "s");
                     menu.openSettings(player);
-                } else if (event.getSlot() == 16) {
+                } else if (event.getSlot() == NPCAdminMenu.SETTINGS_SLOT_MAX_INTERVAL) {
                     // Max. Gesprächs-Interval: +10 / -10 Sekunden
                     int current = manager.getConversationMaxIntervalSeconds();
                     int newValue = event.isLeftClick() ? current + 10 : current - 10;
@@ -406,14 +406,14 @@ public class NPCMenuListener implements Listener {
                 menu.openSettings(player);
             } else if (type == Material.PLAYER_HEAD) {
                 // Min/Max NPCs in Lobby - Unterscheide via Slot
-                if (event.getSlot() == 21) {
+                if (event.getSlot() == NPCAdminMenu.SETTINGS_SLOT_MIN_LOBBY_NPCS) {
                     // Min NPCs: +1 / -1
                     int current = manager.getMinLobbyNPCs();
                     int newValue = event.isLeftClick() ? current + 1 : current - 1;
                     manager.setMinLobbyNPCs(Math.max(0, newValue));
                     player.sendMessage(ChatColor.GREEN + "Min. Lobby-NPCs: " + manager.getMinLobbyNPCs());
                     menu.openSettings(player);
-                } else if (event.getSlot() == 22) {
+                } else if (event.getSlot() == NPCAdminMenu.SETTINGS_SLOT_MAX_LOBBY_NPCS) {
                     // Max NPCs: +1 / -1
                     int current = manager.getMaxLobbyNPCs();
                     int newValue = event.isLeftClick() ? current + 1 : current - 1;

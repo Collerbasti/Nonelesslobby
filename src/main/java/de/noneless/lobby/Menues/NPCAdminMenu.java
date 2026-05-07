@@ -36,6 +36,20 @@ public class NPCAdminMenu {
     public static final String POI_NPC_SELECT_PREFIX = ChatColor.DARK_GREEN + "NPCs für: ";
     public static final String MANDATORY_NPC_TITLE = ChatColor.GOLD + "Pflicht-NPCs";
 
+    public static final int SETTINGS_SLOT_HOLOGRAM_HEIGHT = 10;
+    public static final int SETTINGS_SLOT_HOLOGRAM_LIFETIME = 13;
+    public static final int SETTINGS_SLOT_HOLOGRAM_FOLLOW = 16;
+    public static final int SETTINGS_SLOT_CONVERSATIONS_TOGGLE = 19;
+    public static final int SETTINGS_SLOT_MIN_INTERVAL = 21;
+    public static final int SETTINGS_SLOT_MAX_INTERVAL = 23;
+    public static final int SETTINGS_SLOT_LINE_DELAY = 28;
+    public static final int SETTINGS_SLOT_GATHER_DELAY = 30;
+    public static final int SETTINGS_SLOT_AUDIENCE_RADIUS = 32;
+    public static final int SETTINGS_SLOT_MIN_LOBBY_NPCS = 37;
+    public static final int SETTINGS_SLOT_MAX_LOBBY_NPCS = 39;
+    public static final int SETTINGS_SLOT_CONVERSATION_PREFIX = 41;
+    public static final int SETTINGS_SLOT_BACK = 49;
+
     private final NPCManager manager;
 
     public NPCAdminMenu() {
@@ -43,89 +57,91 @@ public class NPCAdminMenu {
     }
 
     public void openMain(Player player) {
-        Inventory inv = Bukkit.createInventory(null, 27, MAIN_TITLE);
+        Inventory inv = Bukkit.createInventory(null, 54, MAIN_TITLE);
+        inv.setItem(4, createItem(Material.VILLAGER_SPAWN_EGG, ChatColor.DARK_AQUA + "NPC Verwaltung",
+                ChatColor.GRAY + "Lobby-NPCs, POIs, Texte und Gespräche"));
         inv.setItem(10, createItem(Material.TOTEM_OF_UNDYING, ChatColor.GREEN + "NPCs neu spawnen", ChatColor.GRAY + "Entfernt alle NPCs und spawnt sie neu"));
-        inv.setItem(12, createItem(Material.SPAWNER, ChatColor.AQUA + "Weitere NPCs spawnen", ChatColor.GRAY + "Fügt sofort neue NPCs hinzu"));
-        inv.setItem(14, createItem(Material.NAME_TAG, ChatColor.YELLOW + "NPC-Namen bearbeiten", ChatColor.GRAY + "Füge hinzu, benenne um oder lösche"));
-        inv.setItem(16, createItem(Material.BOOK, ChatColor.LIGHT_PURPLE + "NPC-Chat bearbeiten", ChatColor.GRAY + "Verwalte Chat-Nachrichten"));
-        inv.setItem(18, createItem(Material.PLAYER_HEAD, ChatColor.BLUE + "Persönlichkeiten je Name", ChatColor.GRAY + "Ordne Namen Persönlichkeiten zu"));
-        inv.setItem(20, createItem(Material.LECTERN, ChatColor.DARK_PURPLE + "NPC Gespräche", ChatColor.GRAY + "Dialoge ansehen & bearbeiten"));
-        inv.setItem(24, createItem(Material.WRITABLE_BOOK, ChatColor.GOLD + "Persönlichkeits-Texte", ChatColor.GRAY + "Verwalte Persönlichkeitstypen"));
-        inv.setItem(26, createItem(Material.BOOKSHELF, ChatColor.DARK_RED + "Gespräch-Fokus", ChatColor.GRAY + "Filter pro Gespräch setzen"));
-        inv.setItem(11, createItem(Material.REDSTONE, ChatColor.GOLD + "Manager Einstellungen", ChatColor.GRAY + "Hologramme, Gespräche etc."));
-        inv.setItem(22, createItem(Material.BARRIER, ChatColor.RED + "Zurück", ChatColor.GRAY + "Zurück zu den Settings"));
-        inv.setItem(21, createItem(Material.HEART_OF_THE_SEA, ChatColor.LIGHT_PURPLE + "Namenspaare", ChatColor.GRAY + "Paarungen über Namen verwalten"));
-        inv.setItem(13, createItem(Material.COMPASS, ChatColor.DARK_GREEN + "Points of Interest", ChatColor.GRAY + "POIs verwalten (andere Welten)"));
-        inv.setItem(15, createItem(Material.NETHER_STAR, ChatColor.GOLD + "Pflicht-NPCs", ChatColor.GRAY + "NPCs die immer spawnen müssen"));
+        inv.setItem(13, createItem(Material.SPAWNER, ChatColor.AQUA + "Weitere NPCs spawnen", ChatColor.GRAY + "Fügt sofort neue NPCs hinzu"));
+        inv.setItem(16, createItem(Material.NETHER_STAR, ChatColor.GOLD + "Pflicht-NPCs", ChatColor.GRAY + "NPCs, die immer spawnen müssen"));
+        inv.setItem(19, createItem(Material.NAME_TAG, ChatColor.YELLOW + "NPC-Namen bearbeiten", ChatColor.GRAY + "Füge hinzu, benenne um oder lösche"));
+        inv.setItem(22, createItem(Material.PLAYER_HEAD, ChatColor.BLUE + "Persönlichkeiten je Name", ChatColor.GRAY + "Ordne Namen Persönlichkeiten zu"));
+        inv.setItem(25, createItem(Material.HEART_OF_THE_SEA, ChatColor.LIGHT_PURPLE + "Namenspaare", ChatColor.GRAY + "Paarungen über Namen verwalten"));
+        inv.setItem(28, createItem(Material.BOOK, ChatColor.LIGHT_PURPLE + "NPC-Chat bearbeiten", ChatColor.GRAY + "Verwalte Chat-Nachrichten"));
+        inv.setItem(31, createItem(Material.LECTERN, ChatColor.DARK_PURPLE + "NPC Gespräche", ChatColor.GRAY + "Dialoge ansehen und bearbeiten"));
+        inv.setItem(34, createItem(Material.WRITABLE_BOOK, ChatColor.GOLD + "Persönlichkeits-Texte", ChatColor.GRAY + "Verwalte Persönlichkeitstypen"));
+        inv.setItem(37, createItem(Material.COMPASS, ChatColor.DARK_GREEN + "Points of Interest", ChatColor.GRAY + "POIs in anderen Welten verwalten"));
+        inv.setItem(40, createItem(Material.BOOKSHELF, ChatColor.DARK_RED + "Gespräch-Fokus", ChatColor.GRAY + "Filter pro Gespräch setzen"));
+        inv.setItem(43, createItem(Material.REDSTONE, ChatColor.GOLD + "Manager Einstellungen", ChatColor.GRAY + "Hologramme, Gespräche und Limits"));
+        inv.setItem(49, createItem(Material.ARROW, ChatColor.RED + "Zurück", ChatColor.GRAY + "Zurück zu den Settings"));
         fill(inv);
         player.openInventory(inv);
     }
 
     public void openSettings(Player player) {
-        Inventory inv = Bukkit.createInventory(null, 27, SETTINGS_TITLE);
+        Inventory inv = Bukkit.createInventory(null, 54, SETTINGS_TITLE);
         
         // Hologramm Höhe
-        inv.setItem(10, createItem(Material.ARMOR_STAND, ChatColor.AQUA + "Hologramm Höhe",
+        inv.setItem(SETTINGS_SLOT_HOLOGRAM_HEIGHT, createItem(Material.ARMOR_STAND, ChatColor.AQUA + "Hologramm Höhe",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + String.format("%.2f", manager.getChatHologramVerticalOffset()),
                 ChatColor.GRAY + "Linksklick: +0.1 | Rechtsklick: -0.1"));
         
         // Hologramm Lebensdauer
-        inv.setItem(11, createItem(Material.REDSTONE, ChatColor.LIGHT_PURPLE + "Hologramm Lebensdauer",
+        inv.setItem(SETTINGS_SLOT_HOLOGRAM_LIFETIME, createItem(Material.REDSTONE, ChatColor.LIGHT_PURPLE + "Hologramm Lebensdauer",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getChatHologramLifetimeTicks() + " Ticks",
                 ChatColor.GRAY + "Linksklick: +10 | Rechtsklick: -10"));
         
         // Hologramm Follow Intervall
-        inv.setItem(12, createItem(Material.REPEATER, ChatColor.LIGHT_PURPLE + "Hologramm Follow Intervall",
+        inv.setItem(SETTINGS_SLOT_HOLOGRAM_FOLLOW, createItem(Material.REPEATER, ChatColor.LIGHT_PURPLE + "Hologramm Follow Intervall",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getChatHologramFollowInterval() + " Ticks",
                 ChatColor.GRAY + "Nur Anzeige (konstant)"));
         
         // Gespräche aktiviert
         String conversationStatus = manager.isConversationsEnabled() ? ChatColor.GREEN + "AN" : ChatColor.RED + "AUS";
-        inv.setItem(14, createItem(Material.LEVER, ChatColor.GOLD + "Gespräche aktiviert",
+        inv.setItem(SETTINGS_SLOT_CONVERSATIONS_TOGGLE, createItem(Material.LEVER, ChatColor.GOLD + "Gespräche aktiviert",
                 ChatColor.GRAY + "Status: " + conversationStatus,
                 ChatColor.GRAY + "Klick: Toggle"));
         
         // Min Interval
-        inv.setItem(15, createItem(Material.CLOCK, ChatColor.YELLOW + "Min. Gesprächs-Interval",
+        inv.setItem(SETTINGS_SLOT_MIN_INTERVAL, createItem(Material.CLOCK, ChatColor.YELLOW + "Min. Gesprächs-Intervall",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getConversationMinIntervalSeconds() + "s",
                 ChatColor.GRAY + "Linksklick: +10s | Rechtsklick: -10s"));
         
         // Max Interval
-        inv.setItem(16, createItem(Material.CLOCK, ChatColor.YELLOW + "Max. Gesprächs-Interval",
+        inv.setItem(SETTINGS_SLOT_MAX_INTERVAL, createItem(Material.CLOCK, ChatColor.YELLOW + "Max. Gesprächs-Intervall",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getConversationMaxIntervalSeconds() + "s",
                 ChatColor.GRAY + "Linksklick: +10s | Rechtsklick: -10s"));
         
         // Line Delay
-        inv.setItem(18, createItem(Material.REPEATER, ChatColor.AQUA + "Dialog-Zeilen Verzögerung",
+        inv.setItem(SETTINGS_SLOT_LINE_DELAY, createItem(Material.REPEATER, ChatColor.AQUA + "Dialog-Zeilen Verzögerung",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getConversationLineDelayTicks() + " Ticks",
                 ChatColor.GRAY + "Linksklick: +5 | Rechtsklick: -5"));
         
         // Gather Delay
-        inv.setItem(19, createItem(Material.REPEATER, ChatColor.AQUA + "Gather Verzögerung",
+        inv.setItem(SETTINGS_SLOT_GATHER_DELAY, createItem(Material.REPEATER, ChatColor.AQUA + "Gather Verzögerung",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getConversationGatherDelayTicks() + " Ticks",
                 ChatColor.GRAY + "Linksklick: +5 | Rechtsklick: -5"));
         
         // Audience Radius
-        inv.setItem(20, createItem(Material.SPYGLASS, ChatColor.DARK_AQUA + "Publikums Reichweite",
+        inv.setItem(SETTINGS_SLOT_AUDIENCE_RADIUS, createItem(Material.SPYGLASS, ChatColor.DARK_AQUA + "Publikums-Reichweite",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + String.format("%.1f", manager.getConversationAudienceRadius()) + " Blöcke",
                 ChatColor.GRAY + "Linksklick: +5 | Rechtsklick: -5"));
         
         // Min NPCs in Lobby
-        inv.setItem(21, createItem(Material.PLAYER_HEAD, ChatColor.GREEN + "Min. NPCs in Lobby",
+        inv.setItem(SETTINGS_SLOT_MIN_LOBBY_NPCS, createItem(Material.PLAYER_HEAD, ChatColor.GREEN + "Min. NPCs in Lobby",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getMinLobbyNPCs(),
                 ChatColor.GRAY + "Linksklick: +1 | Rechtsklick: -1"));
         
         // Max NPCs in Lobby
-        inv.setItem(22, createItem(Material.PLAYER_HEAD, ChatColor.GREEN + "Max. NPCs in Lobby",
+        inv.setItem(SETTINGS_SLOT_MAX_LOBBY_NPCS, createItem(Material.PLAYER_HEAD, ChatColor.GREEN + "Max. NPCs in Lobby",
                 ChatColor.GRAY + "Aktuell: " + ChatColor.YELLOW + manager.getMaxLobbyNPCs(),
                 ChatColor.GRAY + "Linksklick: +1 | Rechtsklick: -1"));
         
         // Conversation Prefix
-        inv.setItem(24, createItem(Material.BOOK, ChatColor.LIGHT_PURPLE + "Gespräch Präfix",
+        inv.setItem(SETTINGS_SLOT_CONVERSATION_PREFIX, createItem(Material.BOOK, ChatColor.LIGHT_PURPLE + "Gespräch-Präfix",
                 ChatColor.GRAY + "Rechtsklick: Bearbeiten"));
         
         // Zurück
-        inv.setItem(26, createItem(Material.ARROW, ChatColor.RED + "Zurück", ChatColor.GRAY + "Zurück zur NPC Verwaltung"));
+        inv.setItem(SETTINGS_SLOT_BACK, createItem(Material.ARROW, ChatColor.RED + "Zurück", ChatColor.GRAY + "Zurück zur NPC Verwaltung"));
         fill(inv);
         player.openInventory(inv);
     }

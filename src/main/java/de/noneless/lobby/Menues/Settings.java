@@ -30,7 +30,7 @@ public class Settings {
                 Material.COMPARATOR,
                 ChatColor.GOLD + "Noneless Lobby Einstellungen",
                 List.of(
-                        ChatColor.GRAY + "Persoenliche Lobby-Optionen",
+                        ChatColor.GRAY + "Persönliche Lobby-Optionen",
                         ChatColor.GRAY + "und Admin-Werkzeuge"
                 )
         ));
@@ -46,8 +46,8 @@ public class Settings {
 
         settings.setItem(SLOT_BACK, createInfoItem(
                 Material.ARROW,
-                ChatColor.RED + "Zurueck",
-                List.of(ChatColor.GRAY + "Zum Lobby-Menue")
+                ChatColor.RED + "Zurück",
+                List.of(ChatColor.GRAY + "Zum Lobby-Menü")
         ));
 
         fillWithGlass(settings);
@@ -59,7 +59,7 @@ public class Settings {
         return createToggleItem(
                 enabled,
                 "Freunde-Teleport",
-                enabled ? "Freunde duerfen sich zu dir teleportieren" : "Freunde duerfen sich nicht zu dir teleportieren",
+                enabled ? "Freunde dürfen sich zu dir teleportieren" : "Freunde dürfen sich nicht zu dir teleportieren",
                 List.of(ChatColor.GRAY + "Klick: Erlaubnis umschalten")
         );
     }
@@ -91,7 +91,7 @@ public class Settings {
 
     private ItemStack createAdminVisibilityItem(Player player) {
         if (!player.hasPermission("Noneless.Admin")) {
-            return createLockedItem("Admin-Anzeige", "Nur fuer Admins verfuegbar");
+            return createLockedItem("Admin-Anzeige", "Nur für Admins verfügbar");
         }
         boolean visible = Main.AOnline.getBoolean(player.getName() + ".Enable", false);
         return createToggleItem(
@@ -104,7 +104,7 @@ public class Settings {
 
     private ItemStack createGamemodeAdminItem(Player player) {
         if (!player.hasPermission("Noneless.Admin.Gamemode")) {
-            return createLockedItem("Gamemode Verwaltung", "Nur fuer Gamemode-Admins");
+            return createLockedItem("Gamemode Verwaltung", "Nur für Gamemode-Admins");
         }
         return createInfoItem(
                 Material.NETHER_STAR,
@@ -118,27 +118,27 @@ public class Settings {
 
     private ItemStack createNpcAdminItem(Player player) {
         if (!player.hasPermission("nonelesslobby.npc.admin")) {
-            return createLockedItem("NPC Verwaltung", "Nur fuer NPC-Admins");
+            return createLockedItem("NPC Verwaltung", "Nur für NPC-Admins");
         }
         return createInfoItem(
                 Material.VILLAGER_SPAWN_EGG,
                 ChatColor.DARK_AQUA + "NPC Verwaltung",
                 List.of(
                         ChatColor.GRAY + "NPCs, Namen, Chats, POIs",
-                        ChatColor.GRAY + "und Gespraeche verwalten"
+                        ChatColor.GRAY + "und Gespräche verwalten"
                 )
         );
     }
 
     private ItemStack createPointsAdminItem(Player player) {
         if (!player.hasPermission("Noneless.Admin")) {
-            return createLockedItem("Punkte Verwaltung", "Nur fuer Admins verfuegbar");
+            return createLockedItem("Punkte Verwaltung", "Nur für Admins verfügbar");
         }
         return createInfoItem(
                 Material.GOLD_BLOCK,
                 ChatColor.GOLD + "Punkte Verwaltung",
                 List.of(
-                        ChatColor.GRAY + "Spieler-Liste oeffnen",
+                        ChatColor.GRAY + "Spieler-Liste öffnen",
                         ChatColor.GRAY + "Linksklick: +100 | Shift: +10",
                         ChatColor.GRAY + "Rechtsklick: -100 | Shift: -10"
                 )

@@ -32,11 +32,6 @@ public final class GamemodeEnforcer {
             return;
         }
 
-        // Spieler mit Bypass-Permission ausschließen (z.B. MiniCardGame-Duelle)
-        if (player.hasPermission("NonelessLobby.bypassGamemode")) {
-            return;
-        }
-        
         GameMode target = GamemodeSettingsConfig.resolveGamemodeForPlayer(
                 player.getUniqueId(),
                 player.getWorld() != null ? player.getWorld().getName() : null

@@ -61,14 +61,14 @@ public class WarpsListener implements Listener {
                 try {
                     new Settings().Spawn(player);
                 } catch (Exception ex) {
-                    player.sendMessage(ChatColor.RED + "Fehler beim Oeffnen der Einstellungen!");
+                    player.sendMessage(ChatColor.RED + "Fehler beim Öffnen der Einstellungen!");
                 }
             }
             case Warps.ACTION_FOOD -> {
                 player.closeInventory();
                 player.setFoodLevel(20);
                 player.setSaturation(20.0f);
-                player.sendMessage(ChatColor.GREEN + "Du wurdest gesaettigt!");
+                player.sendMessage(ChatColor.GREEN + "Du wurdest gesättigt!");
             }
             case Warps.ACTION_SKYBLOCK -> {
                 player.closeInventory();
@@ -77,8 +77,8 @@ public class WarpsListener implements Listener {
             }
             case Warps.ACTION_GAMES -> {
                 player.closeInventory();
-                player.sendMessage(ChatColor.RED + "Oeffne Games-Menue...");
-                player.sendMessage(ChatColor.GRAY + "Games-Menue wird implementiert!");
+                player.sendMessage(ChatColor.RED + "Öffne Games-Menü...");
+                player.sendMessage(ChatColor.GRAY + "Games-Menü wird implementiert!");
             }
             case Warps.ACTION_NONELESS_GAME_MENU -> {
                 player.closeInventory();
@@ -97,7 +97,7 @@ public class WarpsListener implements Listener {
             case Warps.ACTION_ADMIN_ABILITIES -> {
                 if (!player.hasPermission("nonelesslobby.abilities.admin")) {
                     player.closeInventory();
-                    player.sendMessage(ChatColor.RED + "Du hast keine Berechtigung fuer diese Verwaltung.");
+                    player.sendMessage(ChatColor.RED + "Du hast keine Berechtigung für diese Verwaltung.");
                     return;
                 }
                 new Warps().openAbilityAdminPlayers(player);
@@ -123,7 +123,7 @@ public class WarpsListener implements Listener {
         if (action.startsWith(Warps.ACTION_ADMIN_PLAYER_PREFIX)) {
             if (!player.hasPermission("nonelesslobby.abilities.admin")) {
                 player.closeInventory();
-                player.sendMessage(ChatColor.RED + "Du hast keine Berechtigung fuer diese Verwaltung.");
+                player.sendMessage(ChatColor.RED + "Du hast keine Berechtigung für diese Verwaltung.");
                 return;
             }
             UUID targetId = parseUuid(action.substring(Warps.ACTION_ADMIN_PLAYER_PREFIX.length()));
@@ -136,7 +136,7 @@ public class WarpsListener implements Listener {
         if (action.startsWith(Warps.ACTION_ADMIN_TOGGLE_PREFIX)) {
             if (!player.hasPermission("nonelesslobby.abilities.admin")) {
                 player.closeInventory();
-                player.sendMessage(ChatColor.RED + "Du hast keine Berechtigung fuer diese Verwaltung.");
+                player.sendMessage(ChatColor.RED + "Du hast keine Berechtigung für diese Verwaltung.");
                 return;
             }
             String rest = action.substring(Warps.ACTION_ADMIN_TOGGLE_PREFIX.length());

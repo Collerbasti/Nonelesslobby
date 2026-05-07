@@ -219,7 +219,7 @@ public final class LobbyAbilities {
         for (Ability ability : Ability.values()) {
             deactivate(player, ability, true);
         }
-        player.sendMessage(ChatColor.GRAY + "Lobby-Faehigkeiten entfernt.");
+        player.sendMessage(ChatColor.GRAY + "Lobby-Fähigkeiten entfernt.");
     }
 
     public static void enforceLobbyOnly(Player player) {
@@ -381,7 +381,7 @@ public final class LobbyAbilities {
             player.getInventory().addItem(currentChestplate);
         }
         player.getInventory().setChestplate(elytra);
-        player.sendMessage(ChatColor.AQUA + "Lobby-Elytra ausgeruestet.");
+        player.sendMessage(ChatColor.AQUA + "Lobby-Elytra ausgerüstet.");
     }
 
     private static void giveFireworks(Player player) {
@@ -410,7 +410,7 @@ public final class LobbyAbilities {
         if (isInLobbyWorld(player)) {
             return true;
         }
-        player.sendMessage(ChatColor.RED + "Lobby-Faehigkeiten funktionieren nur in der gesetzten Lobbywelt.");
+        player.sendMessage(ChatColor.RED + "Lobby-Fähigkeiten funktionieren nur in der gesetzten Lobbywelt.");
         return false;
     }
 
@@ -418,7 +418,7 @@ public final class LobbyAbilities {
         if (isAbilityGranted(player.getUniqueId(), ability)) {
             return true;
         }
-        player.sendMessage(ChatColor.RED + "Diese Lobby-Faehigkeit wurde dir noch nicht freigeschaltet.");
+        player.sendMessage(ChatColor.RED + "Diese Lobby-Fähigkeit wurde dir noch nicht freigeschaltet.");
         return false;
     }
 

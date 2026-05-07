@@ -74,7 +74,7 @@ public class Warps {
 
         menu.setItem(22, createWarpItem(
                 Material.FEATHER,
-                Component.text("Lobby-Faehigkeiten", NamedTextColor.AQUA),
+                Component.text("Lobby-Fähigkeiten", NamedTextColor.AQUA),
                 List.of(Component.text("Elytra, Feuerwerke und Effekte", NamedTextColor.GRAY)),
                 ACTION_ABILITIES
         ));
@@ -89,7 +89,7 @@ public class Warps {
         menu.setItem(28, createWarpItem(
                 Material.NETHER_STAR,
                 Component.text("NonelessGame", NamedTextColor.RED),
-                List.of(Component.text("Oeffne das Spiel-Menue", NamedTextColor.GRAY)),
+                List.of(Component.text("Öffne das Spiel-Menü", NamedTextColor.GRAY)),
                 ACTION_NONELESS_GAME_MENU
         ));
 
@@ -109,7 +109,7 @@ public class Warps {
         menu.setItem(49, createWarpItem(
                 Material.COMPASS,
                 Component.text("Einstellungen", NamedTextColor.YELLOW),
-                List.of(Component.text("Oeffne die Einstellungen", NamedTextColor.GRAY)),
+                List.of(Component.text("Öffne die Einstellungen", NamedTextColor.GRAY)),
                 ACTION_SETTINGS
         ));
 
@@ -118,7 +118,7 @@ public class Warps {
     }
 
     public void openAbilities(Player player) {
-        Component title = Component.text("Lobby-Faehigkeiten", NamedTextColor.AQUA);
+        Component title = Component.text("Lobby-Fähigkeiten", NamedTextColor.AQUA);
         MenuHolder holder = new MenuHolder();
         Inventory menu = Bukkit.createInventory(holder, 27, title);
         holder.bind(menu);
@@ -130,7 +130,7 @@ public class Warps {
 
         menu.setItem(16, createWarpItem(
                 Material.BARRIER,
-                Component.text("Faehigkeiten entfernen", NamedTextColor.RED),
+                Component.text("Fähigkeiten entfernen", NamedTextColor.RED),
                 List.of(Component.text("Entfernt Lobby-Effekte und Items", NamedTextColor.GRAY)),
                 ACTION_ABILITY_CLEAR
         ));
@@ -139,15 +139,15 @@ public class Warps {
             menu.setItem(18, createWarpItem(
                     Material.NETHER_STAR,
                     Component.text("Admin-Freischaltungen", NamedTextColor.GOLD),
-                    List.of(Component.text("Spieler-Faehigkeiten verwalten", NamedTextColor.GRAY)),
+                    List.of(Component.text("Spieler-Fähigkeiten verwalten", NamedTextColor.GRAY)),
                     ACTION_ADMIN_ABILITIES
             ));
         }
 
         menu.setItem(22, createWarpItem(
                 Material.ARROW,
-                Component.text("Zurueck", NamedTextColor.GRAY),
-                List.of(Component.text("Zum Warps-Menue", NamedTextColor.DARK_GRAY)),
+                Component.text("Zurück", NamedTextColor.GRAY),
+                List.of(Component.text("Zum Warps-Menü", NamedTextColor.DARK_GRAY)),
                 ACTION_BACK
         ));
 
@@ -156,7 +156,7 @@ public class Warps {
     }
 
     public void openAbilityAdminPlayers(Player admin) {
-        Component title = Component.text("Faehigkeiten: Spieler", NamedTextColor.GOLD);
+        Component title = Component.text("Fähigkeiten: Spieler", NamedTextColor.GOLD);
         MenuHolder holder = new MenuHolder();
         Inventory menu = Bukkit.createInventory(holder, 54, title);
         holder.bind(menu);
@@ -174,8 +174,8 @@ public class Warps {
 
         menu.setItem(49, createWarpItem(
                 Material.ARROW,
-                Component.text("Zurueck", NamedTextColor.GRAY),
-                List.of(Component.text("Zu Lobby-Faehigkeiten", NamedTextColor.DARK_GRAY)),
+                Component.text("Zurück", NamedTextColor.GRAY),
+                List.of(Component.text("Zu Lobby-Fähigkeiten", NamedTextColor.DARK_GRAY)),
                 ACTION_ABILITIES
         ));
 
@@ -208,7 +208,7 @@ public class Warps {
 
         menu.setItem(22, createWarpItem(
                 Material.ARROW,
-                Component.text("Zurueck", NamedTextColor.GRAY),
+                Component.text("Zurück", NamedTextColor.GRAY),
                 List.of(Component.text("Zur Spielerauswahl", NamedTextColor.DARK_GRAY)),
                 ACTION_ADMIN_ABILITIES
         ));
@@ -264,7 +264,7 @@ public class Warps {
                     .append(Component.text(active ? "aktiv" : "inaktiv", active ? NamedTextColor.GREEN : NamedTextColor.RED)));
             lore.add(Component.text("Klick: ein-/ausschalten", NamedTextColor.YELLOW));
         } else {
-            lore.add(Component.text("Ein Admin muss diese Faehigkeit freischalten", NamedTextColor.DARK_GRAY));
+            lore.add(Component.text("Ein Admin muss diese Fähigkeit freischalten", NamedTextColor.DARK_GRAY));
         }
         return createWarpItem(
                 granted ? ability.getIcon() : Material.GRAY_DYE,

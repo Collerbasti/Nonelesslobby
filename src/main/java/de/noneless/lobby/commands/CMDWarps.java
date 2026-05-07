@@ -15,7 +15,7 @@ public class CMDWarps implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(ChatColor.RED + "Dieser Command kann nur von Spielern ausgefuehrt werden!");
+            sender.sendMessage(ChatColor.RED + "Dieser Command kann nur von Spielern ausgeführt werden!");
             return true;
         }
 
@@ -37,13 +37,13 @@ public class CMDWarps implements CommandExecutor {
         try {
             new Warps().Spawn(player);
         } catch (Exception ex) {
-            Main.getInstance().getLogger().log(Level.WARNING, "Konnte Warps-Menue nicht oeffnen.", ex);
-            sender.sendMessage(ChatColor.GOLD + "=== Verfuegbare Warps ===");
+            Main.getInstance().getLogger().log(Level.WARNING, "Konnte Warps-Menü nicht öffnen.", ex);
+            sender.sendMessage(ChatColor.GOLD + "=== Verfügbare Warps ===");
             sender.sendMessage(ChatColor.YELLOW + "- " + ChatColor.WHITE + "City - Hauptstadt");
             sender.sendMessage(ChatColor.YELLOW + "- " + ChatColor.WHITE + "SkyBlock - SkyBlock Welt");
             sender.sendMessage(ChatColor.YELLOW + "- " + ChatColor.WHITE + "Games - Minispiele");
             sender.sendMessage(ChatColor.YELLOW + "- " + ChatColor.WHITE + "Creative - Kreativ Welt");
-            sender.sendMessage(ChatColor.GRAY + "Warps-Menue wird implementiert...");
+            sender.sendMessage(ChatColor.GRAY + "Warps-Menü wird implementiert...");
             sender.sendMessage(ChatColor.GOLD + "========================");
         }
 

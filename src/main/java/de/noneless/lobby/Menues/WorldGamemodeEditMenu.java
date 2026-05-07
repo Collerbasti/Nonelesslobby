@@ -44,7 +44,7 @@ public class WorldGamemodeEditMenu {
 
         ItemStack back = new ItemStack(Material.BARRIER);
         ItemMeta backMeta = back.getItemMeta();
-        backMeta.setDisplayName(ChatColor.RED + "Zurueck");
+        backMeta.setDisplayName(ChatColor.RED + "Zurück");
         applyMetadata(backMeta, "back:" + returnPage);
         back.setItemMeta(backMeta);
         inventory.setItem(22, back);

@@ -147,11 +147,6 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        // Bypass für Spieler mit expliziter Permission (z.B. MiniCardGame-Duelle)
-        if (player.hasPermission("NonelessLobby.bypassGamemode")) {
-            return;
-        }
-
         GameMode desired = getDesiredGamemode(player);
         GameMode newMode = event.getNewGameMode();
         
@@ -160,7 +155,7 @@ public class PlayerListener implements Listener {
             event.setCancelled(true);
             player.sendMessage(ChatColor.RED + "Gamemode-Wechsel nicht erlaubt! Dein Gamemode ist " + desired.name() + ".");
             
-            // Force correct gamemode after a tick (in case something bypassed)
+            // Force correct gamemode after a tick in case another plugin changed it.
             Bukkit.getScheduler().runTaskLater(Main.getInstance(), () -> {
                 if (player.isOnline() && player.getGameMode() != desired) {
                     forceCorrectGamemode(player);
@@ -337,9 +332,6 @@ public class PlayerListener implements Listener {
     }
     
     private void applyGamemodeSetting(Player player) {
-        if (player.hasPermission("NonelessLobby.bypassGamemode")) {
-            return;
-        }
         GameMode target = getDesiredGamemode(player);
         if (player.getGameMode() != target) {
             player.setGameMode(target);
@@ -360,9 +352,6 @@ public class PlayerListener implements Listener {
      */
     private void forceCorrectGamemode(Player player) {
         if (player == null || !player.isOnline()) return;
-        // Bypass für Spieler mit expliziter Permission (z.B. MiniCardGame-Duelle)
-        if (player.hasPermission("NonelessLobby.bypassGamemode")) return;
-        
         GameMode target = getDesiredGamemode(player);
         if (target == null) target = GameMode.ADVENTURE;
         
@@ -385,9 +374,6 @@ public class PlayerListener implements Listener {
      */
     private void forceGamemodeForWorld(Player player, String worldName) {
         if (player == null || !player.isOnline() || worldName == null) return;
-        // Bypass für Spieler mit expliziter Permission (z.B. MiniCardGame-Duelle)
-        if (player.hasPermission("NonelessLobby.bypassGamemode")) return;
-        
         GameMode target = GamemodeSettingsConfig.resolveGamemodeForPlayer(player.getUniqueId(), worldName);
         if (target == null) target = GameMode.ADVENTURE;
         

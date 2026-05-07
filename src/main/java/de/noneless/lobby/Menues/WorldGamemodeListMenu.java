@@ -43,12 +43,12 @@ public class WorldGamemodeListMenu {
             inv.setItem(45, createNavItem(ChatColor.YELLOW + "<- Vorherige Seite", page - 1, "prev"));
         }
         if (page < totalPages - 1) {
-            inv.setItem(53, createNavItem(ChatColor.YELLOW + "Naechste Seite ->", page + 1, "next"));
+            inv.setItem(53, createNavItem(ChatColor.YELLOW + "Nächste Seite ->", page + 1, "next"));
         }
 
         ItemStack back = new ItemStack(Material.BARRIER);
         ItemMeta backMeta = back.getItemMeta();
-        backMeta.setDisplayName(ChatColor.RED + "Zurueck");
+        backMeta.setDisplayName(ChatColor.RED + "Zurück");
         applyMetadata(backMeta, "back:" + page);
         back.setItemMeta(backMeta);
         inv.setItem(49, back);
@@ -58,7 +58,7 @@ public class WorldGamemodeListMenu {
         infoMeta.setDisplayName(ChatColor.GOLD + "Seite " + (page + 1) + "/" + totalPages);
         List<String> lore = new ArrayList<>();
         lore.add(ChatColor.GRAY + "Klicke auf eine Welt");
-        lore.add(ChatColor.GRAY + "um den Gamemode zu aendern.");
+        lore.add(ChatColor.GRAY + "um den Gamemode zu ändern.");
         infoMeta.setLore(lore);
         pageInfo.setItemMeta(infoMeta);
         inv.setItem(50, pageInfo);

@@ -56,41 +56,37 @@ public class Warps {
                 null
         ));
 
-        menu.setItem(10, createSectionItem(Component.text("Welten", NamedTextColor.YELLOW)));
-        menu.setItem(11, createWarpItem(
+        menu.setItem(10, createWarpItem(
                 Material.ENDER_PEARL,
                 Component.text("Essentials Warps", NamedTextColor.GOLD),
                 List.of(Component.text("Alle Essentials-Warps anzeigen", NamedTextColor.GRAY)),
                 ACTION_ESSENTIALS
         ));
 
-        menu.setItem(12, createWarpItem(
+        menu.setItem(16, createWarpItem(
                 Material.GOLDEN_PICKAXE,
                 Component.text("SkyBlock", NamedTextColor.GOLD),
                 List.of(Component.text("Besuche die SkyBlock Welt", NamedTextColor.GRAY)),
                 ACTION_SKYBLOCK
         ));
 
-        menu.setItem(19, createSectionItem(Component.text("Social", NamedTextColor.AQUA)));
-        menu.setItem(20, createFriendsItem(player));
+        menu.setItem(19, createFriendsItem(player));
 
-        menu.setItem(22, createSectionItem(Component.text("Lobby", NamedTextColor.GREEN)));
-        menu.setItem(23, createWarpItem(
+        menu.setItem(22, createWarpItem(
                 Material.FEATHER,
                 Component.text("Lobby-Faehigkeiten", NamedTextColor.AQUA),
                 List.of(Component.text("Elytra, Feuerwerke und Effekte", NamedTextColor.GRAY)),
                 ACTION_ABILITIES
         ));
 
-        menu.setItem(24, createWarpItem(
+        menu.setItem(25, createWarpItem(
                 Material.BAKED_POTATO,
                 Component.text("Essen", NamedTextColor.GREEN),
                 List.of(Component.text("Stille deinen Hunger", NamedTextColor.GRAY)),
                 ACTION_FOOD
         ));
 
-        menu.setItem(28, createSectionItem(Component.text("Spiele", NamedTextColor.RED)));
-        menu.setItem(29, createWarpItem(
+        menu.setItem(28, createWarpItem(
                 Material.NETHER_STAR,
                 Component.text("NonelessGame", NamedTextColor.RED),
                 List.of(Component.text("Oeffne das Spiel-Menue", NamedTextColor.GRAY)),
@@ -99,7 +95,7 @@ public class Warps {
 
         // Guide-Buch nur anzeigen wenn NonelessGame geladen ist
         if (Bukkit.getPluginManager().isPluginEnabled("NonelessGame")) {
-            menu.setItem(30, createWarpItem(
+            menu.setItem(34, createWarpItem(
                     Material.WRITTEN_BOOK,
                     Component.text("Kartenspiel-Anleitung", NamedTextColor.GOLD),
                     List.of(
@@ -110,8 +106,7 @@ public class Warps {
             ));
         }
 
-        menu.setItem(37, createSectionItem(Component.text("System", NamedTextColor.YELLOW)));
-        menu.setItem(38, createWarpItem(
+        menu.setItem(49, createWarpItem(
                 Material.COMPASS,
                 Component.text("Einstellungen", NamedTextColor.YELLOW),
                 List.of(Component.text("Oeffne die Einstellungen", NamedTextColor.GRAY)),
@@ -256,15 +251,6 @@ public class Warps {
         }
         item.setItemMeta(meta);
         return item;
-    }
-
-    private ItemStack createSectionItem(Component displayName) {
-        return createWarpItem(
-                Material.BLUE_STAINED_GLASS_PANE,
-                displayName,
-                null,
-                null
-        );
     }
 
     private ItemStack createAbilityToggleItem(Player player, Ability ability) {

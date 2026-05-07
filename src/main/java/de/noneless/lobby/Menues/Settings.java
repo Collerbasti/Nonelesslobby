@@ -14,12 +14,12 @@ import java.util.List;
 public class Settings {
 
     public static final int SLOT_FRIENDS_TP = 10;
-    public static final int SLOT_NPC_CHAT = 11;
-    public static final int SLOT_REWARDS = 12;
-    public static final int SLOT_ADMIN_VISIBILITY = 20;
+    public static final int SLOT_NPC_CHAT = 13;
+    public static final int SLOT_REWARDS = 16;
+    public static final int SLOT_ADMIN_VISIBILITY = 22;
     public static final int SLOT_GAMEMODE_ADMIN = 28;
-    public static final int SLOT_NPC_ADMIN = 30;
-    public static final int SLOT_POINTS_ADMIN = 32;
+    public static final int SLOT_NPC_ADMIN = 31;
+    public static final int SLOT_POINTS_ADMIN = 34;
     public static final int SLOT_BACK = 49;
 
     public void Spawn(Player player) {
@@ -34,10 +34,6 @@ public class Settings {
                         ChatColor.GRAY + "und Admin-Werkzeuge"
                 )
         ));
-
-        settings.setItem(9, createSectionItem(ChatColor.YELLOW + "Spieler"));
-        settings.setItem(18, createSectionItem(ChatColor.GOLD + "Admin"));
-        settings.setItem(27, createSectionItem(ChatColor.RED + "Server"));
 
         settings.setItem(SLOT_FRIENDS_TP, createFriendsTeleportItem(player));
         settings.setItem(SLOT_NPC_CHAT, createNpcChatItem(player));
@@ -171,10 +167,6 @@ public class Settings {
                 ChatColor.DARK_GRAY + title,
                 List.of(ChatColor.GRAY + reason)
         );
-    }
-
-    private ItemStack createSectionItem(String title) {
-        return createInfoItem(Material.BLUE_STAINED_GLASS_PANE, title, null);
     }
 
     private ItemStack createInfoItem(Material material, String displayName, List<String> lore) {

@@ -1,6 +1,7 @@
 package de.noneless.lobby.scoreboard;
 
 import Config.ConfigManager;
+import de.noneless.lobby.util.LobbyAbilities;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -19,18 +20,21 @@ public class LobbyScoreboard {
     private static final String TITLE = ChatColor.GREEN + "Noneless Lobby";
     private static final String[] customLines = new String[4];
     private static final CommandEntry[] COMMAND_ENTRIES = {
-        new CommandEntry("/warps", null),
-        new CommandEntry("/friend", "nonelesslobby.friends"),
-        new CommandEntry("/settings", null),
-        new CommandEntry("/lobbynpc", "nonelesslobby.admin"),
-        new CommandEntry("/punkte", null),
-        new CommandEntry("/punkteadmin", "nonelesslobby.punkte.admin")
+        new CommandEntry("/warps", "Menü", "nonelesslobby.user"),
+        new CommandEntry("/settings", "Optionen", "nonelesslobby.user"),
+        new CommandEntry("/lobbynpc", "NPCs", "nonelesslobby.admin"),
+        new CommandEntry("/worldmover", "Welten", "nonelesslobby.worldmover"),
+        new CommandEntry("/lobbyreload", "Reload", "nonelesslobby.admin.reload"),
+        new CommandEntry("/punkteadmin", "Punkte", "nonelesslobby.admin"),
+        new CommandEntry("/friend", "Freunde", "nonelesslobby.friends"),
+        new CommandEntry("/punkte", "Punkte", "nonelesslobby.leaderboard"),
+        new CommandEntry("/nonelessgame:menu", "Spiele", null, "NonelessGame")
     };
 
     private static JavaPlugin plugin;
     private static BukkitTask autoUpdateTask;
     
-    // Cache last player count to avoid rebuilding scoreboards when nothing changed
+    // Last player count is kept for compatibility with existing update triggers.
     private static int lastPlayerCount = -1;
     private static final Map<UUID, Long> lastUpdateTime = new HashMap<>();
     private static final long MIN_UPDATE_INTERVAL = 5000L; // Min 5 seconds (5000ms) between individual updates
@@ -78,15 +82,18 @@ public class LobbyScoreboard {
         int score = 15;
         int currentPlayerCount = Bukkit.getOnlinePlayers().size();
         score = addLine(objective, "§fSpieler: §a" + currentPlayerCount, score);
+        score = addLine(objective, "§fWelt: §a" + player.getWorld().getName(), score);
         score = addLine(objective, "§8----------------", score);
-        score = addLine(objective, "§bVerfügbare Befehle:", score);
+        score = addLine(objective, "§bSchnellzugriff:", score);
 
         for (String cmd : getCommands(player)) {
             score = addLine(objective, "§e" + cmd, score);
         }
 
         score = addLine(objective, "§8----------------", score);
-        score = addLine(objective, "§dInfo:", score);
+        score = addLine(objective, "§dStatus:", score);
+        int activeAbilities = LobbyAbilities.getActiveAbilities(player.getUniqueId()).size();
+        score = addLine(objective, "§fFähigkeiten: " + formatCount(activeAbilities), score);
         for (String custom : customLines) {
             if (custom == null || custom.isEmpty()) continue;
             String parsed = ChatColor.translateAlternateColorCodes('&', custom);
@@ -99,14 +106,7 @@ public class LobbyScoreboard {
     public static void updateAll() {
         if (plugin == null) return;
         
-        int currentPlayerCount = Bukkit.getOnlinePlayers().size();
-        
-        // Only update if player count changed or custom lines were modified
-        if (lastPlayerCount == currentPlayerCount) {
-            return; // Skip update, nothing changed
-        }
-        
-        lastPlayerCount = currentPlayerCount;
+        lastPlayerCount = Bukkit.getOnlinePlayers().size();
         Bukkit.getOnlinePlayers().forEach(LobbyScoreboard::update);
     }
     
@@ -122,7 +122,7 @@ public class LobbyScoreboard {
         if (plugin == null) return;
         if (index < 0 || index >= customLines.length) return;
         customLines[index] = text;
-        lastPlayerCount = -1; // Force update on next updateAll()
+        lastPlayerCount = -1;
         updateAll();
     }
 
@@ -140,24 +140,47 @@ public class LobbyScoreboard {
     private static List<String> getCommands(Player player) {
         List<String> commands = new ArrayList<>();
         for (CommandEntry entry : COMMAND_ENTRIES) {
-            if (entry.permission == null || player.hasPermission(entry.permission)) {
-                commands.add(entry.command);
-                if (commands.size() >= 4) break;
+            if (entry.canUse(player)) {
+                commands.add(entry.render());
+                if (commands.size() >= 5) break;
             }
         }
         if (commands.isEmpty()) {
-            commands.add("/settings");
+            commands.add("/settings §7Optionen");
         }
         return commands;
     }
 
+    private static String formatCount(int value) {
+        return value > 0 ? ChatColor.GREEN + String.valueOf(value) + " aktiv" : ChatColor.GRAY + "keine aktiv";
+    }
+
     private static class CommandEntry {
         private final String command;
+        private final String label;
         private final String permission;
+        private final String requiredPlugin;
 
-        CommandEntry(String command, String permission) {
+        CommandEntry(String command, String label, String permission) {
+            this(command, label, permission, null);
+        }
+
+        CommandEntry(String command, String label, String permission, String requiredPlugin) {
             this.command = command;
+            this.label = label;
             this.permission = permission;
+            this.requiredPlugin = requiredPlugin;
+        }
+
+        boolean canUse(Player player) {
+            if (requiredPlugin != null && !Bukkit.getPluginManager().isPluginEnabled(requiredPlugin)) {
+                return false;
+            }
+            return permission == null || player.hasPermission(permission);
+        }
+
+        String render() {
+            return command + " §7" + label;
         }
     }
     

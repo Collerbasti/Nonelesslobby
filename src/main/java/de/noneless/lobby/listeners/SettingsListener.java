@@ -65,24 +65,24 @@ public class SettingsListener implements Listener {
             return;
         }
         switch (event.getSlot()) {
-            case 10 -> toggleFriendsTeleport(player);
-            case 11 -> toggleNpcChat(player);
-            case 12 -> toggleCoinsMode(player);
-            case 14 -> {
+            case Settings.SLOT_FRIENDS_TP -> toggleFriendsTeleport(player);
+            case Settings.SLOT_NPC_CHAT -> toggleNpcChat(player);
+            case Settings.SLOT_REWARDS -> toggleCoinsMode(player);
+            case Settings.SLOT_GAMEMODE_ADMIN -> {
                 if (player.hasPermission("Noneless.Admin.Gamemode")) {
                     openGamemodeAdminMenu(player);
                 } else {
                     player.sendMessage(ChatColor.RED + "Du hast keine Berechtigung für Gamemode-Einstellungen!");
                 }
             }
-            case 16 -> {
+            case Settings.SLOT_ADMIN_VISIBILITY -> {
                 if (player.hasPermission("Noneless.Admin")) {
                     toggleAdminVisibility(player);
                 } else {
                     player.sendMessage(ChatColor.RED + "Du hast keine Admin-Berechtigung!");
                 }
             }
-            case 20 -> {
+            case Settings.SLOT_NPC_ADMIN -> {
                 if (player.hasPermission("nonelesslobby.npc.admin")) {
                     player.closeInventory();
                     new de.noneless.lobby.Menues.NPCAdminMenu().openMain(player);
@@ -90,7 +90,7 @@ public class SettingsListener implements Listener {
                     player.sendMessage(ChatColor.RED + "Dir fehlt die Berechtigung für die NPC-Verwaltung.");
                 }
             }
-            case 22 -> {
+            case Settings.SLOT_BACK -> {
                 player.closeInventory();
                 try {
                     player.performCommand("warps");
@@ -98,7 +98,7 @@ public class SettingsListener implements Listener {
                     player.sendMessage(ChatColor.GREEN + "Settings geschlossen.");
                 }
             }
-            case 24 -> {
+            case Settings.SLOT_POINTS_ADMIN -> {
                 if (player.hasPermission("Noneless.Admin")) {
                     openPointsPlayerList(player, 0);
                 } else {

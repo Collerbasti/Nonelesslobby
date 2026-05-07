@@ -1,159 +1,201 @@
 package de.noneless.lobby.Menues;
 
+import de.noneless.lobby.Main;
+import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.ChatColor;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import de.noneless.lobby.Main;
-
 public class Settings {
-    
+
+    public static final int SLOT_FRIENDS_TP = 10;
+    public static final int SLOT_NPC_CHAT = 11;
+    public static final int SLOT_REWARDS = 12;
+    public static final int SLOT_ADMIN_VISIBILITY = 20;
+    public static final int SLOT_GAMEMODE_ADMIN = 28;
+    public static final int SLOT_NPC_ADMIN = 30;
+    public static final int SLOT_POINTS_ADMIN = 32;
+    public static final int SLOT_BACK = 49;
+
     public void Spawn(Player player) {
-        // Erstelle Settings-MenÃ¼ basierend auf dem originalen Design
-        Inventory settings = player.getServer().createInventory(null, 27, 
-                           player.getName() + " Settings");
-        
-        // Friend Teleport Setting (Slot 10)
-        boolean allowFriendsTp = Main.Frdb.getBoolean(player.getName() + ".AllowFriendsTp", false);
-        ItemStack friendsTpItem;
-        ItemMeta friendsMeta;
-        
-        if (allowFriendsTp) {
-            friendsTpItem = new ItemStack(Material.GREEN_WOOL, 1, (short) 1);
-            friendsMeta = friendsTpItem.getItemMeta();
-            friendsMeta.setDisplayName(ChatColor.GREEN + "Teleportieren von Freunden zu Einem Erlaubt");
-        } else {
-            friendsTpItem = new ItemStack(Material.RED_WOOL, 1, (short) 1);
-            friendsMeta = friendsTpItem.getItemMeta();
-            friendsMeta.setDisplayName(ChatColor.RED + "Teleportieren von Freunden zu Einem Verboten");
-        }
-        friendsTpItem.setItemMeta(friendsMeta);
-        settings.setItem(10, friendsTpItem);
+        Inventory settings = player.getServer().createInventory(null, 54,
+                ChatColor.AQUA + player.getName() + ChatColor.GOLD + " Settings");
 
-        // NPC-Chat Setting (Slot 11)
-        boolean npcChatEnabled = Main.Frdb.getBoolean(player.getName() + ".NpcChatEnabled", true);
-        ItemStack npcChatItem = new ItemStack(npcChatEnabled ? Material.GREEN_WOOL : Material.RED_WOOL);
-        ItemMeta npcChatMeta = npcChatItem.getItemMeta();
-        npcChatMeta.setDisplayName(npcChatEnabled
-                ? ChatColor.GREEN + "NPC-Chatnachrichten sichtbar"
-                : ChatColor.RED + "NPC-Chatnachrichten versteckt");
-        List<String> npcLore = new ArrayList<>();
-        npcLore.add(ChatColor.GRAY + "Steuert Chatnachrichten der NPCs.");
-        npcLore.add(ChatColor.YELLOW + "Klicke zum Umschalten.");
-        npcChatMeta.setLore(npcLore);
-        npcChatItem.setItemMeta(npcChatMeta);
-        settings.setItem(11, npcChatItem);
-        
-        // Coins Setting (Slot 12)
-        boolean getCoins = Main.Frdb.getBoolean(player.getName() + ".GetCoins", false);
-        ItemStack coinsItem;
-        ItemMeta coinsMeta;
-        
-        if (getCoins) {
-            coinsItem = new ItemStack(Material.GREEN_WOOL, 1, (short) 1);
-            coinsMeta = coinsItem.getItemMeta();
-            coinsMeta.setDisplayName(ChatColor.GREEN + "Bekomme 80 Coins pro Stunde");
-        } else {
-            coinsItem = new ItemStack(Material.RED_WOOL, 1, (short) 1);
-            coinsMeta = coinsItem.getItemMeta();
-            coinsMeta.setDisplayName(ChatColor.RED + "Bekomme einen Duellpunkt pro Stunde");
-        }
-        coinsItem.setItemMeta(coinsMeta);
-        settings.setItem(12, coinsItem);
-        
-        // Gamemode Verwaltung (Slot 14) - nur für Admins
-        if (player.hasPermission("Noneless.Admin.Gamemode")) {
-            ItemStack gamemodeItem = new ItemStack(Material.NETHER_STAR);
-            ItemMeta gamemodeMeta = gamemodeItem.getItemMeta();
-            gamemodeMeta.setDisplayName(ChatColor.GOLD + "Gamemode Verwaltung");
-            List<String> gmLore = new ArrayList<>();
-            gmLore.add(ChatColor.GRAY + "Verwalte Standard-Gamemodes");
-            gmLore.add(ChatColor.GRAY + "pro Welt und Creative-Override.");
-            gmLore.add(ChatColor.YELLOW + "Klicke für das Admin-Menü.");
-            gamemodeMeta.setLore(gmLore);
-            gamemodeItem.setItemMeta(gamemodeMeta);
-            settings.setItem(14, gamemodeItem);
-        } else {
-            ItemStack noPermItem = new ItemStack(Material.LIGHT_GRAY_WOOL, 1, (short) 1);
-            ItemMeta noPermMeta = noPermItem.getItemMeta();
-            noPermMeta.setDisplayName(ChatColor.GRAY + "Gamemode Verboten");
-            List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.DARK_GRAY + "Nur für Admins zugänglich");
-            noPermMeta.setLore(lore);
-            noPermItem.setItemMeta(noPermMeta);
-            settings.setItem(14, noPermItem);
-        }
-        
-        // Admin Online Setting (Slot 16) - nur fÃ¼r Admins
-        if (player.hasPermission("Noneless.Admin")) {
-            boolean adminOnlineVisible = Main.AOnline.getBoolean(player.getName() + ".Enable", false);
-            ItemStack adminItem;
-            ItemMeta adminMeta;
-            
-            if (adminOnlineVisible) {
-                adminItem = new ItemStack(Material.GREEN_WOOL, 1, (short) 1);
-                adminMeta = adminItem.getItemMeta();
-                adminMeta.setDisplayName(ChatColor.GREEN + "Im Befehl /Hilfe Anzeigen");
-            } else {
-                adminItem = new ItemStack(Material.RED_WOOL, 1, (short) 1);
-                adminMeta = adminItem.getItemMeta();
-                adminMeta.setDisplayName(ChatColor.RED + "im Befehl /Hilfe nicht Anzeigen");
-            }
-            adminItem.setItemMeta(adminMeta);
-            settings.setItem(16, adminItem);
-        }
-        
-        // NPC Verwaltung (Slot 20) - nur Admins
-        if (player.hasPermission("nonelesslobby.npc.admin")) {
-            ItemStack npcItem = new ItemStack(Material.NETHER_STAR);
-            ItemMeta npcMeta = npcItem.getItemMeta();
-            npcMeta.setDisplayName(ChatColor.DARK_AQUA + "NPC Verwaltung");
-            List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.GRAY + "NPCs neu spawnen, Namen & Chats bearbeiten");
-            npcMeta.setLore(lore);
-            npcItem.setItemMeta(npcMeta);
-            settings.setItem(20, npcItem);
-        }
+        settings.setItem(4, createInfoItem(
+                Material.COMPARATOR,
+                ChatColor.GOLD + "Noneless Lobby Einstellungen",
+                List.of(
+                        ChatColor.GRAY + "Persoenliche Lobby-Optionen",
+                        ChatColor.GRAY + "und Admin-Werkzeuge"
+                )
+        ));
 
-        // Punkte Verwaltung (Slot 24) - nur Admins
-        if (player.hasPermission("Noneless.Admin")) {
-            ItemStack pointsItem = new ItemStack(Material.GOLD_BLOCK);
-            ItemMeta pointsMeta = pointsItem.getItemMeta();
-            pointsMeta.setDisplayName(ChatColor.GOLD + "Punkte Verwaltung");
-            List<String> pointsLore = new ArrayList<>();
-            pointsLore.add(ChatColor.GRAY + "Linksklick: +100 | Shift: +10");
-            pointsLore.add(ChatColor.GRAY + "Rechtsklick: -100 | Shift: -10");
-            pointsLore.add(ChatColor.YELLOW + "Öffnet die Spieler-Liste");
-            pointsMeta.setLore(pointsLore);
-            pointsItem.setItemMeta(pointsMeta);
-            settings.setItem(24, pointsItem);
-        } else {
-            ItemStack noPermPoints = new ItemStack(Material.LIGHT_GRAY_WOOL);
-            ItemMeta noPermMeta = noPermPoints.getItemMeta();
-            noPermMeta.setDisplayName(ChatColor.DARK_GRAY + "Punkte Verwaltung");
-            List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.GRAY + "Nur für Admins verfügbar");
-            noPermMeta.setLore(lore);
-            noPermPoints.setItemMeta(noPermMeta);
-            settings.setItem(24, noPermPoints);
-        }
-        
-        // ZurÃ¼ck-Button (Slot 22)
-        ItemStack backItem = new ItemStack(Material.BARRIER);
-        ItemMeta backMeta = backItem.getItemMeta();
-        backMeta.setDisplayName(ChatColor.RED + "ZurÃ¼ck");
-        backItem.setItemMeta(backMeta);
-        settings.setItem(22, backItem);
-        
-        // Ã–ffne das MenÃ¼
+        settings.setItem(9, createSectionItem(ChatColor.YELLOW + "Spieler"));
+        settings.setItem(18, createSectionItem(ChatColor.GOLD + "Admin"));
+        settings.setItem(27, createSectionItem(ChatColor.RED + "Server"));
+
+        settings.setItem(SLOT_FRIENDS_TP, createFriendsTeleportItem(player));
+        settings.setItem(SLOT_NPC_CHAT, createNpcChatItem(player));
+        settings.setItem(SLOT_REWARDS, createRewardsItem(player));
+
+        settings.setItem(SLOT_ADMIN_VISIBILITY, createAdminVisibilityItem(player));
+        settings.setItem(SLOT_GAMEMODE_ADMIN, createGamemodeAdminItem(player));
+        settings.setItem(SLOT_NPC_ADMIN, createNpcAdminItem(player));
+        settings.setItem(SLOT_POINTS_ADMIN, createPointsAdminItem(player));
+
+        settings.setItem(SLOT_BACK, createInfoItem(
+                Material.ARROW,
+                ChatColor.RED + "Zurueck",
+                List.of(ChatColor.GRAY + "Zum Lobby-Menue")
+        ));
+
+        fillWithGlass(settings);
         player.openInventory(settings);
     }
+
+    private ItemStack createFriendsTeleportItem(Player player) {
+        boolean enabled = Main.Frdb.getBoolean(player.getName() + ".AllowFriendsTp", false);
+        return createToggleItem(
+                enabled,
+                "Freunde-Teleport",
+                enabled ? "Freunde duerfen sich zu dir teleportieren" : "Freunde duerfen sich nicht zu dir teleportieren",
+                List.of(ChatColor.GRAY + "Klick: Erlaubnis umschalten")
+        );
+    }
+
+    private ItemStack createNpcChatItem(Player player) {
+        boolean enabled = Main.Frdb.getBoolean(player.getName() + ".NpcChatEnabled", true);
+        return createToggleItem(
+                enabled,
+                "NPC-Chat",
+                enabled ? "NPC-Chatnachrichten sichtbar" : "NPC-Chatnachrichten versteckt",
+                List.of(ChatColor.GRAY + "Klick: NPC-Chat umschalten")
+        );
+    }
+
+    private ItemStack createRewardsItem(Player player) {
+        boolean coins = Main.Frdb.getBoolean(player.getName() + ".GetCoins", false);
+        ItemStack item = new ItemStack(coins ? Material.GOLD_INGOT : Material.EMERALD);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName((coins ? ChatColor.GOLD : ChatColor.GREEN) + "Stunden-Belohnung");
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.GRAY + "Aktuell: " + (coins ? ChatColor.GOLD + "80 Coins" : ChatColor.GREEN + "Duellpunkt"));
+            lore.add(ChatColor.GRAY + "Klick: Belohnung wechseln");
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    private ItemStack createAdminVisibilityItem(Player player) {
+        if (!player.hasPermission("Noneless.Admin")) {
+            return createLockedItem("Admin-Anzeige", "Nur fuer Admins verfuegbar");
+        }
+        boolean visible = Main.AOnline.getBoolean(player.getName() + ".Enable", false);
+        return createToggleItem(
+                visible,
+                "Admin-Anzeige",
+                visible ? "Du wirst in /Hilfe angezeigt" : "Du wirst in /Hilfe nicht angezeigt",
+                List.of(ChatColor.GRAY + "Klick: Sichtbarkeit umschalten")
+        );
+    }
+
+    private ItemStack createGamemodeAdminItem(Player player) {
+        if (!player.hasPermission("Noneless.Admin.Gamemode")) {
+            return createLockedItem("Gamemode Verwaltung", "Nur fuer Gamemode-Admins");
+        }
+        return createInfoItem(
+                Material.NETHER_STAR,
+                ChatColor.GOLD + "Gamemode Verwaltung",
+                List.of(
+                        ChatColor.GRAY + "Standard-Gamemodes pro Welt",
+                        ChatColor.GRAY + "und Creative-Override"
+                )
+        );
+    }
+
+    private ItemStack createNpcAdminItem(Player player) {
+        if (!player.hasPermission("nonelesslobby.npc.admin")) {
+            return createLockedItem("NPC Verwaltung", "Nur fuer NPC-Admins");
+        }
+        return createInfoItem(
+                Material.VILLAGER_SPAWN_EGG,
+                ChatColor.DARK_AQUA + "NPC Verwaltung",
+                List.of(
+                        ChatColor.GRAY + "NPCs, Namen, Chats, POIs",
+                        ChatColor.GRAY + "und Gespraeche verwalten"
+                )
+        );
+    }
+
+    private ItemStack createPointsAdminItem(Player player) {
+        if (!player.hasPermission("Noneless.Admin")) {
+            return createLockedItem("Punkte Verwaltung", "Nur fuer Admins verfuegbar");
+        }
+        return createInfoItem(
+                Material.GOLD_BLOCK,
+                ChatColor.GOLD + "Punkte Verwaltung",
+                List.of(
+                        ChatColor.GRAY + "Spieler-Liste oeffnen",
+                        ChatColor.GRAY + "Linksklick: +100 | Shift: +10",
+                        ChatColor.GRAY + "Rechtsklick: -100 | Shift: -10"
+                )
+        );
+    }
+
+    private ItemStack createToggleItem(boolean enabled, String title, String stateLine, List<String> extraLore) {
+        ItemStack item = new ItemStack(enabled ? Material.GREEN_WOOL : Material.RED_WOOL);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName((enabled ? ChatColor.GREEN : ChatColor.RED) + title);
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.GRAY + stateLine);
+            if (extraLore != null) {
+                lore.addAll(extraLore);
+            }
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    private ItemStack createLockedItem(String title, String reason) {
+        return createInfoItem(
+                Material.GRAY_DYE,
+                ChatColor.DARK_GRAY + title,
+                List.of(ChatColor.GRAY + reason)
+        );
+    }
+
+    private ItemStack createSectionItem(String title) {
+        return createInfoItem(Material.BLUE_STAINED_GLASS_PANE, title, null);
+    }
+
+    private ItemStack createInfoItem(Material material, String displayName, List<String> lore) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(displayName);
+            if (lore != null && !lore.isEmpty()) {
+                meta.setLore(lore);
+            }
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    private void fillWithGlass(Inventory inventory) {
+        ItemStack filler = createInfoItem(Material.BLACK_STAINED_GLASS_PANE, ChatColor.DARK_GRAY + " ", null);
+        for (int i = 0; i < inventory.getSize(); i++) {
+            if (inventory.getItem(i) == null) {
+                inventory.setItem(i, filler.clone());
+            }
+        }
+    }
 }
-
-

@@ -236,7 +236,7 @@ public final class LobbyAbilities {
             return;
         }
         for (Ability ability : getActiveAbilities(player.getUniqueId())) {
-            if (getActiveSet(ability).contains(player.getUniqueId())) {
+            if (getActiveSet(ability).contains(player.getUniqueId()) && hasRuntimeAbility(player, ability)) {
                 continue;
             }
             activateRuntime(player, ability);
@@ -331,6 +331,39 @@ public final class LobbyAbilities {
             case SLOW_FALLING -> player.removePotionEffect(PotionEffectType.SLOW_FALLING);
             case NIGHT_VISION -> player.removePotionEffect(PotionEffectType.NIGHT_VISION);
         }
+    }
+
+    private static boolean hasRuntimeAbility(Player player, Ability ability) {
+        if (player == null || ability == null) {
+            return false;
+        }
+        return switch (ability) {
+            case ELYTRA -> {
+                ItemStack chestplate = player.getInventory().getChestplate();
+                yield isLobbyAbilityItem(chestplate) && chestplate.getType() == Material.ELYTRA;
+            }
+            case FIREWORKS -> hasLobbyAbilityItem(player, Material.FIREWORK_ROCKET);
+            case SPEED -> player.hasPotionEffect(PotionEffectType.SPEED);
+            case ULTRA_JUMP -> player.hasPotionEffect(PotionEffectType.JUMP_BOOST);
+            case SLOW_FALLING -> player.hasPotionEffect(PotionEffectType.SLOW_FALLING);
+            case NIGHT_VISION -> player.hasPotionEffect(PotionEffectType.NIGHT_VISION);
+        };
+    }
+
+    private static boolean hasLobbyAbilityItem(Player player, Material type) {
+        ItemStack chestplate = player.getInventory().getChestplate();
+        if (isLobbyAbilityItem(chestplate) && (type == null || chestplate.getType() == type)) {
+            return true;
+        }
+
+        for (ItemStack item : player.getInventory().getStorageContents()) {
+            if (isLobbyAbilityItem(item) && (type == null || item.getType() == type)) {
+                return true;
+            }
+        }
+
+        ItemStack offhand = player.getInventory().getItemInOffHand();
+        return isLobbyAbilityItem(offhand) && (type == null || offhand.getType() == type);
     }
 
     private static void equipElytra(Player player) {

@@ -487,6 +487,25 @@ public class PlayerListener implements Listener {
         }
     }
 
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+    public void onLobbyDamage(org.bukkit.event.entity.EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (!isInLobbyWorld(player)) return;
+        event.setCancelled(true);
+        // Herz- und Sättigungsanzeige auf Maximum halten
+        if (player.getHealth() < player.getMaxHealth()) {
+            player.setHealth(player.getMaxHealth());
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+    public void onLobbyFoodChange(org.bukkit.event.entity.FoodLevelChangeEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (!isInLobbyWorld(player)) return;
+        event.setFoodLevel(20);
+        event.setCancelled(true);
+    }
+
     private boolean isInLobbyWorld(Player player) {
         Location lobbyLocation = ConfigManager.getLobbyLocation();
         World lobbyWorld = lobbyLocation != null ? lobbyLocation.getWorld() : Bukkit.getWorld("world");

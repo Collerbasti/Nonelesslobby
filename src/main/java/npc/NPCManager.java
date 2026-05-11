@@ -42,11 +42,12 @@ import java.util.stream.Collectors;
 public class NPCManager {
 
     private static final long CHAT_HOLOGRAM_FOLLOW_INTERVAL = 10L;
-    
+
     private long chatHologramLifetimeTicks = 20L * 5;
 
     private final Main plugin;
     private final List<NPC> lobbyNPCs;
+    private GameHypeManager gameHypeManager;
     private final Random random;
     private final Map<NPC, BukkitTask> movementTasks;
     private final Map<NPC, BukkitTask> lookTasks;
@@ -373,8 +374,46 @@ public class NPCManager {
         return names;
     }
     
+    /**
+     * Gibt eine unmodifiable Kopie der aktuell gespawnten Lobby-NPCs zurück.
+     * Wird vom GameHypeManager verwendet.
+     */
+    public List<NPC> getLobbyNPCs() {
+        return Collections.unmodifiableList(new ArrayList<>(lobbyNPCs));
+    }
+
+    /** Gibt den GameHypeManager zurück (für das Admin-Menü). */
+    public GameHypeManager getGameHypeManager() {
+        return gameHypeManager;
+    }
+
+    /** Persistiert die Hype-Konfiguration sofort in npc_config.yml. */
+    public void saveGameHypeConfig() {
+        saveNpcConfig();
+    }
+
+    /**
+     * Lässt einen NPC eine Hype-Nachricht sprechen (Hologramm + Chat).
+     * Wird vom GameHypeManager aufgerufen.
+     */
+    public void triggerHypeLine(NPC npc, String message) {
+        if (npc == null || message == null || !npc.isSpawned()) return;
+        try {
+            org.bukkit.entity.Entity entity = npc.getEntity();
+            if (entity == null) return;
+            org.bukkit.Location loc = entity.getLocation();
+            String npcName  = getNPCDisplayName(npc);
+            String formatted = ChatColor.AQUA + npcName + ChatColor.GRAY + ": "
+                    + ChatColor.WHITE + message;
+            for (Player p : filterChatReceivers(getNearbyPlayers(loc, 400))) {
+                p.sendMessage(formatted);
+            }
+            showNpcChatBubble(npc, message);
+        } catch (Exception ignored) { }
+    }
+
     // ===== END GETTER/SETTER =====
-    
+
     public NPCManager(Main plugin) {
         this.plugin = plugin;
         this.lobbyNPCs = new ArrayList<>();
@@ -406,6 +445,7 @@ public class NPCManager {
         if (!this.hologramsAvailable) {
             plugin.getLogger().info("DecentHolograms nicht gefunden - NPC-Sprechblasen bleiben deaktiviert.");
         }
+        gameHypeManager = new GameHypeManager(plugin);
         loadNpcConfig();
         loadNpcData();
         loadPairs();
@@ -419,6 +459,7 @@ public class NPCManager {
         scheduleInitialLobbyReset();
         startPairProximityChecker();
         startPOIRotationTask();
+        gameHypeManager.start(this);
     }
 
     private BukkitTask pairProximityTask;
@@ -709,6 +750,9 @@ public class NPCManager {
         loadConversationSettings();
         loadMandatoryNPCs();
         restartConversationScheduler();
+        if (gameHypeManager != null) {
+            gameHypeManager.load(npcConfig);
+        }
     }
     
     private void loadNpcData() {
@@ -1054,6 +1098,9 @@ public class NPCManager {
     private void saveNpcConfig() {
         if (npcConfig == null) {
             return;
+        }
+        if (gameHypeManager != null) {
+            gameHypeManager.save(npcConfig);
         }
         try {
             npcConfig.save(npcConfigFile);
@@ -2294,6 +2341,9 @@ public class NPCManager {
         if (pairProximityTask != null) {
             pairProximityTask.cancel();
             pairProximityTask = null;
+        }
+        if (gameHypeManager != null) {
+            gameHypeManager.stop();
         }
         try {
             for (NPC npc : lobbyNPCs) {

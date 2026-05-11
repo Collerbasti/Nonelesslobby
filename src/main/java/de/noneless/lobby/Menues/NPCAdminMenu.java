@@ -34,7 +34,8 @@ public class NPCAdminMenu {
     public static final String POI_LIST_TITLE = ChatColor.DARK_GREEN + "Points of Interest";
     public static final String POI_DETAIL_PREFIX = ChatColor.DARK_GREEN + "POI: ";
     public static final String POI_NPC_SELECT_PREFIX = ChatColor.DARK_GREEN + "NPCs für: ";
-    public static final String MANDATORY_NPC_TITLE = ChatColor.GOLD + "Pflicht-NPCs";
+    public static final String MANDATORY_NPC_TITLE  = ChatColor.GOLD + "Pflicht-NPCs";
+    public static final String GAME_HYPE_TITLE       = NPCGameHypeMenu.TITLE;
 
     public static final int SETTINGS_SLOT_HOLOGRAM_HEIGHT = 10;
     public static final int SETTINGS_SLOT_HOLOGRAM_LIFETIME = 13;
@@ -72,6 +73,7 @@ public class NPCAdminMenu {
         inv.setItem(37, createItem(Material.COMPASS, ChatColor.DARK_GREEN + "Points of Interest", ChatColor.GRAY + "POIs in anderen Welten verwalten"));
         inv.setItem(40, createItem(Material.BOOKSHELF, ChatColor.DARK_RED + "Gespräch-Fokus", ChatColor.GRAY + "Filter pro Gespräch setzen"));
         inv.setItem(43, createItem(Material.REDSTONE, ChatColor.GOLD + "Manager Einstellungen", ChatColor.GRAY + "Hologramme, Gespräche und Limits"));
+        inv.setItem(46, createItem(Material.JUKEBOX, ChatColor.LIGHT_PURPLE + "Spiel-Hype", ChatColor.GRAY + "NPCs über Duelle und Booster schwärmen lassen"));
         inv.setItem(49, createItem(Material.ARROW, ChatColor.RED + "Zurück", ChatColor.GRAY + "Zurück zu den Settings"));
         fill(inv);
         player.openInventory(inv);
@@ -426,6 +428,10 @@ public class NPCAdminMenu {
             return ChatColor.DARK_GRAY + "keine";
         }
         return ChatColor.YELLOW + String.join(ChatColor.GRAY + ", ", values);
+    }
+
+    public void openGameHypeMenu(Player player) {
+        new NPCGameHypeMenu().open(player);
     }
 
     private ItemStack createItem(Material material, String name, String... loreLines) {

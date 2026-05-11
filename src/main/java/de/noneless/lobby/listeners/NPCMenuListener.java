@@ -53,7 +53,11 @@ public class NPCMenuListener implements Listener {
         SETTINGS_CONVERSATION_GATHER_DELAY,
         SETTINGS_CONVERSATION_AUDIENCE_RADIUS,
         SETTINGS_CONVERSATION_PREFIX,
-        SETTINGS_CONVERSATIONS_TOGGLE
+        SETTINGS_CONVERSATIONS_TOGGLE,
+        HYPE_ADD_BOOSTER_TEMPLATE,
+        HYPE_ADD_DUEL_TEMPLATE,
+        HYPE_SET_INTERVAL_MIN,
+        HYPE_SET_INTERVAL_MAX
     }
 
     private static class EditContext {
@@ -118,6 +122,8 @@ public class NPCMenuListener implements Listener {
                 menu.openPersonalityList(player);
             } else if (type == Material.REDSTONE) {
                 menu.openSettings(player);
+            } else if (type == Material.JUKEBOX) {
+                menu.openGameHypeMenu(player);
             } else if (type == Material.BARRIER || type == Material.ARROW) {
                 player.closeInventory();
                 new de.noneless.lobby.Menues.Settings().Spawn(player);
@@ -585,7 +591,118 @@ public class NPCMenuListener implements Listener {
             } else if (type == Material.ARROW) {
                 menu.openMain(player);
             }
+        } else if (title.equals(NPCAdminMenu.GAME_HYPE_TITLE)) {
+            // ── Spiel-Hype Konfiguration ──────────────────────────────────────
+            event.setCancelled(true);
+            if (clicked == null || !clicked.hasItemMeta()) return;
+            int slot = event.getSlot();
+            Material type = clicked.getType();
+            npc.GameHypeManager hype = manager.getGameHypeManager();
+            if (hype == null) return;
+
+            // Toggle Booster-Hype
+            if (slot == de.noneless.lobby.Menues.NPCGameHypeMenu.SLOT_BOOSTER_TOGGLE) {
+                hype.setBoosterEnabled(!hype.isBoosterEnabled());
+                saveHypeAndReopen(player);
+                return;
+            }
+            // Toggle Duell-Hype
+            if (slot == de.noneless.lobby.Menues.NPCGameHypeMenu.SLOT_DUEL_TOGGLE) {
+                hype.setDuelEnabled(!hype.isDuelEnabled());
+                saveHypeAndReopen(player);
+                return;
+            }
+            // Min-Intervall
+            if (slot == de.noneless.lobby.Menues.NPCGameHypeMenu.SLOT_INTERVAL_MIN) {
+                if (event.isLeftClick()) {
+                    hype.setIntervalMin(hype.getIntervalMinSeconds() + 30);
+                } else if (event.isRightClick()) {
+                    hype.setIntervalMin(hype.getIntervalMinSeconds() - 30);
+                }
+                saveHypeAndReopen(player);
+                return;
+            }
+            // Max-Intervall
+            if (slot == de.noneless.lobby.Menues.NPCGameHypeMenu.SLOT_INTERVAL_MAX) {
+                if (event.isLeftClick()) {
+                    hype.setIntervalMax(hype.getIntervalMaxSeconds() + 30);
+                } else if (event.isRightClick()) {
+                    hype.setIntervalMax(hype.getIntervalMaxSeconds() - 30);
+                }
+                saveHypeAndReopen(player);
+                return;
+            }
+            // Add Booster-Template
+            if (slot == de.noneless.lobby.Menues.NPCGameHypeMenu.SLOT_ADD_BOOSTER) {
+                beginEdit(player, EditType.HYPE_ADD_BOOSTER_TEMPLATE, null, null,
+                        "§eBooster-Text eingeben (§cabbrechen§e zum Abbruch) §7— Platzhalter: {booster}, {kosten}");
+                return;
+            }
+            // Add Duell-Template
+            if (slot == de.noneless.lobby.Menues.NPCGameHypeMenu.SLOT_ADD_DUEL) {
+                beginEdit(player, EditType.HYPE_ADD_DUEL_TEMPLATE, null, null,
+                        "§eDuell-Text eingeben (§cabbrechen§e zum Abbruch) §7— Platzhalter: {spieler1}, {spieler2}");
+                return;
+            }
+            // Reset Booster-Templates
+            if (slot == de.noneless.lobby.Menues.NPCGameHypeMenu.SLOT_RESET_BOOSTER) {
+                for (int i = hype.getBoosterTemplates().size() - 1; i >= 0; i--) hype.removeBoosterTemplate(i);
+                for (String t : npc.GameHypeManager.getDefaultBoosterTemplates()) hype.addBoosterTemplate(t);
+                saveHypeAndReopen(player);
+                player.sendMessage(ChatColor.GREEN + "Booster-Texte wurden zurückgesetzt.");
+                return;
+            }
+            // Reset Duell-Templates
+            if (slot == de.noneless.lobby.Menues.NPCGameHypeMenu.SLOT_RESET_DUEL) {
+                for (int i = hype.getDuelTemplates().size() - 1; i >= 0; i--) hype.removeDuelTemplate(i);
+                for (String t : npc.GameHypeManager.getDefaultDuelTemplates()) hype.addDuelTemplate(t);
+                saveHypeAndReopen(player);
+                player.sendMessage(ChatColor.GREEN + "Duell-Texte wurden zurückgesetzt.");
+                return;
+            }
+            // Back
+            if (type == Material.ARROW) {
+                menu.openMain(player);
+                return;
+            }
+            // Remove Booster-Template (click on template item)
+            int bStart = de.noneless.lobby.Menues.NPCGameHypeMenu.BOOSTER_TEMPLATE_START;
+            int bEnd   = bStart + de.noneless.lobby.Menues.NPCGameHypeMenu.TEMPLATE_ROW_SIZE;
+            if (slot >= bStart && slot < bEnd && type == Material.BOOK) {
+                int idx = slot - bStart;
+                if (hype.removeBoosterTemplate(idx)) {
+                    player.sendMessage(ChatColor.RED + "Booster-Text entfernt.");
+                }
+                saveHypeAndReopen(player);
+                return;
+            }
+            // Remove Duell-Template (click on template item)
+            int dStart = de.noneless.lobby.Menues.NPCGameHypeMenu.DUEL_TEMPLATE_START;
+            int dEnd   = dStart + de.noneless.lobby.Menues.NPCGameHypeMenu.TEMPLATE_ROW_SIZE;
+            if (slot >= dStart && slot < dEnd && type == Material.BOOK) {
+                int idx = slot - dStart;
+                if (hype.removeDuelTemplate(idx)) {
+                    player.sendMessage(ChatColor.RED + "Duell-Text entfernt.");
+                }
+                saveHypeAndReopen(player);
+            }
         }
+    }
+
+    /** Saves game hype config and reopens the hype menu. */
+    private void saveHypeAndReopen(Player player) {
+        // Save via NPCManager's saveNpcConfig (which calls gameHypeManager.save internally)
+        // We trigger a save by calling a no-op setter that calls saveNpcConfig
+        // Actually we use a direct call since NPCManager exposes saveNpcConfig indirectly
+        // through any setter. Instead, we just reopen the menu — the data is already live
+        // and will be persisted on the next natural save or plugin disable.
+        // For immediate persistence, we use a setter that triggers saveNpcConfig:
+        npc.GameHypeManager hype = manager.getGameHypeManager();
+        if (hype != null) {
+            // Trigger save via a harmless setter round-trip
+            manager.saveGameHypeConfig();
+        }
+        menu.openGameHypeMenu(player);
     }
 
     @EventHandler
@@ -962,6 +1079,60 @@ public class NPCMenuListener implements Listener {
                 // This should not be called directly, toggle happens via button
                 menu.openSettings(player);
                 break;
+            case HYPE_ADD_BOOSTER_TEMPLATE: {
+                npc.GameHypeManager hype = manager.getGameHypeManager();
+                if (hype != null) {
+                    hype.addBoosterTemplate(ChatColor.translateAlternateColorCodes('&', message));
+                    manager.saveGameHypeConfig();
+                    success = true;
+                    player.sendMessage(ChatColor.GREEN + "Booster-Text hinzugefügt.");
+                }
+                menu.openGameHypeMenu(player);
+                break;
+            }
+            case HYPE_ADD_DUEL_TEMPLATE: {
+                npc.GameHypeManager hype = manager.getGameHypeManager();
+                if (hype != null) {
+                    hype.addDuelTemplate(ChatColor.translateAlternateColorCodes('&', message));
+                    manager.saveGameHypeConfig();
+                    success = true;
+                    player.sendMessage(ChatColor.GREEN + "Duell-Text hinzugefügt.");
+                }
+                menu.openGameHypeMenu(player);
+                break;
+            }
+            case HYPE_SET_INTERVAL_MIN: {
+                npc.GameHypeManager hype = manager.getGameHypeManager();
+                try {
+                    int seconds = Integer.parseInt(message);
+                    if (hype != null) {
+                        hype.setIntervalMin(seconds);
+                        manager.saveGameHypeConfig();
+                        success = true;
+                        player.sendMessage(ChatColor.GREEN + "Min-Intervall auf " + seconds + "s gesetzt.");
+                    }
+                } catch (NumberFormatException ex) {
+                    player.sendMessage(ChatColor.RED + "Ungültige Zahl.");
+                }
+                menu.openGameHypeMenu(player);
+                break;
+            }
+            case HYPE_SET_INTERVAL_MAX: {
+                npc.GameHypeManager hype = manager.getGameHypeManager();
+                try {
+                    int seconds = Integer.parseInt(message);
+                    if (hype != null) {
+                        hype.setIntervalMax(seconds);
+                        manager.saveGameHypeConfig();
+                        success = true;
+                        player.sendMessage(ChatColor.GREEN + "Max-Intervall auf " + seconds + "s gesetzt.");
+                    }
+                } catch (NumberFormatException ex) {
+                    player.sendMessage(ChatColor.RED + "Ungültige Zahl.");
+                }
+                menu.openGameHypeMenu(player);
+                break;
+            }
         }
         if (!success) {
             player.sendMessage(ChatColor.RED + "Aktion fehlgeschlagen. Bitte Eingabe prüfen.");

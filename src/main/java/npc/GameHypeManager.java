@@ -18,47 +18,54 @@ import java.util.concurrent.ThreadLocalRandom;
  * Lässt zufällige Lobby-NPCs periodisch über aktive Duelle und Booster
  * im MiniCardGame-Shop schwärmen.
  *
- * <p>Datenzugriff auf das NonelessGame-Plugin erfolgt via Reflection, damit
- * keine Compile-Zeit-Abhängigkeit entsteht.
+ * <p>Daily- und Monthly-Booster werden getrennt verwaltet und mit eigenen
+ * Template-Listen angesprochen. Beim Feuern wird je ein konkreter Booster
+ * aus der jeweiligen Kategorie ausgewählt.
  *
- * <p>Platzhalter in Templates:
+ * <p>Platzhalter:
  * <ul>
- *   <li>Booster:  {@code {booster}} → Booster-Name,  {@code {kosten}} → Kosten in Punkten</li>
- *   <li>Duell:    {@code {spieler1}} {@code {spieler2}} → Spieler-Namen</li>
+ *   <li>Daily/Monthly:  {@code {booster}} → Name,  {@code {kosten}} → Punkte</li>
+ *   <li>Duell:          {@code {spieler1}} {@code {spieler2}}</li>
  * </ul>
  *
- * <p>Konfiguration (in {@code npc_config.yml}, Abschnitt {@code gameHype}):
- * <pre>
- *   gameHype:
- *     boosterEnabled: true
- *     duelEnabled: true
- *     intervalMinSeconds: 120
- *     intervalMaxSeconds: 300
- *     boosterTemplates:
- *       - "..."
- *     duelTemplates:
- *       - "..."
- * </pre>
+ * <p>Slot-Zuordnung (muss mit BoosterRegistry übereinstimmen):
+ * <ul>
+ *   <li>Daily   → Slots 10, 11</li>
+ *   <li>Monthly → Slots 13, 14, 15</li>
+ * </ul>
  */
 public final class GameHypeManager {
 
     private static final String CARD_GAME_PLUGIN = "NonelessGame";
 
-    // Config keys (flat, stored in npcConfig under section "gameHype")
-    private static final String CFG_BOOSTER_ENABLED  = "gameHype.boosterEnabled";
+    /** Slots der Daily-Booster (muss mit BoosterRegistry.DAILY_SLOTS übereinstimmen). */
+    private static final Set<Integer> DAILY_SLOTS   = new HashSet<>(Arrays.asList(10, 11));
+    /** Slots der Monthly-Booster (muss mit BoosterRegistry.MONTHLY_SLOTS übereinstimmen). */
+    private static final Set<Integer> MONTHLY_SLOTS = new HashSet<>(Arrays.asList(13, 14, 15));
+
+    // ── Config keys ───────────────────────────────────────────────────────────
+
+    private static final String CFG_DAILY_ENABLED    = "gameHype.dailyEnabled";
+    private static final String CFG_MONTHLY_ENABLED  = "gameHype.monthlyEnabled";
     private static final String CFG_DUEL_ENABLED     = "gameHype.duelEnabled";
     private static final String CFG_INTERVAL_MIN     = "gameHype.intervalMinSeconds";
     private static final String CFG_INTERVAL_MAX     = "gameHype.intervalMaxSeconds";
-    private static final String CFG_BOOSTER_TEMPLATES = "gameHype.boosterTemplates";
+    private static final String CFG_DAILY_TEMPLATES  = "gameHype.dailyTemplates";
+    private static final String CFG_MONTHLY_TEMPLATES = "gameHype.monthlyTemplates";
     private static final String CFG_DUEL_TEMPLATES   = "gameHype.duelTemplates";
+    // Legacy key for migration
+    private static final String CFG_LEGACY_BOOSTER_TEMPLATES = "gameHype.boosterTemplates";
 
     // ── Configurable state ────────────────────────────────────────────────────
 
-    private boolean boosterEnabled = true;
+    private boolean dailyEnabled   = true;
+    private boolean monthlyEnabled = true;
     private boolean duelEnabled    = true;
     private int intervalMinSeconds = 120;
     private int intervalMaxSeconds = 300;
-    private final List<String> boosterTemplates = new ArrayList<>();
+
+    private final List<String> dailyTemplates   = new ArrayList<>();
+    private final List<String> monthlyTemplates = new ArrayList<>();
     private final List<String> duelTemplates    = new ArrayList<>();
 
     // ── Runtime state ─────────────────────────────────────────────────────────
@@ -71,23 +78,18 @@ public final class GameHypeManager {
 
     public GameHypeManager(Main plugin) {
         this.plugin = plugin;
-        boosterTemplates.addAll(getDefaultBoosterTemplates());
+        dailyTemplates.addAll(getDefaultDailyTemplates());
+        monthlyTemplates.addAll(getDefaultMonthlyTemplates());
         duelTemplates.addAll(getDefaultDuelTemplates());
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
-    /**
-     * Startet den periodischen Hype-Task. Wird vom NPCManager aufgerufen.
-     */
     public void start(NPCManager npcManager) {
         this.manager = npcManager;
         scheduleNext();
     }
 
-    /**
-     * Stoppt den periodischen Hype-Task. Wird beim Server-Shutdown aufgerufen.
-     */
     public void stop() {
         if (task != null) {
             task.cancel();
@@ -98,15 +100,11 @@ public final class GameHypeManager {
     // ── Scheduling ────────────────────────────────────────────────────────────
 
     private void scheduleNext() {
-        if (!boosterEnabled && !duelEnabled) return;
+        if (!dailyEnabled && !monthlyEnabled && !duelEnabled) return;
         int range = Math.max(1, intervalMaxSeconds - intervalMinSeconds);
         long ticks = 20L * (intervalMinSeconds + ThreadLocalRandom.current().nextInt(range));
         task = Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            try {
-                fire();
-            } finally {
-                scheduleNext();
-            }
+            try { fire(); } finally { scheduleNext(); }
         }, ticks);
     }
 
@@ -121,40 +119,41 @@ public final class GameHypeManager {
         if (spawned.isEmpty()) return;
         NPC npc = spawned.get(ThreadLocalRandom.current().nextInt(spawned.size()));
 
-        // Decide type order (random priority)
-        List<String> order = new ArrayList<>();
-        if (boosterEnabled) order.add("booster");
-        if (duelEnabled)    order.add("duel");
-        Collections.shuffle(order);
+        // Build candidate types in random order
+        List<String> types = new ArrayList<>();
+        if (dailyEnabled)   types.add("daily");
+        if (monthlyEnabled) types.add("monthly");
+        if (duelEnabled)    types.add("duel");
+        Collections.shuffle(types);
 
-        String message = null;
-        for (String type : order) {
-            message = "booster".equals(type) ? buildBoosterMessage() : buildDuelMessage();
-            if (message != null) break;
+        for (String type : types) {
+            String msg = switch (type) {
+                case "daily"   -> buildBoosterMessage(dailyTemplates,   DAILY_SLOTS);
+                case "monthly" -> buildBoosterMessage(monthlyTemplates, MONTHLY_SLOTS);
+                case "duel"    -> buildDuelMessage();
+                default        -> null;
+            };
+            if (msg != null) {
+                manager.triggerHypeLine(npc, msg);
+                return;
+            }
         }
-        if (message == null) return;
-
-        manager.triggerHypeLine(npc, message);
     }
 
     // ── Message builders ──────────────────────────────────────────────────────
 
-    private String buildBoosterMessage() {
-        if (boosterTemplates.isEmpty()) return null;
-        List<BoosterEntry> boosters = fetchBoosters();
-        String boosterName;
-        String cost;
-        if (boosters.isEmpty()) {
-            boosterName = "Daily-Booster";
-            cost = "?";
-        } else {
-            BoosterEntry entry = boosters.get(ThreadLocalRandom.current().nextInt(boosters.size()));
-            boosterName = entry.name;
-            cost = String.valueOf(entry.cost);
-        }
-        return randomTemplate(boosterTemplates)
-                .replace("{booster}", boosterName)
-                .replace("{kosten}", cost);
+    /**
+     * Baut eine Booster-Nachricht für die angegebenen Slots.
+     * Wählt einen konkreten Booster zufällig aus den verfügbaren aus.
+     */
+    private String buildBoosterMessage(List<String> templates, Set<Integer> slots) {
+        if (templates.isEmpty()) return null;
+        List<BoosterEntry> boosters = fetchBoosters(slots);
+        if (boosters.isEmpty()) return null; // Keine Booster in dieser Kategorie aktiv
+        BoosterEntry entry = boosters.get(ThreadLocalRandom.current().nextInt(boosters.size()));
+        return randomTemplate(templates)
+                .replace("{booster}", entry.name)
+                .replace("{kosten}", String.valueOf(entry.cost));
     }
 
     private String buildDuelMessage() {
@@ -174,9 +173,11 @@ public final class GameHypeManager {
     // ── Reflection: fetch live data from MiniCardGame ─────────────────────────
 
     /**
-     * Holt die aktuellen Booster aus CardGameState.boosters via Reflection.
+     * Holt Booster aus CardGameState.boosters, gefiltert nach Slot-Nummern.
+     * Jeder Slot entspricht genau einem Booster → bei mehreren Daily-Slots
+     * kommt ein Eintrag pro aktivem Slot zurück.
      */
-    private List<BoosterEntry> fetchBoosters() {
+    private List<BoosterEntry> fetchBoosters(Set<Integer> allowedSlots) {
         List<BoosterEntry> result = new ArrayList<>();
         try {
             Plugin cardGame = Bukkit.getPluginManager().getPlugin(CARD_GAME_PLUGIN);
@@ -188,8 +189,11 @@ public final class GameHypeManager {
             @SuppressWarnings("unchecked")
             Map<Integer, Object> boosters = (Map<Integer, Object>) boostersField.get(null);
 
-            for (Object display : boosters.values()) {
+            for (Map.Entry<Integer, Object> e : boosters.entrySet()) {
+                int slot = e.getKey();
+                if (!allowedSlots.contains(slot)) continue; // Nur passende Kategorie
                 try {
+                    Object display = e.getValue();
                     Method getPack = display.getClass().getMethod("getPack");
                     Object pack = getPack.invoke(display);
                     if (pack == null) continue;
@@ -219,7 +223,7 @@ public final class GameHypeManager {
             @SuppressWarnings("unchecked")
             List<Object> duelle = new ArrayList<>((List<Object>) duelleField.get(null));
 
-            Method isActive  = duellClass.getMethod("isActive");
+            Method isActive   = duellClass.getMethod("isActive");
             Method getPlayer1 = duellClass.getMethod("getPlayer1");
             Method getPlayer2 = duellClass.getMethod("getPlayer2");
 
@@ -231,9 +235,9 @@ public final class GameHypeManager {
                     if (!(boolean) isActive.invoke(duel)) continue;
                     Object d1 = getPlayer1.invoke(duel);
                     Object d2 = getPlayer2.invoke(duel);
-                    String name1 = resolveDuellantName(d1, getPlayer);
-                    String name2 = resolveDuellantName(d2, getPlayer);
-                    result.add(new DuelEntry(name1, name2));
+                    result.add(new DuelEntry(
+                            resolveDuellantName(d1, getPlayer),
+                            resolveDuellantName(d2, getPlayer)));
                 } catch (Exception ignored) { }
             }
         } catch (Exception ignored) { }
@@ -246,7 +250,6 @@ public final class GameHypeManager {
             Player p = (Player) getPlayer.invoke(duellant);
             if (p != null) return p.getName();
         } catch (Exception ignored) { }
-        // BotDuellant — try getProfile().getDisplayName()
         try {
             Method getProfile     = duellant.getClass().getMethod("getProfile");
             Object profile        = getProfile.invoke(duellant);
@@ -259,43 +262,67 @@ public final class GameHypeManager {
     // ── Persistence ───────────────────────────────────────────────────────────
 
     public void load(FileConfiguration cfg) {
-        boosterEnabled     = cfg.getBoolean(CFG_BOOSTER_ENABLED, true);
-        duelEnabled        = cfg.getBoolean(CFG_DUEL_ENABLED, true);
+        dailyEnabled   = cfg.getBoolean(CFG_DAILY_ENABLED,
+                cfg.getBoolean("gameHype.boosterEnabled", true)); // legacy fallback
+        monthlyEnabled = cfg.getBoolean(CFG_MONTHLY_ENABLED, true);
+        duelEnabled    = cfg.getBoolean(CFG_DUEL_ENABLED, true);
         intervalMinSeconds = Math.max(30, cfg.getInt(CFG_INTERVAL_MIN, 120));
         intervalMaxSeconds = Math.max(intervalMinSeconds + 10, cfg.getInt(CFG_INTERVAL_MAX, 300));
 
-        List<String> bt = cfg.getStringList(CFG_BOOSTER_TEMPLATES);
-        if (!bt.isEmpty()) {
-            boosterTemplates.clear();
-            boosterTemplates.addAll(bt);
+        List<String> dt_raw = cfg.getStringList(CFG_DAILY_TEMPLATES);
+        if (!dt_raw.isEmpty()) {
+            dailyTemplates.clear();
+            dailyTemplates.addAll(dt_raw);
+        } else {
+            // Migration: falls alte boosterTemplates vorhanden, übernehmen
+            List<String> legacy = cfg.getStringList(CFG_LEGACY_BOOSTER_TEMPLATES);
+            if (!legacy.isEmpty()) {
+                dailyTemplates.clear();
+                dailyTemplates.addAll(legacy);
+            }
         }
-        List<String> dt = cfg.getStringList(CFG_DUEL_TEMPLATES);
-        if (!dt.isEmpty()) {
+
+        List<String> mt_raw = cfg.getStringList(CFG_MONTHLY_TEMPLATES);
+        if (!mt_raw.isEmpty()) {
+            monthlyTemplates.clear();
+            monthlyTemplates.addAll(mt_raw);
+        }
+
+        List<String> duel_raw = cfg.getStringList(CFG_DUEL_TEMPLATES);
+        if (!duel_raw.isEmpty()) {
             duelTemplates.clear();
-            duelTemplates.addAll(dt);
+            duelTemplates.addAll(duel_raw);
         }
     }
 
     public void save(FileConfiguration cfg) {
-        cfg.set(CFG_BOOSTER_ENABLED,   boosterEnabled);
-        cfg.set(CFG_DUEL_ENABLED,      duelEnabled);
-        cfg.set(CFG_INTERVAL_MIN,      intervalMinSeconds);
-        cfg.set(CFG_INTERVAL_MAX,      intervalMaxSeconds);
-        cfg.set(CFG_BOOSTER_TEMPLATES, new ArrayList<>(boosterTemplates));
-        cfg.set(CFG_DUEL_TEMPLATES,    new ArrayList<>(duelTemplates));
+        cfg.set(CFG_DAILY_ENABLED,    dailyEnabled);
+        cfg.set(CFG_MONTHLY_ENABLED,  monthlyEnabled);
+        cfg.set(CFG_DUEL_ENABLED,     duelEnabled);
+        cfg.set(CFG_INTERVAL_MIN,     intervalMinSeconds);
+        cfg.set(CFG_INTERVAL_MAX,     intervalMaxSeconds);
+        cfg.set(CFG_DAILY_TEMPLATES,  new ArrayList<>(dailyTemplates));
+        cfg.set(CFG_MONTHLY_TEMPLATES, new ArrayList<>(monthlyTemplates));
+        cfg.set(CFG_DUEL_TEMPLATES,   new ArrayList<>(duelTemplates));
+        // Alten Key entfernen, damit keine veralteten Daten übrig bleiben
+        cfg.set("gameHype.boosterEnabled",  null);
+        cfg.set("gameHype.boosterTemplates", null);
     }
 
     // ── Public API (for admin menu) ───────────────────────────────────────────
 
-    public boolean isBoosterEnabled()    { return boosterEnabled; }
-    public boolean isDuelEnabled()       { return duelEnabled; }
-    public int getIntervalMinSeconds()   { return intervalMinSeconds; }
-    public int getIntervalMaxSeconds()   { return intervalMaxSeconds; }
+    public boolean isDailyEnabled()    { return dailyEnabled; }
+    public boolean isMonthlyEnabled()  { return monthlyEnabled; }
+    public boolean isDuelEnabled()     { return duelEnabled; }
+    public int getIntervalMinSeconds() { return intervalMinSeconds; }
+    public int getIntervalMaxSeconds() { return intervalMaxSeconds; }
 
-    public List<String> getBoosterTemplates() { return Collections.unmodifiableList(boosterTemplates); }
+    public List<String> getDailyTemplates()   { return Collections.unmodifiableList(dailyTemplates); }
+    public List<String> getMonthlyTemplates() { return Collections.unmodifiableList(monthlyTemplates); }
     public List<String> getDuelTemplates()    { return Collections.unmodifiableList(duelTemplates); }
 
-    public void setBoosterEnabled(boolean v) { boosterEnabled = v; }
+    public void setDailyEnabled(boolean v)   { dailyEnabled = v; }
+    public void setMonthlyEnabled(boolean v) { monthlyEnabled = v; }
     public void setDuelEnabled(boolean v)    { duelEnabled = v; }
 
     public void setIntervalMin(int seconds) {
@@ -307,20 +334,30 @@ public final class GameHypeManager {
         intervalMaxSeconds = Math.max(intervalMinSeconds + 10, seconds);
     }
 
-    public void addBoosterTemplate(String t) {
-        if (t != null && !t.isBlank()) boosterTemplates.add(t.trim());
+    // Daily templates
+    public void addDailyTemplate(String t) {
+        if (t != null && !t.isBlank()) dailyTemplates.add(t.trim());
     }
-
-    public boolean removeBoosterTemplate(int index) {
-        if (index < 0 || index >= boosterTemplates.size()) return false;
-        boosterTemplates.remove(index);
+    public boolean removeDailyTemplate(int index) {
+        if (index < 0 || index >= dailyTemplates.size()) return false;
+        dailyTemplates.remove(index);
         return true;
     }
 
+    // Monthly templates
+    public void addMonthlyTemplate(String t) {
+        if (t != null && !t.isBlank()) monthlyTemplates.add(t.trim());
+    }
+    public boolean removeMonthlyTemplate(int index) {
+        if (index < 0 || index >= monthlyTemplates.size()) return false;
+        monthlyTemplates.remove(index);
+        return true;
+    }
+
+    // Duel templates
     public void addDuelTemplate(String t) {
         if (t != null && !t.isBlank()) duelTemplates.add(t.trim());
     }
-
     public boolean removeDuelTemplate(int index) {
         if (index < 0 || index >= duelTemplates.size()) return false;
         duelTemplates.remove(index);
@@ -329,13 +366,23 @@ public final class GameHypeManager {
 
     // ── Defaults ──────────────────────────────────────────────────────────────
 
-    public static List<String> getDefaultBoosterTemplates() {
+    public static List<String> getDefaultDailyTemplates() {
         return Arrays.asList(
-                "Psst! Der §e{booster}§f-Booster ist gerade für §a{kosten} Punkte§f erhältlich!",
-                "Hey, habt ihr schon den §e{booster}§f-Booster gesehen? Nur §a{kosten} Punkte§f!",
-                "§e{booster}§f für §a{kosten} Punkte§f - das ist ein echtes Schnäppchen!",
-                "Falls ihr neue Karten wollt: §e{booster}§f im Shop für §a{kosten} Punkte§f!",
-                "Ich hab gehört, der §e{booster}§f-Booster lohnt sich sehr!"
+                "Psst! Der §e{booster}§f-Booster ist heute für §a{kosten} Punkte§f erhältlich!",
+                "Der tägliche §e{booster}§f-Booster wartet auf euch - nur §a{kosten} Punkte§f!",
+                "Heute im Shop: §e{booster}§f für §a{kosten} Punkte§f. Lohnt sich!",
+                "Habt ihr schon den heutigen §e{booster}§f-Booster geholt? §a{kosten} Punkte§f!",
+                "§e{booster}§f ist der Daily-Booster des Tages - §a{kosten} Punkte§f!"
+        );
+    }
+
+    public static List<String> getDefaultMonthlyTemplates() {
+        return Arrays.asList(
+                "Dieser Monat gibt es den §b{booster}§f-Booster für §a{kosten} Punkte§f!",
+                "Der Monats-Booster §b{booster}§f ist noch für §a{kosten} Punkte§f erhältlich!",
+                "Habt ihr schon den §b{booster}§f-Monats-Booster? Nur §a{kosten} Punkte§f!",
+                "§b{booster}§f ist der Booster des Monats - §a{kosten} Punkte§f. Nicht verpassen!",
+                "Tipp des Monats: §b{booster}§f für §a{kosten} Punkte§f im Shop!"
         );
     }
 

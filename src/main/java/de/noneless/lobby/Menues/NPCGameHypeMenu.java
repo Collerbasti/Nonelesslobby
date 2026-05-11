@@ -19,45 +19,46 @@ import java.util.List;
  *
  * <p>Layout (54 Slots):
  * <pre>
- *  Row 0 (0-8):   Header-Leiste
- *  Row 1 (9-17):  Steuerung: Booster-Toggle · Duell-Toggle · Min-Intervall · Max-Intervall
- *  Row 2 (18-26): Booster-Templates (bis zu 8; Linksklick = entfernen)
- *  Row 3 (27-35): Duell-Templates   (bis zu 8; Linksklick = entfernen)
- *  Row 4-5 (36-53): untere Leiste mit Aktions-Buttons
+ *  Row 0  ( 0- 8):  Glas-Header
+ *  Row 1  ( 9-17):  Daily-Toggle | Monthly-Toggle | Duell-Toggle | Min-Intervall | Max-Intervall
+ *  Row 2  (18-26):  [GOLD]  Daily-Header  + bis zu 8 Daily-Templates   (Slots 19-26)
+ *  Row 3  (27-35):  [AQUA]  Monthly-Header + bis zu 8 Monthly-Templates (Slots 28-35)
+ *  Row 4  (36-44):  [ROT]   Duell-Header  + bis zu 8 Duell-Templates   (Slots 37-44)
+ *  Row 5  (45-53):  + Daily | + Monthly | + Duell | Reset Daily | Reset Monthly | Reset Duell | Info | Back
  * </pre>
- *
- * Platzhalter in Templates:
- * <ul>
- *   <li>Booster: {@code {booster}} {@code {kosten}}</li>
- *   <li>Duell:   {@code {spieler1}} {@code {spieler2}}</li>
- * </ul>
  */
 public class NPCGameHypeMenu {
 
     public static final String TITLE = ChatColor.DARK_PURPLE + "Spiel-Hype Konfiguration";
 
-    // Control row (row 1)
-    public static final int SLOT_BOOSTER_TOGGLE  = 10;
-    public static final int SLOT_DUEL_TOGGLE     = 13;
-    public static final int SLOT_INTERVAL_MIN    = 16;
-    public static final int SLOT_INTERVAL_MAX    = 17;
+    // ── Steuerungszeile (Row 1) ───────────────────────────────────────────────
+    public static final int SLOT_DAILY_TOGGLE   = 10;
+    public static final int SLOT_MONTHLY_TOGGLE = 12;
+    public static final int SLOT_DUEL_TOGGLE    = 14;
+    public static final int SLOT_INTERVAL_MIN   = 16;
+    public static final int SLOT_INTERVAL_MAX   = 17;
 
-    // Template section headers (row 2 / 3 left edge)
-    public static final int SLOT_BOOSTER_HEADER  = 18;
-    public static final int SLOT_DUEL_HEADER     = 27;
+    // ── Template-Abschnitte ───────────────────────────────────────────────────
+    public static final int SLOT_DAILY_HEADER    = 18;
+    public static final int DAILY_TEMPLATE_START = 19; // 19-26 (max 8)
 
-    // Template slots
-    public static final int BOOSTER_TEMPLATE_START = 19; // 19-26 (max 8)
-    public static final int DUEL_TEMPLATE_START    = 28; // 28-35 (max 8)
-    public static final int TEMPLATE_ROW_SIZE      = 8;
+    public static final int SLOT_MONTHLY_HEADER    = 27;
+    public static final int MONTHLY_TEMPLATE_START = 28; // 28-35 (max 8)
 
-    // Bottom action bar (row 5)
-    public static final int SLOT_ADD_BOOSTER   = 45;
-    public static final int SLOT_ADD_DUEL      = 46;
-    public static final int SLOT_RESET_BOOSTER = 48;
-    public static final int SLOT_RESET_DUEL    = 50;
-    public static final int SLOT_INFO          = 52;
-    public static final int SLOT_BACK          = 53;
+    public static final int SLOT_DUEL_HEADER    = 36;
+    public static final int DUEL_TEMPLATE_START = 37; // 37-44 (max 8)
+
+    public static final int TEMPLATE_ROW_SIZE = 8;
+
+    // ── Aktionsleiste (Row 5) ─────────────────────────────────────────────────
+    public static final int SLOT_ADD_DAILY    = 45;
+    public static final int SLOT_ADD_MONTHLY  = 46;
+    public static final int SLOT_ADD_DUEL     = 47;
+    public static final int SLOT_RESET_DAILY  = 48;
+    public static final int SLOT_RESET_MONTHLY = 49;
+    public static final int SLOT_RESET_DUEL   = 50;
+    public static final int SLOT_INFO         = 52;
+    public static final int SLOT_BACK         = 53;
 
     private final NPCManager manager;
 
@@ -71,28 +72,34 @@ public class NPCGameHypeMenu {
         Inventory inv = Bukkit.createInventory(null, 54, TITLE);
         GameHypeManager hype = manager.getGameHypeManager();
 
-        // ── Row 0: Glass header ───────────────────────────────────────────────
-        fillRow(inv, 0, Material.GRAY_STAINED_GLASS_PANE, " ");
+        // Row 0: Glas-Header
+        for (int i = 0; i < 9; i++) inv.setItem(i, glass());
 
-        // ── Row 1: Toggles & intervals ────────────────────────────────────────
-        boolean bEn = hype.isBoosterEnabled();
-        inv.setItem(SLOT_BOOSTER_TOGGLE, createToggle(
-                bEn,
-                ChatColor.GOLD + "Booster-Hype",
-                "NPCs schwärmen über aktuelle Booster",
+        // ── Row 1: Toggles & Intervalle ───────────────────────────────────────
+        inv.setItem(SLOT_DAILY_TOGGLE, createToggle(
+                hype.isDailyEnabled(),
+                ChatColor.GOLD + "Daily-Hype",
+                Material.SUNFLOWER,
+                "NPCs schwärmen über die täglichen Booster",
                 "{booster} = Booster-Name",
-                "{kosten} = Preis in Punkten"
+                "{kosten}  = Preis in Punkten"
         ));
-
-        boolean dEn = hype.isDuelEnabled();
+        inv.setItem(SLOT_MONTHLY_TOGGLE, createToggle(
+                hype.isMonthlyEnabled(),
+                ChatColor.AQUA + "Monthly-Hype",
+                Material.PRISMARINE_CRYSTALS,
+                "NPCs schwärmen über den Monats-Booster",
+                "{booster} = Booster-Name",
+                "{kosten}  = Preis in Punkten"
+        ));
         inv.setItem(SLOT_DUEL_TOGGLE, createToggle(
-                dEn,
+                hype.isDuelEnabled(),
                 ChatColor.RED + "Duell-Hype",
+                Material.DIAMOND_SWORD,
                 "NPCs schwärmen über aktive Duelle",
                 "{spieler1} = Spieler 1",
                 "{spieler2} = Spieler 2"
         ));
-
         inv.setItem(SLOT_INTERVAL_MIN, createItem(Material.CLOCK,
                 ChatColor.YELLOW + "Min. Intervall: " + ChatColor.WHITE + hype.getIntervalMinSeconds() + "s",
                 ChatColor.GRAY + "Mindestwartezeit zwischen Hype-Nachrichten",
@@ -104,68 +111,88 @@ public class NPCGameHypeMenu {
                 ChatColor.DARK_GRAY + "Linksklick: +30s   Rechtsklick: -30s"
         ));
 
-        // ── Row 2: Booster templates ──────────────────────────────────────────
-        inv.setItem(SLOT_BOOSTER_HEADER, createItem(Material.PAPER,
-                ChatColor.GOLD + "── Booster-Texte ──",
-                ChatColor.GRAY + "Klicke einen Text zum Entfernen"
+        // ── Row 2: Daily-Templates ────────────────────────────────────────────
+        inv.setItem(SLOT_DAILY_HEADER, createItem(Material.SUNFLOWER,
+                ChatColor.GOLD + "── Daily-Texte ──",
+                ChatColor.GRAY + "Platzhalter: {booster}, {kosten}",
+                ChatColor.RED  + "Template anklicken zum Entfernen"
         ));
-        List<String> bt = hype.getBoosterTemplates();
-        for (int i = 0; i < Math.min(bt.size(), TEMPLATE_ROW_SIZE); i++) {
-            inv.setItem(BOOSTER_TEMPLATE_START + i, createTemplateItem(bt.get(i), i));
+        List<String> daily = hype.getDailyTemplates();
+        for (int i = 0; i < Math.min(daily.size(), TEMPLATE_ROW_SIZE); i++) {
+            inv.setItem(DAILY_TEMPLATE_START + i, createTemplateItem(daily.get(i), i, ChatColor.GOLD));
         }
 
-        // ── Row 3: Duel templates ─────────────────────────────────────────────
-        inv.setItem(SLOT_DUEL_HEADER, createItem(Material.PAPER,
+        // ── Row 3: Monthly-Templates ──────────────────────────────────────────
+        inv.setItem(SLOT_MONTHLY_HEADER, createItem(Material.PRISMARINE_CRYSTALS,
+                ChatColor.AQUA + "── Monthly-Texte ──",
+                ChatColor.GRAY + "Platzhalter: {booster}, {kosten}",
+                ChatColor.RED  + "Template anklicken zum Entfernen"
+        ));
+        List<String> monthly = hype.getMonthlyTemplates();
+        for (int i = 0; i < Math.min(monthly.size(), TEMPLATE_ROW_SIZE); i++) {
+            inv.setItem(MONTHLY_TEMPLATE_START + i, createTemplateItem(monthly.get(i), i, ChatColor.AQUA));
+        }
+
+        // ── Row 4: Duell-Templates ────────────────────────────────────────────
+        inv.setItem(SLOT_DUEL_HEADER, createItem(Material.DIAMOND_SWORD,
                 ChatColor.RED + "── Duell-Texte ──",
-                ChatColor.GRAY + "Klicke einen Text zum Entfernen"
+                ChatColor.GRAY + "Platzhalter: {spieler1}, {spieler2}",
+                ChatColor.RED  + "Template anklicken zum Entfernen"
         ));
-        List<String> dt = hype.getDuelTemplates();
-        for (int i = 0; i < Math.min(dt.size(), TEMPLATE_ROW_SIZE); i++) {
-            inv.setItem(DUEL_TEMPLATE_START + i, createTemplateItem(dt.get(i), i));
+        List<String> duel = hype.getDuelTemplates();
+        for (int i = 0; i < Math.min(duel.size(), TEMPLATE_ROW_SIZE); i++) {
+            inv.setItem(DUEL_TEMPLATE_START + i, createTemplateItem(duel.get(i), i, ChatColor.RED));
         }
 
-        // ── Bottom action bar ─────────────────────────────────────────────────
-        inv.setItem(SLOT_ADD_BOOSTER, createItem(Material.LIME_DYE,
-                ChatColor.GREEN + "+ Booster-Text hinzufügen",
-                ChatColor.GRAY + "Gibt Platzhalter: {booster}, {kosten}"
+        // ── Row 5: Aktionsleiste ──────────────────────────────────────────────
+        inv.setItem(SLOT_ADD_DAILY, createItem(Material.LIME_DYE,
+                ChatColor.GREEN + "+ Daily-Text",
+                ChatColor.GRAY + "Neuen Daily-Hype-Text hinzufügen",
+                ChatColor.DARK_GRAY + "Platzhalter: {booster}, {kosten}"
         ));
-        inv.setItem(SLOT_ADD_DUEL, createItem(Material.LIME_DYE,
-                ChatColor.GREEN + "+ Duell-Text hinzufügen",
-                ChatColor.GRAY + "Platzhalter: {spieler1}, {spieler2}"
+        inv.setItem(SLOT_ADD_MONTHLY, createItem(Material.CYAN_DYE,
+                ChatColor.AQUA + "+ Monthly-Text",
+                ChatColor.GRAY + "Neuen Monthly-Hype-Text hinzufügen",
+                ChatColor.DARK_GRAY + "Platzhalter: {booster}, {kosten}"
         ));
-        inv.setItem(SLOT_RESET_BOOSTER, createItem(Material.ORANGE_DYE,
-                ChatColor.GOLD + "Booster-Texte zurücksetzen",
-                ChatColor.GRAY + "Setzt Standard-Texte wieder her"
+        inv.setItem(SLOT_ADD_DUEL, createItem(Material.PINK_DYE,
+                ChatColor.LIGHT_PURPLE + "+ Duell-Text",
+                ChatColor.GRAY + "Neuen Duell-Hype-Text hinzufügen",
+                ChatColor.DARK_GRAY + "Platzhalter: {spieler1}, {spieler2}"
+        ));
+        inv.setItem(SLOT_RESET_DAILY, createItem(Material.ORANGE_DYE,
+                ChatColor.GOLD + "Daily zurücksetzen",
+                ChatColor.GRAY + "Standard-Daily-Texte wiederherstellen"
+        ));
+        inv.setItem(SLOT_RESET_MONTHLY, createItem(Material.ORANGE_DYE,
+                ChatColor.GOLD + "Monthly zurücksetzen",
+                ChatColor.GRAY + "Standard-Monthly-Texte wiederherstellen"
         ));
         inv.setItem(SLOT_RESET_DUEL, createItem(Material.ORANGE_DYE,
-                ChatColor.GOLD + "Duell-Texte zurücksetzen",
-                ChatColor.GRAY + "Setzt Standard-Texte wieder her"
+                ChatColor.GOLD + "Duell zurücksetzen",
+                ChatColor.GRAY + "Standard-Duell-Texte wiederherstellen"
         ));
         inv.setItem(SLOT_INFO, createItem(Material.BOOK,
                 ChatColor.AQUA + "Platzhalter-Info",
-                ChatColor.GRAY + "Booster: §e{booster}§7, §e{kosten}",
-                ChatColor.GRAY + "Duell:   §c{spieler1}§7, §c{spieler2}",
-                ChatColor.DARK_GRAY + "Farben: &e, &c, &f, &a usw.",
-                ChatColor.DARK_GRAY + "§-Codes werden ebenfalls unterstützt"
+                ChatColor.GOLD  + "Daily/Monthly: {booster}, {kosten}",
+                ChatColor.RED   + "Duell: {spieler1}, {spieler2}",
+                ChatColor.DARK_GRAY + "Farben mit &e, &c, &a, &f usw.",
+                ChatColor.DARK_GRAY + "§-Codes werden auch unterstützt"
         ));
         inv.setItem(SLOT_BACK, createItem(Material.ARROW,
                 ChatColor.RED + "Zurück",
                 ChatColor.GRAY + "Zurück zur NPC Verwaltung"
         ));
 
-        // Fill remaining bottom row slots with glass
-        for (int s : new int[]{36,37,38,39,40,41,42,43,44,47,49,51}) {
-            if (inv.getItem(s) == null) {
-                inv.setItem(s, glass(" "));
-            }
-        }
+        // Restliche Slots in Row 5 mit Glas füllen
+        inv.setItem(51, glass());
 
         player.openInventory(inv);
     }
 
     // ── Item helpers ──────────────────────────────────────────────────────────
 
-    private ItemStack createToggle(boolean enabled, String name, String... loreLines) {
+    private ItemStack createToggle(boolean enabled, String name, Material icon, String... loreLines) {
         Material mat = enabled ? Material.LIME_DYE : Material.RED_DYE;
         String status = enabled
                 ? ChatColor.GREEN + "✔ Aktiviert"
@@ -173,9 +200,7 @@ public class NPCGameHypeMenu {
         List<String> lore = new ArrayList<>();
         lore.add(status);
         lore.add(ChatColor.DARK_GRAY + "Klicken zum Umschalten");
-        for (String line : loreLines) {
-            lore.add(ChatColor.GRAY + line);
-        }
+        for (String line : loreLines) lore.add(ChatColor.GRAY + line);
         ItemStack item = new ItemStack(mat);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
@@ -186,13 +211,15 @@ public class NPCGameHypeMenu {
         return item;
     }
 
-    private ItemStack createTemplateItem(String template, int index) {
+    private ItemStack createTemplateItem(String template, int index, ChatColor accent) {
         ItemStack item = new ItemStack(Material.BOOK);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(ChatColor.WHITE + template);
+            // Farbcodes im Template für Anzeige auflösen
+            String display = ChatColor.translateAlternateColorCodes('&', template);
+            meta.setDisplayName(ChatColor.WHITE + display);
             List<String> lore = new ArrayList<>();
-            lore.add(ChatColor.DARK_GRAY + "Index: " + index);
+            lore.add(accent + "" + ChatColor.BOLD + "Index " + index);
             lore.add(ChatColor.RED + "Linksklick: Entfernen");
             meta.setLore(lore);
             item.setItemMeta(meta);
@@ -213,20 +240,13 @@ public class NPCGameHypeMenu {
         return item;
     }
 
-    private ItemStack glass(String name) {
+    private ItemStack glass() {
         ItemStack item = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(name);
+            meta.setDisplayName(" ");
             item.setItemMeta(meta);
         }
         return item;
-    }
-
-    private void fillRow(Inventory inv, int row, Material mat, String name) {
-        ItemStack pane = glass(name);
-        for (int i = row * 9; i < row * 9 + 9; i++) {
-            inv.setItem(i, pane);
-        }
     }
 }

@@ -189,6 +189,9 @@ public final class LobbyAbilities {
         if (!requireLobbyWorld(player) || !requireGranted(player, ability)) {
             return false;
         }
+        if (!requireOnGround(player)) {
+            return false;
+        }
         if (isActive(player.getUniqueId(), ability)) {
             deactivate(player, ability, true);
             player.sendMessage(ChatColor.GRAY + ability.getDisplayName() + " deaktiviert.");
@@ -411,6 +414,14 @@ public final class LobbyAbilities {
             return true;
         }
         player.sendMessage(ChatColor.RED + "Lobby-Fähigkeiten funktionieren nur in der gesetzten Lobbywelt.");
+        return false;
+    }
+
+    private static boolean requireOnGround(Player player) {
+        if (player.isOnGround()) {
+            return true;
+        }
+        player.sendMessage(ChatColor.RED + "Du musst auf dem Boden stehen, um Lobby-Perks zu aktivieren oder deaktivieren.");
         return false;
     }
 

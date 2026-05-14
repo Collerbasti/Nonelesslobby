@@ -14,9 +14,14 @@ import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
 import net.citizensnpcs.api.ai.Navigator;
 import net.citizensnpcs.trait.SkinTrait;
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
+import net.md_5.bungee.api.chat.TextComponent;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.plugin.Plugin;
 
 import de.noneless.lobby.Main;
 
@@ -42,6 +47,8 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class NPCManager {
+    private static final String CARDGAME_PLUGIN_NAME = "NonelessGame";
+    private static final String CARDGAME_BOT_SOURCE = "NonelessGame.BotDuellants";
 
     private static final long CHAT_HOLOGRAM_FOLLOW_INTERVAL = 10L;
 
@@ -98,11 +105,17 @@ public class NPCManager {
         final String id;
         final String name;
         final String skin;
+        final String deck;
+        final String difficulty;
+        final String type;
 
-        ExternalNpcProfile(String id, String name, String skin) {
+        ExternalNpcProfile(String id, String name, String skin, String deck, String difficulty, String type) {
             this.id = id;
             this.name = name;
             this.skin = skin;
+            this.deck = deck;
+            this.difficulty = difficulty;
+            this.type = type;
         }
 
         static ExternalNpcProfile fromMap(Map<String, String> values) {
@@ -116,7 +129,10 @@ public class NPCManager {
             return new ExternalNpcProfile(
                     values.getOrDefault("id", name),
                     ChatColor.translateAlternateColorCodes('&', name),
-                    values.getOrDefault("skin", ""));
+                    values.getOrDefault("skin", ""),
+                    values.getOrDefault("deck", ""),
+                    values.getOrDefault("difficulty", ""),
+                    values.getOrDefault("type", ""));
         }
     }
 
@@ -2056,6 +2072,12 @@ public class NPCManager {
             npc.data().setPersistent("external-source", source);
             npc.data().set("external-id", profile.id);
             npc.data().setPersistent("external-id", profile.id);
+            npc.data().set("external-deck", profile.deck);
+            npc.data().setPersistent("external-deck", profile.deck);
+            npc.data().set("external-difficulty", profile.difficulty);
+            npc.data().setPersistent("external-difficulty", profile.difficulty);
+            npc.data().set("external-type", profile.type);
+            npc.data().setPersistent("external-type", profile.type);
             applyExternalSkin(npc, profile.skin);
 
             boolean spawned = npc.spawn(spawnLocation);
@@ -2697,6 +2719,9 @@ public class NPCManager {
         if (player == null || entityId == null) return false;
         NPC npc = entityNpcMap.get(entityId);
         if (npc == null) return false;
+        if (isCardGameBotNpc(npc)) {
+            return triggerCardGameBotInteraction(player, npc);
+        }
         List<Player> listeners = new ArrayList<>();
         listeners.add(player);
         String message = resolveAmbientTemplate(npc, listeners);
@@ -2707,6 +2732,71 @@ public class NPCManager {
         }
         showNpcChatBubble(npc, message);
         return true;
+    }
+
+    private boolean triggerCardGameBotInteraction(Player player, NPC npc) {
+        String botId = getNpcDataString(npc, "external-id");
+        if (botId == null || botId.isBlank()) {
+            return false;
+        }
+        String npcName = getNPCDisplayName(npc);
+        Plugin cardGame = Bukkit.getPluginManager().getPlugin(CARDGAME_PLUGIN_NAME);
+        if (cardGame == null || !cardGame.isEnabled()) {
+            player.sendMessage(ChatColor.RED + "Das Kartenspiel ist gerade nicht verfuegbar.");
+            return true;
+        }
+
+        try {
+            Object available = cardGame.getClass()
+                    .getMethod("isLobbyBotDuelAvailable", Player.class, String.class)
+                    .invoke(cardGame, player, botId);
+            if (!(available instanceof Boolean) || !((Boolean) available)) {
+                String lockMessage = "";
+                try {
+                    Object raw = cardGame.getClass()
+                            .getMethod("getLobbyBotLockMessage", Player.class, String.class)
+                            .invoke(cardGame, player, botId);
+                    if (raw != null) {
+                        lockMessage = raw.toString();
+                    }
+                } catch (NoSuchMethodException ignored) { }
+                if (lockMessage == null || lockMessage.isBlank()) {
+                    lockMessage = "Ich bin fuer dich noch nicht freigeschaltet.";
+                }
+                player.sendMessage(ChatColor.AQUA + npcName + ChatColor.GRAY + ": " + ChatColor.RED + lockMessage);
+                showNpcChatBubble(npc, lockMessage);
+                return true;
+            }
+        } catch (Exception e) {
+            plugin.getLogger().warning("Bot-NPC-Freischaltung konnte nicht geprueft werden: " + e.getMessage());
+            player.sendMessage(ChatColor.RED + "Dieses Bot-Duell kann gerade nicht gestartet werden.");
+            return true;
+        }
+
+        String message = "Bock auf ein Spiel gegen mich?";
+        if (isNpcChatEnabled(player)) {
+            TextComponent line = new TextComponent(ChatColor.AQUA + npcName + ChatColor.GRAY + ": " + ChatColor.WHITE + message + " ");
+            TextComponent accept = new TextComponent(ChatColor.GREEN + "" + ChatColor.BOLD + "[ANNEHMEN]");
+            accept.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nonelessgame:lobbybotduel " + botId));
+            accept.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
+                    new ComponentBuilder(ChatColor.YELLOW + "Deck und Arena fuer dieses Bot-Duell waehlen").create()));
+            line.addExtra(accept);
+            player.spigot().sendMessage(line);
+        }
+        showNpcChatBubble(npc, message);
+        return true;
+    }
+
+    private boolean isCardGameBotNpc(NPC npc) {
+        return CARDGAME_BOT_SOURCE.equals(getNpcDataString(npc, "external-source"));
+    }
+
+    private String getNpcDataString(NPC npc, String key) {
+        if (npc == null || key == null) {
+            return null;
+        }
+        Object value = npc.data().get(key);
+        return value != null ? String.valueOf(value) : null;
     }
 
     private void showNpcChatBubble(NPC npc, String rawMessage) {
@@ -3537,7 +3627,7 @@ public class NPCManager {
     }
     
     private String resolveAmbientTemplate(NPC npc, List<Player> listeners) {
-        List<String> templates = getChatTemplatesForNPC(npc);
+        List<String> templates = getChatTemplatesForNPC(npc, listeners);
         if (templates.isEmpty()) {
             return null;
         }
@@ -3926,8 +4016,9 @@ public class NPCManager {
         );
     }
     
-    private List<String> getChatTemplatesForNPC(NPC npc) {
-        List<String> templates = new ArrayList<>(ambientChatLines);
+    private List<String> getChatTemplatesForNPC(NPC npc, List<Player> listeners) {
+        List<String> templates = isCardGameBotNpc(npc) ? new ArrayList<>() : new ArrayList<>(ambientChatLines);
+        templates.addAll(getExternalChatTemplates(npc, listeners));
         List<String> personalities = npcAssignedPersonalities.get(npc);
         if (personalities != null) {
             for (String personality : personalities) {
@@ -3939,6 +4030,55 @@ public class NPCManager {
             }
         }
         return templates;
+    }
+
+    private List<String> getExternalChatTemplates(NPC npc, List<Player> listeners) {
+        if (!isCardGameBotNpc(npc)) {
+            return Collections.emptyList();
+        }
+        String botId = getNpcDataString(npc, "external-id");
+        if (botId == null || botId.isBlank()) {
+            return Collections.emptyList();
+        }
+        Plugin cardGame = Bukkit.getPluginManager().getPlugin(CARDGAME_PLUGIN_NAME);
+        if (cardGame == null || !cardGame.isEnabled()) {
+            return List.of(
+                    "Ich warte noch darauf, dass das Kartenspiel wieder bereit ist.",
+                    "Ohne Kartenspiel-Server kann ich nur trainieren."
+            );
+        }
+        Player contextPlayer = (listeners != null && !listeners.isEmpty()) ? listeners.get(0) : null;
+        try {
+            Object raw = cardGame.getClass()
+                    .getMethod("getLobbyBotAmbientLines", Player.class, String.class)
+                    .invoke(cardGame, contextPlayer, botId);
+            if (raw instanceof List<?>) {
+                List<String> lines = new ArrayList<>();
+                for (Object entry : (List<?>) raw) {
+                    if (entry != null && !entry.toString().isBlank()) {
+                        lines.add(entry.toString());
+                    }
+                }
+                if (!lines.isEmpty()) {
+                    return lines;
+                }
+            }
+        } catch (NoSuchMethodException ignored) {
+        } catch (Exception e) {
+            plugin.getLogger().warning("Bot-NPC-Chat konnte nicht vom Kartenspiel geladen werden: " + e.getMessage());
+        }
+        String deck = getNpcDataString(npc, "external-deck");
+        String difficulty = getNpcDataString(npc, "external-difficulty");
+        List<String> fallback = new ArrayList<>();
+        fallback.add("Mein Deck ist bereit. Ein falscher Zug reicht mir oft.");
+        if (deck != null && !deck.isBlank()) {
+            fallback.add("Ich spiele gerade ein " + deck + "-Deck.");
+        }
+        if (difficulty != null && !difficulty.isBlank()) {
+            fallback.add("Meine Standard-Schwierigkeit ist " + difficulty + ".");
+        }
+        fallback.add("Bock auf ein Spiel gegen mich? Sprich mich direkt an.");
+        return fallback;
     }
 
     public List<String> getConversationScriptIds() {

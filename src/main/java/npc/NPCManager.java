@@ -2742,7 +2742,7 @@ public class NPCManager {
         String npcName = getNPCDisplayName(npc);
         Plugin cardGame = Bukkit.getPluginManager().getPlugin(CARDGAME_PLUGIN_NAME);
         if (cardGame == null || !cardGame.isEnabled()) {
-            player.sendMessage(ChatColor.RED + "Das Kartenspiel ist gerade nicht verfuegbar.");
+            player.sendMessage(ChatColor.RED + "Das Kartenspiel ist gerade nicht verfügbar.");
             return true;
         }
 
@@ -2755,7 +2755,7 @@ public class NPCManager {
                 return true;
             }
         } catch (Exception e) {
-            plugin.getLogger().warning("Bot-NPC-Freischaltung konnte nicht geprueft werden: " + e.getMessage());
+            plugin.getLogger().warning("Bot-NPC-Freischaltung konnte nicht geprüft werden: " + e.getMessage());
             player.sendMessage(ChatColor.RED + "Dieses Bot-Duell kann gerade nicht gestartet werden.");
             return true;
         }
@@ -2771,7 +2771,7 @@ public class NPCManager {
             TextComponent accept = new TextComponent(ChatColor.GREEN + "" + ChatColor.BOLD + "[ANNEHMEN]");
             accept.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/nonelessgame:lobbybotduel " + botId));
             accept.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT,
-                    new ComponentBuilder(ChatColor.YELLOW + "Deck und Arena fuer dieses Bot-Duell waehlen").create()));
+                    new ComponentBuilder(ChatColor.YELLOW + "Deck und Arena für dieses Bot-Duell wählen").create()));
             line.addExtra(accept);
             player.spigot().sendMessage(line);
         }
@@ -2784,7 +2784,7 @@ public class NPCManager {
         listeners.add(player);
         String message = resolveAmbientTemplate(npc, listeners);
         if (message == null || message.isBlank()) {
-            message = "Ich habe gerade noch ueber mein letztes Duell nachgedacht.";
+            message = "Ich habe gerade noch über mein letztes Duell nachgedacht.";
         }
         if (isNpcChatEnabled(player)) {
             player.sendMessage(ChatColor.AQUA + npcName + ChatColor.GRAY + ": " + ChatColor.WHITE + message);

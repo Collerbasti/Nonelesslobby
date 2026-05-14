@@ -38,6 +38,7 @@ import java.util.UUID;
 import java.util.Set;
 import java.util.IdentityHashMap;
 import java.util.Collections;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 public class NPCManager {
@@ -418,44 +419,49 @@ public class NPCManager {
             Bukkit.getScheduler().runTask(plugin, () -> syncExternalLobbyNPCs(source, profiles, maxNpcs));
             return;
         }
-        if (source == null || source.isBlank()) {
-            return;
-        }
-        if (!isCitizensAvailable()) {
-            plugin.getLogger().warning("Citizens2 Plugin ist nicht verfügbar! Externe Lobby-NPCs können nicht gespawnt werden.");
-            return;
-        }
-
-        removeExternalLobbyNPCs(source);
-        if (profiles == null || profiles.isEmpty()) {
-            return;
-        }
-
-        Location lobbySpawn = resolveLobbySpawnLocation();
-        if (lobbySpawn == null || lobbySpawn.getWorld() == null) {
-            plugin.getLogger().warning("Keine Lobby-Position für externe NPCs gefunden.");
-            return;
-        }
-
-        int limit = Math.max(0, maxNpcs);
-        int spawned = 0;
-        for (Map<String, String> rawProfile : profiles) {
-            if (limit > 0 && spawned >= limit) {
-                break;
+        try {
+            if (source == null || source.isBlank()) {
+                return;
             }
-            ExternalNpcProfile profile = ExternalNpcProfile.fromMap(rawProfile);
-            if (profile == null) {
-                continue;
+            if (!isCitizensAvailable()) {
+                plugin.getLogger().warning("Citizens2 Plugin ist nicht verfügbar! Externe Lobby-NPCs können nicht gespawnt werden.");
+                return;
             }
-            Location spawnLocation = getSpawnLocationNear(lobbySpawn, lobbyNPCs.size() + spawned);
-            if (spawnExternalNPC(spawnLocation, source, profile)) {
-                spawned++;
-            }
-        }
 
-        if (spawned > 0) {
-            plugin.getLogger().info("§a" + spawned + " externe Lobby-NPCs von " + source + " gespawnt.");
-            restartConversationScheduler();
+            removeExternalLobbyNPCs(source);
+            if (profiles == null || profiles.isEmpty()) {
+                return;
+            }
+
+            Location lobbySpawn = resolveLobbySpawnLocation();
+            if (lobbySpawn == null || lobbySpawn.getWorld() == null) {
+                plugin.getLogger().warning("Keine Lobby-Position für externe NPCs gefunden.");
+                return;
+            }
+
+            int limit = Math.max(0, maxNpcs);
+            int spawned = 0;
+            for (Map<String, String> rawProfile : profiles) {
+                if (limit > 0 && spawned >= limit) {
+                    break;
+                }
+                ExternalNpcProfile profile = ExternalNpcProfile.fromMap(rawProfile);
+                if (profile == null) {
+                    continue;
+                }
+                Location spawnLocation = getSpawnLocationNear(lobbySpawn, lobbyNPCs.size() + spawned);
+                if (spawnExternalNPC(spawnLocation, source, profile)) {
+                    spawned++;
+                }
+            }
+
+            if (spawned > 0) {
+                plugin.getLogger().info("§a" + spawned + " externe Lobby-NPCs von " + source + " gespawnt.");
+                restartConversationScheduler();
+            }
+        } catch (Throwable throwable) {
+            plugin.getLogger().log(Level.WARNING,
+                    "Externe Lobby-NPC-Synchronisierung fehlgeschlagen: " + describeThrowable(throwable), throwable);
         }
     }
 
@@ -464,37 +470,53 @@ public class NPCManager {
             Bukkit.getScheduler().runTask(plugin, () -> removeExternalLobbyNPCs(source));
             return;
         }
-        if (source == null || source.isBlank()) {
-            return;
-        }
+        try {
+            if (source == null || source.isBlank()) {
+                return;
+            }
 
-        int removed = 0;
-        for (NPC npc : new ArrayList<>(lobbyNPCs)) {
-            if (npc == null || !source.equals(String.valueOf(npc.data().get("external-source")))) {
-                continue;
-            }
-            try {
-                cancelMovementTask(npc);
-                cancelLookTask(npc);
-                cancelAmbientChat(npc);
-                unregisterNPCEntity(npc);
-                npcAssignedPersonalities.remove(npc);
-                conversationLockedNPCs.remove(npc);
-                removePersistentNpcEntry(npc);
-                if (npc.isSpawned()) {
-                    npc.despawn();
+            int removed = 0;
+            for (NPC npc : new ArrayList<>(lobbyNPCs)) {
+                if (npc == null || !source.equals(String.valueOf(npc.data().get("external-source")))) {
+                    continue;
                 }
-                npc.destroy();
-                removed++;
-            } catch (Exception e) {
-                plugin.getLogger().warning("Externer NPC konnte nicht entfernt werden: " + e.getMessage());
-            } finally {
-                lobbyNPCs.remove(npc);
+                try {
+                    cancelMovementTask(npc);
+                    cancelLookTask(npc);
+                    cancelAmbientChat(npc);
+                    unregisterNPCEntity(npc);
+                    npcAssignedPersonalities.remove(npc);
+                    conversationLockedNPCs.remove(npc);
+                    removePersistentNpcEntry(npc);
+                    if (npc.isSpawned()) {
+                        npc.despawn();
+                    }
+                    npc.destroy();
+                    removed++;
+                } catch (Exception e) {
+                    plugin.getLogger().warning("Externer NPC konnte nicht entfernt werden: " + e.getMessage());
+                } finally {
+                    lobbyNPCs.remove(npc);
+                }
             }
+            if (removed > 0) {
+                plugin.getLogger().info("§e" + removed + " externe Lobby-NPCs von " + source + " entfernt.");
+            }
+        } catch (Throwable throwable) {
+            plugin.getLogger().log(Level.WARNING,
+                    "Externe Lobby-NPC-Entfernung fehlgeschlagen: " + describeThrowable(throwable), throwable);
         }
-        if (removed > 0) {
-            plugin.getLogger().info("§e" + removed + " externe Lobby-NPCs von " + source + " entfernt.");
+    }
+
+    private String describeThrowable(Throwable throwable) {
+        if (throwable == null) {
+            return "unbekannter Fehler";
         }
+        String message = throwable.getMessage();
+        if (message == null || message.isBlank()) {
+            return throwable.getClass().getName();
+        }
+        return throwable.getClass().getName() + ": " + message;
     }
 
     /** Gibt den GameHypeManager zurück (für das Admin-Menü). */

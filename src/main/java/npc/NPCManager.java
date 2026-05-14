@@ -13,6 +13,7 @@ import net.citizensnpcs.api.CitizensAPI;
 import net.citizensnpcs.api.npc.NPC;
 import net.citizensnpcs.api.npc.NPCRegistry;
 import net.citizensnpcs.api.ai.Navigator;
+import net.citizensnpcs.trait.SkinTrait;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.ConfigurationSection;
@@ -89,6 +90,32 @@ public class NPCManager {
             this.name = name;
             this.location = location;
             this.allowedNPCNames = new LinkedHashSet<>();
+        }
+    }
+
+    private static final class ExternalNpcProfile {
+        final String id;
+        final String name;
+        final String skin;
+
+        ExternalNpcProfile(String id, String name, String skin) {
+            this.id = id;
+            this.name = name;
+            this.skin = skin;
+        }
+
+        static ExternalNpcProfile fromMap(Map<String, String> values) {
+            if (values == null) {
+                return null;
+            }
+            String name = values.get("name");
+            if (name == null || name.isBlank()) {
+                return null;
+            }
+            return new ExternalNpcProfile(
+                    values.getOrDefault("id", name),
+                    ChatColor.translateAlternateColorCodes('&', name),
+                    values.getOrDefault("skin", ""));
         }
     }
 
@@ -380,6 +407,94 @@ public class NPCManager {
      */
     public List<NPC> getLobbyNPCs() {
         return Collections.unmodifiableList(new ArrayList<>(lobbyNPCs));
+    }
+
+    /**
+     * Registriert NPCs anderer Plugins im normalen Lobby-NPC-System.
+     * Erwartet Maps mit id, name und optional skin.
+     */
+    public void syncExternalLobbyNPCs(String source, List<Map<String, String>> profiles, int maxNpcs) {
+        if (!Bukkit.isPrimaryThread()) {
+            Bukkit.getScheduler().runTask(plugin, () -> syncExternalLobbyNPCs(source, profiles, maxNpcs));
+            return;
+        }
+        if (source == null || source.isBlank()) {
+            return;
+        }
+        if (!isCitizensAvailable()) {
+            plugin.getLogger().warning("Citizens2 Plugin ist nicht verfügbar! Externe Lobby-NPCs können nicht gespawnt werden.");
+            return;
+        }
+
+        removeExternalLobbyNPCs(source);
+        if (profiles == null || profiles.isEmpty()) {
+            return;
+        }
+
+        Location lobbySpawn = resolveLobbySpawnLocation();
+        if (lobbySpawn == null || lobbySpawn.getWorld() == null) {
+            plugin.getLogger().warning("Keine Lobby-Position für externe NPCs gefunden.");
+            return;
+        }
+
+        int limit = Math.max(0, maxNpcs);
+        int spawned = 0;
+        for (Map<String, String> rawProfile : profiles) {
+            if (limit > 0 && spawned >= limit) {
+                break;
+            }
+            ExternalNpcProfile profile = ExternalNpcProfile.fromMap(rawProfile);
+            if (profile == null) {
+                continue;
+            }
+            Location spawnLocation = getSpawnLocationNear(lobbySpawn, lobbyNPCs.size() + spawned);
+            if (spawnExternalNPC(spawnLocation, source, profile)) {
+                spawned++;
+            }
+        }
+
+        if (spawned > 0) {
+            plugin.getLogger().info("§a" + spawned + " externe Lobby-NPCs von " + source + " gespawnt.");
+            restartConversationScheduler();
+        }
+    }
+
+    public void removeExternalLobbyNPCs(String source) {
+        if (!Bukkit.isPrimaryThread()) {
+            Bukkit.getScheduler().runTask(plugin, () -> removeExternalLobbyNPCs(source));
+            return;
+        }
+        if (source == null || source.isBlank()) {
+            return;
+        }
+
+        int removed = 0;
+        for (NPC npc : new ArrayList<>(lobbyNPCs)) {
+            if (npc == null || !source.equals(String.valueOf(npc.data().get("external-source")))) {
+                continue;
+            }
+            try {
+                cancelMovementTask(npc);
+                cancelLookTask(npc);
+                cancelAmbientChat(npc);
+                unregisterNPCEntity(npc);
+                npcAssignedPersonalities.remove(npc);
+                conversationLockedNPCs.remove(npc);
+                removePersistentNpcEntry(npc);
+                if (npc.isSpawned()) {
+                    npc.despawn();
+                }
+                npc.destroy();
+                removed++;
+            } catch (Exception e) {
+                plugin.getLogger().warning("Externer NPC konnte nicht entfernt werden: " + e.getMessage());
+            } finally {
+                lobbyNPCs.remove(npc);
+            }
+        }
+        if (removed > 0) {
+            plugin.getLogger().info("§e" + removed + " externe Lobby-NPCs von " + source + " entfernt.");
+        }
     }
 
     /** Gibt den GameHypeManager zurück (für das Admin-Menü). */
@@ -1909,6 +2024,64 @@ public class NPCManager {
             plugin.getLogger().warning("Fehler beim Spawnen von NPC '" + npcName + "': " + e.getMessage());
         }
         return false;
+    }
+
+    private boolean spawnExternalNPC(Location spawnLocation, String source, ExternalNpcProfile profile) {
+        try {
+            NPCRegistry registry = CitizensAPI.getNPCRegistry();
+            NPC npc = registry.createNPC(org.bukkit.entity.EntityType.PLAYER, profile.name);
+            npc.data().set("external-source", source);
+            npc.data().setPersistent("external-source", source);
+            npc.data().set("external-id", profile.id);
+            npc.data().setPersistent("external-id", profile.id);
+            applyExternalSkin(npc, profile.skin);
+
+            boolean spawned = npc.spawn(spawnLocation);
+            if (spawned) {
+                configureNPC(npc, profile.name);
+                lobbyNPCs.add(npc);
+                registerNPCEntity(npc);
+                addPersistentNpcEntry(npc);
+                return true;
+            }
+            plugin.getLogger().warning("Externer NPC '" + profile.name + "' konnte nicht gespawnt werden!");
+        } catch (Exception e) {
+            plugin.getLogger().warning("Fehler beim Spawnen von externem NPC '" + profile.name + "': " + e.getMessage());
+        }
+        return false;
+    }
+
+    private void applyExternalSkin(NPC npc, String skin) {
+        if (npc == null || skin == null || skin.isBlank()) {
+            return;
+        }
+        try {
+            SkinTrait skinTrait = npc.getOrAddTrait(SkinTrait.class);
+            skinTrait.setSkinName(skin, true);
+        } catch (Exception e) {
+            plugin.getLogger().info("Skin fuer externen NPC konnte nicht gesetzt werden: " + e.getMessage());
+        }
+    }
+
+    private Location resolveLobbySpawnLocation() {
+        Location lobbySpawn = null;
+        try {
+            Class<?> configManagerClass = Class.forName("Config.ConfigManager");
+            lobbySpawn = (Location) configManagerClass.getMethod("getLobbyLocation").invoke(null);
+        } catch (Exception ignored) {
+        }
+        if (lobbySpawn != null && lobbySpawn.getWorld() != null) {
+            return lobbySpawn;
+        }
+        Location pluginLobby = plugin.getLobbyLocation();
+        if (pluginLobby != null && pluginLobby.getWorld() != null) {
+            return pluginLobby;
+        }
+        World world = Bukkit.getWorld("world");
+        if (world != null) {
+            return world.getSpawnLocation();
+        }
+        return Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().get(0).getSpawnLocation();
     }
     
     /**

@@ -2751,25 +2751,17 @@ public class NPCManager {
                     .getMethod("isLobbyBotDuelAvailable", Player.class, String.class)
                     .invoke(cardGame, player, botId);
             if (!(available instanceof Boolean) || !((Boolean) available)) {
-                String lockMessage = "";
-                try {
-                    Object raw = cardGame.getClass()
-                            .getMethod("getLobbyBotLockMessage", Player.class, String.class)
-                            .invoke(cardGame, player, botId);
-                    if (raw != null) {
-                        lockMessage = raw.toString();
-                    }
-                } catch (NoSuchMethodException ignored) { }
-                if (lockMessage == null || lockMessage.isBlank()) {
-                    lockMessage = "Ich bin fuer dich noch nicht freigeschaltet.";
-                }
-                player.sendMessage(ChatColor.AQUA + npcName + ChatColor.GRAY + ": " + ChatColor.RED + lockMessage);
-                showNpcChatBubble(npc, lockMessage);
+                sendCardGameBotAmbientInteraction(player, npc, npcName);
                 return true;
             }
         } catch (Exception e) {
             plugin.getLogger().warning("Bot-NPC-Freischaltung konnte nicht geprueft werden: " + e.getMessage());
             player.sendMessage(ChatColor.RED + "Dieses Bot-Duell kann gerade nicht gestartet werden.");
+            return true;
+        }
+
+        if (random.nextInt(10) != 0) {
+            sendCardGameBotAmbientInteraction(player, npc, npcName);
             return true;
         }
 
@@ -2785,6 +2777,19 @@ public class NPCManager {
         }
         showNpcChatBubble(npc, message);
         return true;
+    }
+
+    private void sendCardGameBotAmbientInteraction(Player player, NPC npc, String npcName) {
+        List<Player> listeners = new ArrayList<>();
+        listeners.add(player);
+        String message = resolveAmbientTemplate(npc, listeners);
+        if (message == null || message.isBlank()) {
+            message = "Ich habe gerade noch ueber mein letztes Duell nachgedacht.";
+        }
+        if (isNpcChatEnabled(player)) {
+            player.sendMessage(ChatColor.AQUA + npcName + ChatColor.GRAY + ": " + ChatColor.WHITE + message);
+        }
+        showNpcChatBubble(npc, message);
     }
 
     private boolean isCardGameBotNpc(NPC npc) {
@@ -4077,7 +4082,6 @@ public class NPCManager {
         if (difficulty != null && !difficulty.isBlank()) {
             fallback.add("Meine Standard-Schwierigkeit ist " + difficulty + ".");
         }
-        fallback.add("Bock auf ein Spiel gegen mich? Sprich mich direkt an.");
         return fallback;
     }
 

@@ -49,6 +49,8 @@ import java.util.stream.Collectors;
 public class NPCManager {
     private static final String CARDGAME_PLUGIN_NAME = "NonelessGame";
     private static final String CARDGAME_BOT_SOURCE = "NonelessGame.BotDuellants";
+    private static final int NPC_INTERACTION_BATTLEPASS_XP = 10;
+    private static final long NPC_INTERACTION_XP_COOLDOWN_MS = 60_000L;
 
     private static final long CHAT_HOLOGRAM_FOLLOW_INTERVAL = 10L;
 
@@ -68,6 +70,7 @@ public class NPCManager {
     private final Map<String, String> personalityCaseLookup;
     private final Map<NPC, List<String>> npcAssignedPersonalities;
     private final Set<NPC> conversationLockedNPCs;
+    private final Map<UUID, Map<String, Long>> npcInteractionXpCooldowns;
     private final List<String> npcNames;
     private final List<String> ambientChatLines;
     private final List<ConversationScript> conversationScripts;
@@ -580,6 +583,7 @@ public class NPCManager {
         this.personalityCaseLookup = new HashMap<>();
         this.npcAssignedPersonalities = new HashMap<>();
         this.conversationLockedNPCs = Collections.newSetFromMap(new IdentityHashMap<>());
+        this.npcInteractionXpCooldowns = new HashMap<>();
         this.npcNames = new ArrayList<>();
         this.ambientChatLines = new ArrayList<>();
         this.conversationScripts = new ArrayList<>();
@@ -2719,6 +2723,7 @@ public class NPCManager {
         if (player == null || entityId == null) return false;
         NPC npc = entityNpcMap.get(entityId);
         if (npc == null) return false;
+        awardBattlepassXpForNpcInteraction(player, npc);
         if (isCardGameBotNpc(npc)) {
             return triggerCardGameBotInteraction(player, npc);
         }
@@ -2732,6 +2737,56 @@ public class NPCManager {
         }
         showNpcChatBubble(npc, message);
         return true;
+    }
+
+    private void awardBattlepassXpForNpcInteraction(Player player, NPC npc) {
+        if (player == null || npc == null) {
+            return;
+        }
+        String npcKey = getNpcInteractionCooldownKey(npc);
+        if (npcKey == null || npcKey.isBlank()) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        UUID playerId = player.getUniqueId();
+        Map<String, Long> playerCooldowns = npcInteractionXpCooldowns.computeIfAbsent(playerId, ignored -> new HashMap<>());
+        Long lastAward = playerCooldowns.get(npcKey);
+        if (lastAward != null && now - lastAward < NPC_INTERACTION_XP_COOLDOWN_MS) {
+            return;
+        }
+
+        Plugin cardGame = Bukkit.getPluginManager().getPlugin(CARDGAME_PLUGIN_NAME);
+        if (cardGame == null || !cardGame.isEnabled()) {
+            return;
+        }
+        try {
+            Object battlepassManager = cardGame.getClass()
+                    .getMethod("getBattlepassManager")
+                    .invoke(cardGame);
+            if (battlepassManager == null) {
+                return;
+            }
+            battlepassManager.getClass()
+                    .getMethod("addXp", UUID.class, int.class)
+                    .invoke(battlepassManager, playerId, NPC_INTERACTION_BATTLEPASS_XP);
+            playerCooldowns.put(npcKey, now);
+        } catch (NoSuchMethodException ignored) {
+            // NonelessGame-Version hat noch keine Battlepass-API.
+        } catch (Exception e) {
+            plugin.getLogger().warning("Battlepass-XP für NPC-Interaktion konnte nicht vergeben werden: " + e.getMessage());
+        }
+    }
+
+    private String getNpcInteractionCooldownKey(NPC npc) {
+        if (npc == null) {
+            return null;
+        }
+        String externalSource = getNpcDataString(npc, "external-source");
+        String externalId = getNpcDataString(npc, "external-id");
+        if (externalSource != null && !externalSource.isBlank() && externalId != null && !externalId.isBlank()) {
+            return externalSource + ":" + externalId;
+        }
+        return "citizens:" + npc.getId();
     }
 
     private boolean triggerCardGameBotInteraction(Player player, NPC npc) {
